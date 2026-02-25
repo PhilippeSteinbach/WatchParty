@@ -32,6 +32,17 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
+    @ExceptionHandler(RoomNotFoundException.class)
+    public ProblemDetail handleRoomNotFound(RoomNotFoundException ex) {
+        var problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND,
+                ex.getMessage()
+        );
+        problemDetail.setTitle("Not Found");
+        problemDetail.setType(URI.create("https://watchparty.com/errors/room-not-found"));
+        return problemDetail;
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ProblemDetail handleIllegalArgument(IllegalArgumentException ex) {
         var problemDetail = ProblemDetail.forStatusAndDetail(
