@@ -1,6 +1,16 @@
-# WatchParty – Watch Vidoes Together
+# WatchParty – Watch Videos Together
 
 Synchrones YouTube-Schauen in virtuellen Räumen mit Echtzeit-Chat, Webcam/Mikrofon und kollaborativer oder Host-basierter Steuerung.
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Angular (standalone components), TypeScript, SCSS |
+| Backend | Java 21+, Spring Boot 3 |
+| Database | PostgreSQL 16 |
+| Real-time | Spring WebSocket (STOMP over SockJS) |
+| Containerisation | Docker Compose |
 
 ## Features
 

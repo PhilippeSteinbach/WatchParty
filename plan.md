@@ -9,34 +9,36 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
 **Goal:** Runnable project structure with build, test, and Docker.
 
 ### Server
-- [ ] Create .NET 10 Web API project `WatchParty.Api` with solution file `WatchParty.sln` in `server/`
-- [ ] Create test project `WatchParty.Api.Tests` (xUnit)
-- [ ] Install NuGet packages:
-  - `Npgsql.EntityFrameworkCore.PostgreSQL`
-  - `FluentValidation.AspNetCore`
-  - `Serilog.AspNetCore`
-  - `Swashbuckle.AspNetCore`
-  - `Microsoft.AspNetCore.Authentication.JwtBearer`
-- [ ] Configure `Program.cs`: Swagger, CORS, SignalR, Serilog, Problem Details (RFC 9457), Health Checks
-- [ ] Create `appsettings.json` + `appsettings.Development.json` (PostgreSQL connection string, JWT settings, YouTube API key placeholder via User Secrets)
-- [ ] Add `.editorconfig` per C# conventions
+- [ ] Create Spring Boot 3 project with Maven in `server/` (Java 21+)
+- [ ] Add dependencies in `pom.xml`:
+  - `spring-boot-starter-web`
+  - `spring-boot-starter-data-jpa`
+  - `spring-boot-starter-websocket`
+  - `spring-boot-starter-validation`
+  - `spring-boot-starter-security`
+  - `springdoc-openapi-starter-webmvc-ui`
+  - `postgresql` driver
+  - `flyway-core`
+  - `jjwt` (io.jsonwebtoken)
+- [ ] Configure `WatchPartyApplication.java` main class
+- [ ] Create `application.yml` + `application-dev.yml` (PostgreSQL connection, JWT settings, YouTube API key placeholder via environment variables)
 - [ ] Add `Dockerfile` + `.dockerignore`
 
 ### Client
 - [ ] Scaffold Angular project in `client/`: `ng new watch-party --standalone --style=scss --routing`
 - [ ] Enable strict mode in `tsconfig.json`
-- [ ] Install dependencies: `@microsoft/signalr`, `@types/youtube`
+- [ ] Install dependencies: `@stomp/stompjs`, `sockjs-client`, `@types/youtube`
 - [ ] Create `proxy.conf.json` for API calls in development
 - [ ] Add `Dockerfile` (multi-stage: Node build → Nginx)
 
 ### Infrastructure
-- [ ] Create `docker-compose.yml` in repo root with services: `db` (PostgreSQL 16), `api` (ASP.NET Core), `client` (Nginx)
-- [ ] Configure volumes for DB persistence, ports: 4200, 5000, 5432
+- [ ] Create `docker-compose.yml` in repo root with services: `db` (PostgreSQL 16), `api` (Spring Boot), `client` (Nginx)
+- [ ] Configure volumes for DB persistence, ports: 4200, 8080, 5432
 - [ ] Add CI workflow in `.github/workflows/`: build + test for both projects
 
 ### Verification
 - `docker compose up` starts all 3 services
-- Swagger UI at `localhost:5000/swagger`
+- Swagger UI at `localhost:8080/swagger-ui.html`
 - Angular app at `localhost:4200`
 
 ---
@@ -46,29 +48,29 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
 **Goal:** Create rooms, join via link, watch YouTube videos synchronously. Anonymous participation with nickname.
 
 ### Server – Domain & Data
-- [ ] Create `Room` entity: `Id` (Guid), `Code` (string, 6-8 chars, unique), `Name`, `ControlMode` (enum: Collaborative | HostOnly), `HostConnectionId`, `CurrentVideoUrl`, `CurrentTime` (TimeSpan), `IsPlaying`, `CreatedAt`, `ExpiresAt`
-- [ ] Create `Participant` entity: `Id`, `RoomId`, `Nickname`, `ConnectionId`, `IsHost`, `JoinedAt`
-- [ ] Create `AppDbContext` with `DbSet<Room>`, `DbSet<Participant>`, PostgreSQL config
-- [ ] Run initial EF Core migration
+- [ ] Create `Room` entity (JPA `@Entity`): `id` (UUID), `code` (String, 6-8 chars, unique), `name`, `controlMode` (enum: COLLABORATIVE | HOST_ONLY), `hostConnectionId`, `currentVideoUrl`, `currentTime` (Duration), `isPlaying`, `createdAt`, `expiresAt`
+- [ ] Create `Participant` entity: `id`, `roomId`, `nickname`, `connectionId`, `isHost`, `joinedAt`
+- [ ] Create `RoomRepository` and `ParticipantRepository` (Spring Data JPA)
+- [ ] Create initial Flyway migration
 
-### Server – Room API (Minimal APIs)
+### Server – Room API (REST Controllers)
 - [ ] `POST /api/rooms` → Create room (Name, ControlMode), return room code
 - [ ] `GET /api/rooms/{code}` → Get room details
 - [ ] `DELETE /api/rooms/{code}` → Close room (host only)
-- [ ] FluentValidation: room name required, max 100 chars
-- [ ] Problem Details responses for errors
+- [ ] Jakarta Bean Validation: room name required, max 100 chars
+- [ ] Problem Details responses for errors (RFC 9457)
 
-### Server – SignalR Hub (`WatchPartyHub`)
-- [ ] `JoinRoomAsync(roomCode, nickname)` → Add participant to SignalR group, validate nickname, return current player state
-- [ ] `LeaveRoomAsync()` → Remove participant, on host leave: assign new host or close room
-- [ ] `PlayAsync()` / `PauseAsync()` / `SeekAsync(timeSeconds)` → Check permissions (ControlMode), broadcast to group
-- [ ] `ChangeVideoAsync(videoUrl)` → Change video, broadcast
-- [ ] `SyncStateAsync()` → Periodic state sync (heartbeat every 5s)
-- [ ] Override `OnDisconnectedAsync` for cleanup
+### Server – WebSocket Handler (`WatchPartyWebSocketHandler`)
+- [ ] `joinRoom(roomCode, nickname)` → Add participant to session group, validate nickname, return current player state
+- [ ] `leaveRoom()` → Remove participant, on host leave: assign new host or close room
+- [ ] `play()` / `pause()` / `seek(timeSeconds)` → Check permissions (ControlMode), broadcast to group
+- [ ] `changeVideo(videoUrl)` → Change video, broadcast
+- [ ] `syncState()` → Periodic state sync (heartbeat every 5s)
+- [ ] Handle session disconnect for cleanup
 
 ### Client – Room Creation & Joining
 - [ ] `RoomService` – HTTP calls to Room API, room state as signals
-- [ ] `SignalRService` – Manage hub connection, expose events as signals
+- [ ] `WebSocketService` – Manage STOMP/SockJS connection, expose events as signals
 - [ ] `HomeComponent` – Create room (name, control mode), result: shareable link
 - [ ] `JoinRoomComponent` – Enter nickname, join room (route: `/room/:code`)
 - [ ] Routing: `/` → Home, `/room/:code` → WatchRoom
@@ -77,14 +79,14 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
 ### Client – YouTube Player & Sync
 - [ ] `WatchRoomComponent` – Main container with player, participant list
 - [ ] `YoutubePlayerComponent` – YouTube IFrame API integration
-- [ ] Forward player events (`onStateChange`) to SignalR
-- [ ] Apply incoming SignalR events to player (play/pause/seek)
+- [ ] Forward player events (`onStateChange`) to WebSocket
+- [ ] Apply incoming WebSocket events to player (play/pause/seek)
 - [ ] Respect control mode: disable controls for non-hosts in Host-Mode
 - [ ] `ParticipantListComponent` – Show participants, mark host
 
 ### Latency Compensation (Basic)
-- [ ] Client sends current playback position to hub periodically
-- [ ] Hub compares positions; drift > 2s → `SeekAsync` to drifting client
+- [ ] Client sends current playback position to server periodically
+- [ ] Server compares positions; drift > 2s → `seek` to drifting client
 - [ ] Gradual catchup: playback rate 1.05x for small drift (< 2s)
 - [ ] Hard seek: drift > 5s → jump to correct position immediately
 
@@ -100,8 +102,8 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
 **Goal:** Text chat with emoji reactions and video playlist.
 
 ### Server – Chat
-- [ ] `ChatMessage` entity: `Id`, `RoomId`, `Nickname`, `Content`, `Reactions` (JSON column), `SentAt`
-- [ ] Hub methods: `SendMessageAsync(content)`, `AddReactionAsync(messageId, emoji)`
+- [ ] `ChatMessage` entity (JPA `@Entity`): `id`, `roomId`, `nickname`, `content`, `reactions` (JSON column via `@JdbcTypeCode`), `sentAt`
+- [ ] WebSocket message handlers: `sendMessage(content)`, `addReaction(messageId, emoji)`
 - [ ] Persist messages in DB (last 200 per room), load history on join
 - [ ] Validation: max 500 chars, rate limiting (max 5 messages/10s per user)
 
@@ -112,8 +114,8 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
 - [ ] Chat state in signals: `messages`, `isLoading`
 
 ### Server – Playlist
-- [ ] `PlaylistItem` entity: `Id`, `RoomId`, `VideoUrl`, `Title`, `ThumbnailUrl`, `Duration`, `AddedBy`, `Position`, `AddedAt`
-- [ ] Hub methods: `AddToPlaylistAsync(videoUrl)`, `PlayNowAsync(videoUrl)`, `RemoveFromPlaylistAsync(itemId)`, `ReorderPlaylistAsync(itemId, newPosition)`, `SkipToNextAsync()`
+- [ ] `PlaylistItem` entity (JPA `@Entity`): `id`, `roomId`, `videoUrl`, `title`, `thumbnailUrl`, `duration`, `addedBy`, `position`, `addedAt`
+- [ ] WebSocket message handlers: `addToPlaylist(videoUrl)`, `playNow(videoUrl)`, `removeFromPlaylist(itemId)`, `reorderPlaylist(itemId, newPosition)`, `skipToNext()`
 - [ ] `YouTubeService` – Fetch video metadata (title, thumbnail, duration) from YouTube Data API v3
 - [ ] Auto-play next video when current one ends
 
@@ -136,16 +138,16 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
 **Goal:** Optional registration, permanent rooms, JWT auth.
 
 ### Server – Auth
-- [ ] `User` entity: `Id`, `Email`, `DisplayName`, `PasswordHash`, `CreatedAt`
+- [ ] `User` entity (JPA `@Entity`): `id`, `email`, `displayName`, `passwordHash`, `createdAt`
 - [ ] Auth endpoints: `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/refresh`
-- [ ] JWT token generation with refresh token rotation
-- [ ] Password hashing with BCrypt
-- [ ] SignalR Hub supports both anonymous and authenticated users
+- [ ] JWT token generation with refresh token rotation (using `jjwt`)
+- [ ] Password hashing with BCrypt (`spring-security-crypto`)
+- [ ] WebSocket handler supports both anonymous and authenticated users
 
 ### Server – Permanent Rooms
-- [ ] Extend Room entity: `OwnerId` (FK → User, nullable), `IsPermanent` (bool)
-- [ ] Anonymous rooms: `ExpiresAt` = CreatedAt + 24h
-- [ ] Cleanup job (`IHostedService`): delete expired rooms
+- [ ] Extend Room entity: `ownerId` (FK → User, nullable), `isPermanent` (boolean)
+- [ ] Anonymous rooms: `expiresAt` = createdAt + 24h
+- [ ] Cleanup job (`@Scheduled`): delete expired rooms
 - [ ] Registered users: can create permanent rooms (no ExpiresAt)
 - [ ] `GET /api/users/me/rooms` → List own rooms
 
@@ -170,7 +172,7 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
 **Goal:** Webcam/microphone sharing, UI polish, production readiness.
 
 ### Server – WebRTC Signaling
-- [ ] Hub methods: `SendOfferAsync(targetConnectionId, sdp)`, `SendAnswerAsync(targetConnectionId, sdp)`, `SendIceCandidateAsync(targetConnectionId, candidate)`
+- [ ] WebSocket message handlers: `sendOffer(targetConnectionId, sdp)`, `sendAnswer(targetConnectionId, sdp)`, `sendIceCandidate(targetConnectionId, candidate)`
 - [ ] Use public STUN servers initially (Google)
 - [ ] Connection limit: max 6 participants per room for WebRTC (mesh topology)
 
@@ -178,7 +180,7 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
 - [ ] `WebRtcService` – `RTCPeerConnection` management, media stream handling
 - [ ] `getUserMedia()` for camera/microphone access
 - [ ] Mesh network: each peer connects to every other peer
-- [ ] Signaling via SignalR Hub (offer/answer/ICE)
+- [ ] Signaling via WebSocket (offer/answer/ICE)
 - [ ] `VideoGridComponent` – Webcam feeds in responsive grid layout (max 6)
 - [ ] `MediaControlsComponent` – Camera on/off, microphone mute/unmute
 - [ ] Media state as signals: `localStream`, `remoteStreams`, `isCameraOn`, `isMicOn`
@@ -193,12 +195,12 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
 - [ ] Accessibility: keyboard navigation, ARIA labels, focus management
 
 ### Production Readiness
-- [ ] Rate-limiting middleware (ASP.NET Core `RateLimiter`)
+- [ ] Rate-limiting filter (Spring Boot `Bucket4j` or custom filter)
 - [ ] CORS policy for production origin
-- [ ] Health checks: DB, SignalR
-- [ ] Serilog: structured logging to stdout (Docker-friendly)
+- [ ] Health checks: DB, WebSocket (`spring-boot-starter-actuator`)
+- [ ] SLF4J + Logback: structured logging to stdout (Docker-friendly)
 - [ ] Docker Compose production override: Nginx with SSL termination, environment variables
-- [ ] EF Core migration on startup (`Database.MigrateAsync()` in `Program.cs`)
+- [ ] Flyway migration on startup (automatic via Spring Boot)
 
 ### Verification
 - Webcam/mic sharing works between 2+ participants
@@ -212,8 +214,8 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
 
 | Check | Command |
 |-------|---------|
-| Server Build | `dotnet build` (no warnings) |
-| Server Tests | `dotnet test` (all green) |
+| Server Build | `./mvnw clean package` (no warnings) |
+| Server Tests | `./mvnw test` (all green) |
 | Client Build | `ng build` (no errors) |
 | Client Lint | `ng lint` (clean) |
 | Client Tests | `ng test --watch=false` (all green) |

@@ -5,33 +5,33 @@
 | Layer | Technology |
 |-------|-----------|
 | Frontend | Angular (latest, standalone components), TypeScript, SCSS |
-| Backend | ASP.NET Core (.NET 10+), C# 14 |
+| Backend | Java 21+, Spring Boot 3 |
 | Database | PostgreSQL 16 |
-| Real-time | SignalR (watch-party synchronisation, chat, WebRTC signaling) |
+| Real-time | Spring WebSocket (STOMP over SockJS) |
 | Video | YouTube IFrame API (playback) + YouTube Data API v3 (metadata) |
 | Audio/Video | WebRTC Mesh (up to 6 participants) |
 | Containerisation | Docker Compose (Nginx, API, PostgreSQL) |
 | Testing (FE) | Jasmine, Karma; Cypress / Playwright for E2E |
-| Testing (BE) | xUnit; Moq / NSubstitute for mocks |
-| API Style | Minimal APIs + SignalR; OpenAPI / Swagger docs |
+| Testing (BE) | JUnit 5; Mockito for mocks |
+| API Style | Spring REST Controllers + WebSocket; SpringDoc OpenAPI / Swagger docs |
 
 ---
 
 ## System Overview
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    Docker Compose                    │
-│                                                     │
-│  ┌──────────┐   ┌───────────────┐   ┌───────────┐  │
-│  │  Nginx   │   │  ASP.NET Core │   │ PostgreSQL│  │
-│  │ (Angular)│──▶│  API + SignalR │──▶│   16      │  │
-│  │  :4200   │   │    :5000      │   │  :5432    │  │
-│  └──────────┘   └───────┬───────┘   └───────────┘  │
-│                         │                           │
-│                   YouTube Data                      │
-│                    API v3                            │
-└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                      Docker Compose                      │
+│                                                         │
+│  ┌──────────┐   ┌────────────────────┐   ┌───────────┐  │
+│  │  Nginx   │   │  Spring Boot       │   │ PostgreSQL│  │
+│  │ (Angular)│──▶│  API + WebSocket   │──▶│   16      │  │
+│  │  :4200   │   │    :8080           │   │  :5432    │  │
+│  └──────────┘   └────────┬───────────┘   └───────────┘  │
+│                          │                               │
+│                    YouTube Data                          │
+│                     API v3                               │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -39,12 +39,12 @@
 ## Service Communication
 
 ```
-Client (Angular)              Server (ASP.NET Core)
-├── SignalRService       ◄──► WatchPartyHub
-├── WebRtcService        ◄──► (Signaling via Hub)
-├── RoomService          ◄──► RoomEndpoints
-├── AuthService          ◄──► AuthEndpoints
-├── PlaylistService      ◄──► (via Hub)
+Client (Angular)              Server (Spring Boot)
+├── WebSocketService    ◄──► WatchPartyWebSocketHandler
+├── WebRtcService       ◄──► (Signaling via WebSocket)
+├── RoomService         ◄──► RoomController
+├── AuthService         ◄──► AuthController
+├── PlaylistService     ◄──► (via WebSocket)
 └── YoutubePlayerComp.        YouTubeService (Data API v3)
 ```
 
@@ -54,36 +54,47 @@ Client (Angular)              Server (ASP.NET Core)
 
 ```
 server/
-├── WatchParty.sln
-├── src/WatchParty.Api/
-│   ├── Program.cs
-│   ├── appsettings.json
-│   ├── Data/
-│   │   ├── AppDbContext.cs
-│   │   └── Migrations/
-│   ├── Entities/
-│   │   ├── Room.cs
-│   │   ├── Participant.cs
-│   │   ├── ChatMessage.cs
-│   │   ├── PlaylistItem.cs
-│   │   └── User.cs
-│   ├── Hubs/
-│   │   └── WatchPartyHub.cs
-│   ├── Services/
-│   │   ├── IRoomService.cs / RoomService.cs
-│   │   ├── IYouTubeService.cs / YouTubeService.cs
-│   │   └── ITokenService.cs / TokenService.cs
-│   ├── Endpoints/
-│   │   ├── RoomEndpoints.cs
-│   │   └── AuthEndpoints.cs
-│   ├── Validators/
-│   │   └── CreateRoomValidator.cs
-│   └── Middleware/
-│       └── ExceptionMiddleware.cs
-├── tests/WatchParty.Api.Tests/
-│   ├── Services/
-│   ├── Hubs/
-│   └── Endpoints/
+├── pom.xml
+├── src/main/java/com/watchparty/
+│   ├── WatchPartyApplication.java
+│   ├── config/
+│   │   ├── WebSocketConfig.java
+│   │   ├── SecurityConfig.java
+│   │   └── CorsConfig.java
+│   ├── entity/
+│   │   ├── Room.java
+│   │   ├── Participant.java
+│   │   ├── ChatMessage.java
+│   │   ├── PlaylistItem.java
+│   │   └── User.java
+│   ├── repository/
+│   │   ├── RoomRepository.java
+│   │   ├── ParticipantRepository.java
+│   │   ├── ChatMessageRepository.java
+│   │   ├── PlaylistItemRepository.java
+│   │   └── UserRepository.java
+│   ├── service/
+│   │   ├── RoomService.java
+│   │   ├── YouTubeService.java
+│   │   └── TokenService.java
+│   ├── controller/
+│   │   ├── RoomController.java
+│   │   └── AuthController.java
+│   ├── websocket/
+│   │   └── WatchPartyWebSocketHandler.java
+│   ├── dto/
+│   │   ├── CreateRoomRequest.java
+│   │   └── RoomResponse.java
+│   └── exception/
+│       └── GlobalExceptionHandler.java
+├── src/main/resources/
+│   ├── application.yml
+│   ├── application-dev.yml
+│   └── db/migration/        (Flyway)
+├── src/test/java/com/watchparty/
+│   ├── service/
+│   ├── controller/
+│   └── websocket/
 └── Dockerfile
 ```
 
@@ -100,7 +111,7 @@ client/
 │   │   ├── app.routes.ts
 │   │   ├── core/
 │   │   │   ├── services/
-│   │   │   │   ├── signalr.service.ts
+│   │   │   │   ├── websocket.service.ts
 │   │   │   │   ├── auth.service.ts
 │   │   │   │   └── webrtc.service.ts
 │   │   │   ├── interceptors/
@@ -174,45 +185,45 @@ client/
 
 ---
 
-## SignalR Hub Methods (`WatchPartyHub`)
+## WebSocket Message Handlers (`WatchPartyWebSocketHandler`)
 
 ### Room Management
 | Method | Direction | Description |
 |--------|-----------|-------------|
-| `JoinRoomAsync(code, nickname)` | Client → Server | Join room, receive current state |
-| `LeaveRoomAsync()` | Client → Server | Leave room, cleanup |
-| `OnDisconnectedAsync()` | Server | Auto-cleanup on disconnect |
+| `joinRoom(code, nickname)` | Client → Server | Join room, receive current state |
+| `leaveRoom()` | Client → Server | Leave room, cleanup |
+| `onDisconnect()` | Server | Auto-cleanup on disconnect |
 
 ### Player Sync
 | Method | Direction | Description |
 |--------|-----------|-------------|
-| `PlayAsync()` | Client → Server → All | Broadcast play |
-| `PauseAsync()` | Client → Server → All | Broadcast pause |
-| `SeekAsync(seconds)` | Client → Server → All | Broadcast seek |
-| `ChangeVideoAsync(url)` | Client → Server → All | Switch video |
-| `SyncStateAsync()` | Bidirectional | Periodic heartbeat (5s) |
+| `play()` | Client → Server → All | Broadcast play |
+| `pause()` | Client → Server → All | Broadcast pause |
+| `seek(seconds)` | Client → Server → All | Broadcast seek |
+| `changeVideo(url)` | Client → Server → All | Switch video |
+| `syncState()` | Bidirectional | Periodic heartbeat (5s) |
 
 ### Chat
 | Method | Direction | Description |
 |--------|-----------|-------------|
-| `SendMessageAsync(content)` | Client → Server → All | Broadcast chat message |
-| `AddReactionAsync(msgId, emoji)` | Client → Server → All | Add emoji reaction |
+| `sendMessage(content)` | Client → Server → All | Broadcast chat message |
+| `addReaction(msgId, emoji)` | Client → Server → All | Add emoji reaction |
 
 ### Playlist
 | Method | Direction | Description |
 |--------|-----------|-------------|
-| `AddToPlaylistAsync(url)` | Client → Server → All | Add video to queue |
-| `PlayNowAsync(url)` | Client → Server → All | Immediately play video |
-| `RemoveFromPlaylistAsync(id)` | Client → Server → All | Remove from queue |
-| `ReorderPlaylistAsync(id, pos)` | Client → Server → All | Change order |
-| `SkipToNextAsync()` | Client → Server → All | Play next in queue |
+| `addToPlaylist(url)` | Client → Server → All | Add video to queue |
+| `playNow(url)` | Client → Server → All | Immediately play video |
+| `removeFromPlaylist(id)` | Client → Server → All | Remove from queue |
+| `reorderPlaylist(id, pos)` | Client → Server → All | Change order |
+| `skipToNext()` | Client → Server → All | Play next in queue |
 
 ### WebRTC Signaling
 | Method | Direction | Description |
 |--------|-----------|-------------|
-| `SendOfferAsync(target, sdp)` | Client → Server → Target | WebRTC offer |
-| `SendAnswerAsync(target, sdp)` | Client → Server → Target | WebRTC answer |
-| `SendIceCandidateAsync(target, candidate)` | Client → Server → Target | ICE candidate |
+| `sendOffer(target, sdp)` | Client → Server → Target | WebRTC offer |
+| `sendAnswer(target, sdp)` | Client → Server → Target | WebRTC answer |
+| `sendIceCandidate(target, candidate)` | Client → Server → Target | ICE candidate |
 
 ---
 
@@ -235,8 +246,8 @@ client/
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | Database | PostgreSQL | Production-ready, Docker-friendly, JSON column support for reactions |
-| API Style | Minimal APIs | Lightweight, fits feature-endpoint approach |
-| WebRTC Topology | Mesh (max 6) | No SFU/media server needed, signaling via existing SignalR hub |
+| API Style | Spring REST Controllers | Standard, well-supported, fits feature-based approach |
+| WebRTC Topology | Mesh (max 6) | No SFU/media server needed, signaling via existing WebSocket |
 | UI Framework | Custom SCSS, no Angular Material | Lighter bundle, dark theme, full control |
 | YouTube Integration | IFrame API + Data API v3 | IFrame for playback, Data API for metadata |
 | State Management | Angular Signals | Built-in, fine-grained reactivity, no external deps |
@@ -253,4 +264,4 @@ client/
 | 2–5s | Seek to correct position |
 | > 5s | Hard seek + pause/resume |
 
-Clients report playback position to hub every 5 seconds. Hub compares and issues corrections to drifting clients.
+Clients report playback position to server every 5 seconds. Server compares and issues corrections to drifting clients.
