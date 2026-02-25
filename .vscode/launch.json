@@ -1,0 +1,52 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Server: Spring Boot",
+      "request": "launch",
+      "mainClass": "com.watchparty.WatchPartyApplication",
+      "projectName": "watchparty-api",
+      "cwd": "${workspaceFolder}/server",
+      "env": {
+        "SPRING_PROFILES_ACTIVE": "dev,local"
+      },
+      "vmArgs": "-Dspring.profiles.active=dev,local",
+      "preLaunchTask": "db-start"
+    },
+    {
+      "type": "chrome",
+      "name": "Client: Angular (Chrome)",
+      "request": "launch",
+      "url": "http://localhost:4200",
+      "webRoot": "${workspaceFolder}/client/src",
+      "sourceMapPathOverrides": {
+        "webpack:/*": "${webRoot}/*"
+      },
+      "preLaunchTask": "client-serve"
+    },
+    {
+      "type": "msedge",
+      "name": "Client: Angular (Edge)",
+      "request": "launch",
+      "url": "http://localhost:4200",
+      "webRoot": "${workspaceFolder}/client/src",
+      "sourceMapPathOverrides": {
+        "webpack:/*": "${webRoot}/*"
+      },
+      "preLaunchTask": "client-serve"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack: Server + Client (Chrome)",
+      "configurations": ["Server: Spring Boot", "Client: Angular (Chrome)"],
+      "stopAll": true
+    },
+    {
+      "name": "Full Stack: Server + Client (Edge)",
+      "configurations": ["Server: Spring Boot", "Client: Angular (Edge)"],
+      "stopAll": true
+    }
+  ]
+}
