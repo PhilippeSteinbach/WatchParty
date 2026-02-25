@@ -94,8 +94,14 @@ public class WatchPartyWebSocketHandler {
         }
 
         switch (message.action()) {
-            case "PLAY" -> room.setPlaying(true);
-            case "PAUSE" -> room.setPlaying(false);
+            case "PLAY" -> {
+                room.setPlaying(true);
+                room.setCurrentTimeSeconds(message.currentTimeSeconds());
+            }
+            case "PAUSE" -> {
+                room.setPlaying(false);
+                room.setCurrentTimeSeconds(message.currentTimeSeconds());
+            }
             case "SEEK" -> room.setCurrentTimeSeconds(message.currentTimeSeconds());
             case "CHANGE_VIDEO" -> {
                 room.setCurrentVideoUrl(message.videoUrl());

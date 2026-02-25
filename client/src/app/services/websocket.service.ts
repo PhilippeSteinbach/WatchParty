@@ -1,10 +1,11 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject, NgZone } from '@angular/core';
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { ChatMessage, Participant, PlayerState, PlaylistItem, RoomState, SyncCorrection } from '../models/room.model';
 
 @Injectable({ providedIn: 'root' })
 export class WebSocketService {
+  private readonly zone = inject(NgZone);
   private client: Client | null = null;
   private roomCode = '';
 
@@ -25,48 +26,57 @@ export class WebSocketService {
         this.connected.set(true);
 
         this.client!.subscribe(`/topic/room.${roomCode}`, (message: IMessage) => {
-          const body = JSON.parse(message.body);
-          if (body.participants) {
-            this.roomState.set(body as RoomState);
-          } else {
-            // PlayerState — merge into existing room state
-            const current = this.roomState();
-            if (current) {
-              const ps = body as PlayerState;
-              this.roomState.set({
-                ...current,
-                currentVideoUrl: ps.videoUrl ?? current.currentVideoUrl,
-                currentTimeSeconds: ps.currentTimeSeconds,
-                isPlaying: ps.isPlaying,
-              });
+          this.zone.run(() => {
+            const body = JSON.parse(message.body);
+            if (body.participants) {
+              this.roomState.set(body as RoomState);
+            } else {
+              const current = this.roomState();
+              if (current) {
+                const ps = body as PlayerState;
+                this.roomState.set({
+                  ...current,
+                  currentVideoUrl: ps.videoUrl ?? current.currentVideoUrl,
+                  currentTimeSeconds: ps.currentTimeSeconds,
+                  isPlaying: ps.isPlaying,
+                });
+              }
             }
-          }
+          });
         });
 
         this.client!.subscribe(`/topic/room.${roomCode}.chat`, (message: IMessage) => {
-          const msg = JSON.parse(message.body) as ChatMessage;
-          this.chatMessages.update(messages => {
-            const idx = messages.findIndex(m => m.id === msg.id);
-            if (idx >= 0) {
-              const updated = [...messages];
-              updated[idx] = msg;
-              return updated;
-            }
-            return [...messages, msg];
+          this.zone.run(() => {
+            const msg = JSON.parse(message.body) as ChatMessage;
+            this.chatMessages.update(messages => {
+              const idx = messages.findIndex(m => m.id === msg.id);
+              if (idx >= 0) {
+                const updated = [...messages];
+                updated[idx] = msg;
+                return updated;
+              }
+              return [...messages, msg];
+            });
           });
         });
 
         this.client!.subscribe('/user/queue/chat.history', (message: IMessage) => {
-          this.chatMessages.set(JSON.parse(message.body) as ChatMessage[]);
+          this.zone.run(() => {
+            this.chatMessages.set(JSON.parse(message.body) as ChatMessage[]);
+          });
         });
 
         this.client!.subscribe(`/topic/room.${roomCode}.playlist`, (message: IMessage) => {
-          const body = JSON.parse(message.body) as { items: PlaylistItem[] };
-          this.playlistItems.set(body.items);
+          this.zone.run(() => {
+            const body = JSON.parse(message.body) as { items: PlaylistItem[] };
+            this.playlistItems.set(body.items);
+          });
         });
 
         this.client!.subscribe('/user/queue/sync.correction', (message: IMessage) => {
-          this.syncCorrection.set(JSON.parse(message.body) as SyncCorrection);
+          this.zone.run(() => {
+            this.syncCorrection.set(JSON.parse(message.body) as SyncCorrection);
+          });
         });
 
         this.client!.publish({
