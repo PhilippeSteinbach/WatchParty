@@ -283,7 +283,13 @@ public class WatchPartyWebSocketHandler {
                 .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
 
         Room room = participant.getRoom();
-        playlistService.addItem(room.getId(), request.videoUrl(), participant.getNickname());
+
+        boolean alreadyInPlaylist = playlistItemRepository
+                .findFirstByRoomIdAndVideoUrlOrderByPositionDesc(room.getId(), request.videoUrl())
+                .isPresent();
+        if (!alreadyInPlaylist) {
+            playlistService.addItem(room.getId(), request.videoUrl(), participant.getNickname());
+        }
 
         room.setCurrentVideoUrl(request.videoUrl());
         room.setCurrentTimeSeconds(0);
