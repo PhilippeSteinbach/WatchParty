@@ -7,6 +7,7 @@ import com.watchparty.entity.Room;
 import com.watchparty.exception.RoomNotFoundException;
 import com.watchparty.repository.ParticipantRepository;
 import com.watchparty.repository.RoomRepository;
+import com.watchparty.service.ChatService;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -22,13 +23,16 @@ public class WatchPartyWebSocketHandler {
     private final RoomRepository roomRepository;
     private final ParticipantRepository participantRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ChatService chatService;
 
     public WatchPartyWebSocketHandler(RoomRepository roomRepository,
                                        ParticipantRepository participantRepository,
-                                       SimpMessagingTemplate messagingTemplate) {
+                                       SimpMessagingTemplate messagingTemplate,
+                                       ChatService chatService) {
         this.roomRepository = roomRepository;
         this.participantRepository = participantRepository;
         this.messagingTemplate = messagingTemplate;
+        this.chatService = chatService;
     }
 
     @MessageMapping("/room.join")
@@ -142,6 +146,53 @@ public class WatchPartyWebSocketHandler {
         }
 
         broadcastRoomState(room);
+    }
+
+    @MessageMapping("/room.chat")
+    @Transactional
+    public void chatMessage(@Payload ChatMessageRequest message, SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = headerAccessor.getSessionId();
+
+        Participant participant = participantRepository.findByConnectionId(sessionId)
+                .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
+
+        Room room = participant.getRoom();
+        ChatMessageResponse response = chatService.sendMessage(room.getId(), participant.getNickname(), message.content());
+        messagingTemplate.convertAndSend("/topic/room." + room.getCode() + ".chat", response);
+    }
+
+    @MessageMapping("/room.chat.reaction")
+    @Transactional
+    public void chatReaction(@Payload ChatReactionRequest request, SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = headerAccessor.getSessionId();
+
+        Participant participant = participantRepository.findByConnectionId(sessionId)
+                .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
+
+        Room room = participant.getRoom();
+        ChatMessageResponse response = chatService.addReaction(request.messageId(), request.emoji());
+        messagingTemplate.convertAndSend("/topic/room." + room.getCode() + ".chat", response);
+    }
+
+    @MessageMapping("/room.chat.history")
+    @Transactional(readOnly = true)
+    public void chatHistory(SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = headerAccessor.getSessionId();
+
+        Participant participant = participantRepository.findByConnectionId(sessionId)
+                .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
+
+        Room room = participant.getRoom();
+        List<ChatMessageResponse> history = chatService.getChatHistory(room.getId());
+        messagingTemplate.convertAndSendToUser(sessionId, "/queue/chat.history", history,
+                createHeaders(sessionId));
+    }
+
+    private org.springframework.messaging.MessageHeaders createHeaders(String sessionId) {
+        var headerAccessor = SimpMessageHeaderAccessor.create(org.springframework.messaging.simp.SimpMessageType.MESSAGE);
+        headerAccessor.setSessionId(sessionId);
+        headerAccessor.setLeaveMutable(true);
+        return headerAccessor.getMessageHeaders();
     }
 
     private void broadcastRoomState(Room room) {

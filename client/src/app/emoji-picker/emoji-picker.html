@@ -1,0 +1,12 @@
+<div class="emoji-picker">
+  @for (emoji of emojis; track emoji) {
+    <button
+      class="emoji-btn"
+      type="button"
+      (click)="selectEmoji(emoji)"
+      [attr.aria-label]="'React with ' + emoji"
+    >
+      {{ emoji }}
+    </button>
+  }
+</div>

@@ -87,7 +87,7 @@
 }
 
 .player-area {
-  flex: 1;
+  flex: 7;
   background: #11111b;
   display: flex;
   align-items: center;
@@ -95,8 +95,22 @@
 }
 
 .sidebar {
-  width: 260px;
+  flex: 3;
+  min-width: 280px;
+  max-width: 360px;
   background: #1e1e2e;
   border-left: 1px solid #313244;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  app-participant-list {
+    flex-shrink: 0;
+    border-bottom: 1px solid #313244;
+  }
+
+  app-chat-panel {
+    flex: 1;
+    overflow: hidden;
+  }
 }

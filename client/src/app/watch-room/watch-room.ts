@@ -9,12 +9,13 @@ import { FormsModule } from '@angular/forms';
 import { WebSocketService } from '../services/websocket.service';
 import { YoutubePlayerComponent } from '../youtube-player/youtube-player';
 import { ParticipantListComponent } from '../participant-list/participant-list';
+import { ChatPanelComponent } from '../chat-panel/chat-panel';
 import { PlayerState } from '../models/room.model';
 
 @Component({
   selector: 'app-watch-room',
   standalone: true,
-  imports: [FormsModule, YoutubePlayerComponent, ParticipantListComponent],
+  imports: [FormsModule, YoutubePlayerComponent, ParticipantListComponent, ChatPanelComponent],
   templateUrl: './watch-room.html',
   styleUrl: './watch-room.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

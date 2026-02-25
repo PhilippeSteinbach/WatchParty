@@ -31,3 +31,11 @@ export interface RoomState {
   isPlaying: boolean;
   participants: Participant[];
 }
+
+export interface ChatMessage {
+  id: string;
+  nickname: string;
+  content: string;
+  reactions: Record<string, number>;
+  sentAt: string;
+}

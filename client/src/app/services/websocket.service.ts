@@ -1,7 +1,7 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { Participant, PlayerState, RoomState } from '../models/room.model';
+import { ChatMessage, Participant, PlayerState, RoomState } from '../models/room.model';
 
 @Injectable({ providedIn: 'root' })
 export class WebSocketService {
@@ -11,6 +11,7 @@ export class WebSocketService {
   readonly roomState = signal<RoomState | null>(null);
   readonly connected = signal(false);
   readonly participants = computed(() => this.roomState()?.participants ?? []);
+  readonly chatMessages = signal<ChatMessage[]>([]);
 
   connect(roomCode: string, nickname: string): void {
     this.roomCode = roomCode;
@@ -40,9 +41,31 @@ export class WebSocketService {
           }
         });
 
+        this.client!.subscribe(`/topic/room.${roomCode}.chat`, (message: IMessage) => {
+          const msg = JSON.parse(message.body) as ChatMessage;
+          this.chatMessages.update(messages => {
+            const idx = messages.findIndex(m => m.id === msg.id);
+            if (idx >= 0) {
+              const updated = [...messages];
+              updated[idx] = msg;
+              return updated;
+            }
+            return [...messages, msg];
+          });
+        });
+
+        this.client!.subscribe('/user/queue/chat.history', (message: IMessage) => {
+          this.chatMessages.set(JSON.parse(message.body) as ChatMessage[]);
+        });
+
         this.client!.publish({
           destination: '/app/room.join',
           body: JSON.stringify({ roomCode, nickname }),
+        });
+
+        this.client!.publish({
+          destination: '/app/room.chat.history',
+          body: '',
         });
       },
       onDisconnect: () => this.connected.set(false),
@@ -59,6 +82,7 @@ export class WebSocketService {
     }
     this.connected.set(false);
     this.roomState.set(null);
+    this.chatMessages.set([]);
   }
 
   sendPlayerAction(action: PlayerState): void {
@@ -73,6 +97,24 @@ export class WebSocketService {
   requestSync(): void {
     if (this.client?.active) {
       this.client.publish({ destination: '/app/room.sync', body: '' });
+    }
+  }
+
+  sendChatMessage(content: string): void {
+    if (this.client?.active) {
+      this.client.publish({
+        destination: '/app/room.chat',
+        body: JSON.stringify({ content }),
+      });
+    }
+  }
+
+  addReaction(messageId: string, emoji: string): void {
+    if (this.client?.active) {
+      this.client.publish({
+        destination: '/app/room.chat.reaction',
+        body: JSON.stringify({ messageId, emoji }),
+      });
     }
   }
 }
