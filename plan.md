@@ -175,31 +175,31 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
 
 ---
 
-## Phase 3: Authentication & Persistence
+## Phase 3: Authentication & Persistence ✅
 
 **Goal:** Optional registration, permanent rooms, JWT auth.
 
 ### Server – Auth
-- [ ] `User` entity (JPA `@Entity`): `id`, `email`, `displayName`, `passwordHash`, `createdAt`
-- [ ] Auth endpoints: `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/refresh`
-- [ ] JWT token generation with refresh token rotation (using `jjwt`)
-- [ ] Password hashing with BCrypt (`spring-security-crypto`)
-- [ ] WebSocket handler supports both anonymous and authenticated users
+- [x] `User` entity (JPA `@Entity`): `id`, `email`, `displayName`, `passwordHash`, `createdAt`
+- [x] Auth endpoints: `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/refresh`
+- [x] JWT token generation with refresh token rotation (using `jjwt`)
+- [x] Password hashing with BCrypt (`spring-security-crypto`)
+- [x] WebSocket handler supports both anonymous and authenticated users
 
 ### Server – Permanent Rooms
-- [ ] Extend Room entity: `ownerId` (FK → User, nullable), `isPermanent` (boolean)
-- [ ] Anonymous rooms: `expiresAt` = createdAt + 24h
-- [ ] Cleanup job (`@Scheduled`): delete expired rooms
-- [ ] Registered users: can create permanent rooms (no ExpiresAt)
-- [ ] `GET /api/users/me/rooms` → List own rooms
+- [x] Extend Room entity: `ownerId` (FK → User, nullable), `isPermanent` (boolean)
+- [x] Anonymous rooms: `expiresAt` = createdAt + 24h
+- [x] Cleanup job (`@Scheduled`): delete expired rooms
+- [x] Registered users: can create permanent rooms (no ExpiresAt)
+- [x] `GET /api/users/me/rooms` → List own rooms
 
 ### Client – Auth UI
-- [ ] `LoginComponent`, `RegisterComponent` – Reactive forms with validation
-- [ ] `AuthService` – JWT in localStorage, auth state as signal (`currentUser`)
-- [ ] `AuthInterceptor` – Attach Bearer token to API requests
-- [ ] `AuthGuard` – Protected routes (e.g., "My Rooms")
-- [ ] `UserMenuComponent` – Login/logout, nickname display
-- [ ] Route: `/my-rooms` → List of own permanent rooms
+- [x] `LoginComponent`, `RegisterComponent` – Reactive forms with validation
+- [x] `AuthService` – JWT in localStorage, auth state as signal (`currentUser`)
+- [x] `AuthInterceptor` – Attach Bearer token to API requests
+- [x] `AuthGuard` – Protected routes (e.g., "My Rooms")
+- [x] `UserMenuComponent` – Login/logout, nickname display
+- [x] Route: `/my-rooms` → List of own permanent rooms
 
 ### Verification
 - Registration + login works, JWT is correctly sent
