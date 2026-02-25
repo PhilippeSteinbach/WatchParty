@@ -39,6 +39,9 @@ public class Room {
     @Column(name = "is_playing", nullable = false)
     private boolean isPlaying;
 
+    @Column(name = "state_updated_at")
+    private Instant stateUpdatedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -139,5 +142,13 @@ public class Room {
 
     public void setExpiresAt(Instant expiresAt) {
         this.expiresAt = expiresAt;
+    }
+
+    public Instant getStateUpdatedAt() {
+        return stateUpdatedAt;
+    }
+
+    public void setStateUpdatedAt(Instant stateUpdatedAt) {
+        this.stateUpdatedAt = stateUpdatedAt;
     }
 }

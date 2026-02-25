@@ -15,6 +15,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
@@ -198,5 +199,108 @@ class WatchPartyWebSocketHandlerTest {
         assertEquals(42.5, state.currentTimeSeconds());
         assertTrue(state.isPlaying());
         assertEquals(1, state.participants().size());
+    }
+
+    @Test
+    void whenPositionReportWithLargeDriftThenSendsSeekCorrection() {
+        sampleRoom.setCurrentTimeSeconds(100.0);
+        sampleRoom.setPlaying(true);
+        sampleRoom.setStateUpdatedAt(Instant.now());
+
+        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(hostParticipant));
+
+        // Client reports position 10s behind expected (~100s)
+        var report = new PositionReportMessage(90.0);
+        handler.reportPosition(report, headerAccessor);
+
+        verify(messagingTemplate).convertAndSendToUser(
+                eq("session-1"), eq("/queue/sync.correction"), messageCaptor.capture(), any(MessageHeaders.class));
+        var correction = (SyncCorrectionMessage) messageCaptor.getValue();
+        assertEquals("SEEK", correction.correctionType());
+        assertEquals(1.0, correction.playbackRate());
+    }
+
+    @Test
+    void whenPositionReportWithSmallDriftThenSendsRateAdjust() {
+        sampleRoom.setCurrentTimeSeconds(100.0);
+        sampleRoom.setPlaying(true);
+        sampleRoom.setStateUpdatedAt(Instant.now());
+
+        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(hostParticipant));
+
+        // Client reports position 1s behind expected (~100s)
+        var report = new PositionReportMessage(99.0);
+        handler.reportPosition(report, headerAccessor);
+
+        verify(messagingTemplate).convertAndSendToUser(
+                eq("session-1"), eq("/queue/sync.correction"), messageCaptor.capture(), any(MessageHeaders.class));
+        var correction = (SyncCorrectionMessage) messageCaptor.getValue();
+        assertEquals("RATE_ADJUST", correction.correctionType());
+        assertEquals(1.05, correction.playbackRate());
+    }
+
+    @Test
+    void whenPositionReportWithNoDriftThenNoCorrection() {
+        sampleRoom.setCurrentTimeSeconds(100.0);
+        sampleRoom.setPlaying(true);
+        sampleRoom.setStateUpdatedAt(Instant.now());
+
+        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(hostParticipant));
+
+        // Client reports position within 0.5s tolerance
+        var report = new PositionReportMessage(100.2);
+        handler.reportPosition(report, headerAccessor);
+
+        verify(messagingTemplate, never()).convertAndSendToUser(anyString(), anyString(), any(), any(MessageHeaders.class));
+    }
+
+    @Test
+    void whenPositionReportWhilePausedThenNoCorrection() {
+        sampleRoom.setCurrentTimeSeconds(100.0);
+        sampleRoom.setPlaying(false);
+
+        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(hostParticipant));
+
+        var report = new PositionReportMessage(90.0);
+        handler.reportPosition(report, headerAccessor);
+
+        verify(messagingTemplate, never()).convertAndSendToUser(anyString(), anyString(), any(), any(MessageHeaders.class));
+    }
+
+    @Test
+    void whenCalculateExpectedPositionWhilePlayingThenAddsElapsedTime() {
+        sampleRoom.setPlaying(true);
+        sampleRoom.setCurrentTimeSeconds(50.0);
+        sampleRoom.setStateUpdatedAt(Instant.now().minusSeconds(10));
+
+        double expected = handler.calculateExpectedPosition(sampleRoom);
+
+        // Should be approximately 60.0 (50 + 10 seconds elapsed)
+        assertTrue(expected >= 59.5 && expected <= 60.5,
+                "Expected ~60.0 but got " + expected);
+    }
+
+    @Test
+    void whenCalculateExpectedPositionWhilePausedThenReturnsCurrentTime() {
+        sampleRoom.setPlaying(false);
+        sampleRoom.setCurrentTimeSeconds(50.0);
+        sampleRoom.setStateUpdatedAt(Instant.now().minusSeconds(10));
+
+        double expected = handler.calculateExpectedPosition(sampleRoom);
+
+        assertEquals(50.0, expected);
+    }
+
+    @Test
+    void whenPlayerActionThenSetsStateUpdatedAt() {
+        var playerMessage = new PlayerStateMessage("PAUSE", null, 50.0, false);
+        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(hostParticipant));
+
+        assertNull(sampleRoom.getStateUpdatedAt());
+
+        handler.playerAction(playerMessage, headerAccessor);
+
+        assertNotNull(sampleRoom.getStateUpdatedAt());
+        verify(roomRepository).save(sampleRoom);
     }
 }

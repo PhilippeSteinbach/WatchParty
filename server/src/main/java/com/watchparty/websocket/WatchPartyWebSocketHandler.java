@@ -16,6 +16,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -107,6 +109,7 @@ public class WatchPartyWebSocketHandler {
             default -> throw new IllegalArgumentException("Unknown player action: " + message.action());
         }
 
+        room.setStateUpdatedAt(Instant.now());
         roomRepository.save(room);
 
         messagingTemplate.convertAndSend("/topic/room." + room.getCode(), message);
@@ -122,6 +125,55 @@ public class WatchPartyWebSocketHandler {
 
         Room room = participant.getRoom();
         broadcastRoomState(room);
+    }
+
+    @MessageMapping("/room.position.report")
+    @Transactional(readOnly = true)
+    public void reportPosition(@Payload PositionReportMessage report, SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = headerAccessor.getSessionId();
+
+        Participant participant = participantRepository.findByConnectionId(sessionId)
+                .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
+
+        Room room = participant.getRoom();
+
+        if (!room.isPlaying() || room.getCurrentVideoUrl() == null) {
+            return;
+        }
+
+        double expectedPosition = calculateExpectedPosition(room);
+        double drift = report.currentTimeSeconds() - expectedPosition;
+        double absDrift = Math.abs(drift);
+
+        SyncCorrectionMessage correction = null;
+
+        if (absDrift >= 5.0) {
+            correction = SyncCorrectionMessage.seek(expectedPosition);
+        } else if (absDrift >= 2.0) {
+            correction = SyncCorrectionMessage.seek(expectedPosition);
+        } else if (absDrift >= 0.5) {
+            // Behind → speed up, ahead → slow down
+            double rate = drift < 0 ? 1.05 : 0.95;
+            correction = SyncCorrectionMessage.rateAdjust(expectedPosition, rate);
+        }
+
+        if (correction != null) {
+            messagingTemplate.convertAndSendToUser(
+                    sessionId, "/queue/sync.correction", correction,
+                    createHeaders(sessionId));
+        }
+    }
+
+    double calculateExpectedPosition(Room room) {
+        if (!room.isPlaying()) {
+            return room.getCurrentTimeSeconds();
+        }
+        Instant stateUpdated = room.getStateUpdatedAt();
+        if (stateUpdated == null) {
+            return room.getCurrentTimeSeconds();
+        }
+        double elapsed = Duration.between(stateUpdated, Instant.now()).toMillis() / 1000.0;
+        return room.getCurrentTimeSeconds() + Math.max(0, elapsed);
     }
 
     public void handleParticipantLeave(String sessionId) {
@@ -230,6 +282,7 @@ public class WatchPartyWebSocketHandler {
         room.setCurrentVideoUrl(request.videoUrl());
         room.setCurrentTimeSeconds(0);
         room.setPlaying(false);
+        room.setStateUpdatedAt(Instant.now());
         roomRepository.save(room);
 
         broadcastRoomState(room);
@@ -283,6 +336,7 @@ public class WatchPartyWebSocketHandler {
             room.setCurrentVideoUrl(nextItem.videoUrl());
             room.setCurrentTimeSeconds(0);
             room.setPlaying(false);
+            room.setStateUpdatedAt(Instant.now());
             roomRepository.save(room);
 
             broadcastRoomState(room);

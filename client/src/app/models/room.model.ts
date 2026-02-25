@@ -50,3 +50,11 @@ export interface PlaylistItem {
   position: number;
   addedAt: string;
 }
+
+export type SyncCorrectionType = 'RATE_ADJUST' | 'SEEK' | 'RATE_RESET';
+
+export interface SyncCorrection {
+  targetTimeSeconds: number;
+  playbackRate: number;
+  correctionType: SyncCorrectionType;
+}

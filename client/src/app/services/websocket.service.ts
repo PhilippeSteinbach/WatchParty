@@ -1,7 +1,7 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { ChatMessage, Participant, PlayerState, PlaylistItem, RoomState } from '../models/room.model';
+import { ChatMessage, Participant, PlayerState, PlaylistItem, RoomState, SyncCorrection } from '../models/room.model';
 
 @Injectable({ providedIn: 'root' })
 export class WebSocketService {
@@ -13,6 +13,7 @@ export class WebSocketService {
   readonly participants = computed(() => this.roomState()?.participants ?? []);
   readonly chatMessages = signal<ChatMessage[]>([]);
   readonly playlistItems = signal<PlaylistItem[]>([]);
+  readonly syncCorrection = signal<SyncCorrection | null>(null);
 
   connect(roomCode: string, nickname: string): void {
     this.roomCode = roomCode;
@@ -64,6 +65,10 @@ export class WebSocketService {
           this.playlistItems.set(body.items);
         });
 
+        this.client!.subscribe('/user/queue/sync.correction', (message: IMessage) => {
+          this.syncCorrection.set(JSON.parse(message.body) as SyncCorrection);
+        });
+
         this.client!.publish({
           destination: '/app/room.join',
           body: JSON.stringify({ roomCode, nickname }),
@@ -95,6 +100,7 @@ export class WebSocketService {
     this.roomState.set(null);
     this.chatMessages.set([]);
     this.playlistItems.set([]);
+    this.syncCorrection.set(null);
   }
 
   sendPlayerAction(action: PlayerState): void {
@@ -168,6 +174,15 @@ export class WebSocketService {
       this.client.publish({
         destination: '/app/room.playlist.reorder',
         body: JSON.stringify({ itemId, newPosition }),
+      });
+    }
+  }
+
+  reportPosition(currentTimeSeconds: number): void {
+    if (this.client?.active) {
+      this.client.publish({
+        destination: '/app/room.position.report',
+        body: JSON.stringify({ currentTimeSeconds }),
       });
     }
   }

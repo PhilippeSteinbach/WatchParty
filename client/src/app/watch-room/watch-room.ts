@@ -4,6 +4,9 @@ import {
   inject,
   input,
   signal,
+  effect,
+  viewChild,
+  OnDestroy,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { WebSocketService } from '../services/websocket.service';
@@ -21,7 +24,7 @@ import { PlayerState } from '../models/room.model';
   styleUrl: './watch-room.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class WatchRoomComponent {
+export class WatchRoomComponent implements OnDestroy {
   private readonly ws = inject(WebSocketService);
 
   readonly roomCode = input.required<string>();
@@ -31,6 +34,68 @@ export class WatchRoomComponent {
   readonly videoUrlInput = signal('');
   readonly linkCopied = signal(false);
   readonly activeTab = signal<'chat' | 'playlist'>('chat');
+  readonly playbackRate = signal(1.0);
+
+  readonly playerRef = viewChild(YoutubePlayerComponent);
+
+  private positionReportInterval: ReturnType<typeof setInterval> | null = null;
+
+  constructor() {
+    // Start periodic position reporting when connected
+    effect(() => {
+      const state = this.ws.roomState();
+      if (state?.isPlaying) {
+        this.startPositionReporting();
+      } else {
+        this.stopPositionReporting();
+      }
+    });
+
+    // Handle sync corrections from server
+    effect(() => {
+      const correction = this.ws.syncCorrection();
+      if (!correction) return;
+
+      if (correction.correctionType === 'RATE_ADJUST') {
+        this.playbackRate.set(correction.playbackRate);
+      } else if (correction.correctionType === 'SEEK') {
+        this.playbackRate.set(1.0);
+        const player = this.playerRef();
+        if (player) {
+          this.ws.sendPlayerAction({
+            action: 'SYNC',
+            currentTimeSeconds: correction.targetTimeSeconds,
+            isPlaying: true,
+          });
+        }
+      } else if (correction.correctionType === 'RATE_RESET') {
+        this.playbackRate.set(1.0);
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.stopPositionReporting();
+  }
+
+  private startPositionReporting(): void {
+    if (this.positionReportInterval) return;
+    this.positionReportInterval = setInterval(() => {
+      const player = this.playerRef();
+      if (player) {
+        this.ws.reportPosition(player.getCurrentTime());
+      }
+    }, 5000);
+  }
+
+  private stopPositionReporting(): void {
+    if (this.positionReportInterval) {
+      clearInterval(this.positionReportInterval);
+      this.positionReportInterval = null;
+    }
+    // Reset playback rate when paused
+    this.playbackRate.set(1.0);
+  }
 
   get currentVideoUrl(): string {
     return this.roomState()?.currentVideoUrl ?? '';

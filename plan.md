@@ -85,10 +85,10 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
 - [x] `ParticipantListComponent` – Show participants, mark host
 
 ### Latency Compensation (Basic)
-- [ ] Client sends current playback position to server periodically
-- [ ] Server compares positions; drift > 2s → `seek` to drifting client
-- [ ] Gradual catchup: playback rate 1.05x for small drift (< 2s)
-- [ ] Hard seek: drift > 5s → jump to correct position immediately
+- [x] Client sends current playback position to server periodically
+- [x] Server compares positions; drift > 2s → `seek` to drifting client
+- [x] Gradual catchup: playback rate 1.05x for small drift (< 2s)
+- [x] Hard seek: drift > 5s → jump to correct position immediately
 
 ### Verification
 - Two browser tabs can join a room
