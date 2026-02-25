@@ -1,0 +1,14 @@
+<div class="participant-list">
+  <h3>Participants</h3>
+  <ul>
+    @for (p of participants(); track p.id) {
+      <li class="participant">
+        <span class="avatar">{{ p.nickname.charAt(0).toUpperCase() }}</span>
+        <span class="name">{{ p.nickname }}</span>
+        @if (p.isHost) {
+          <span class="host-badge" title="Host">👑</span>
+        }
+      </li>
+    }
+  </ul>
+</div>
