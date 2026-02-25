@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { RoomService } from '../services/room.service';
+import { AuthService } from '../services/auth.service';
 import { ControlMode } from '../models/room.model';
 
 @Component({
@@ -15,10 +16,12 @@ import { ControlMode } from '../models/room.model';
 export class HomeComponent {
   private readonly roomService = inject(RoomService);
   private readonly router = inject(Router);
+  readonly authService = inject(AuthService);
 
   readonly roomName = signal('');
   readonly controlMode = signal<ControlMode>('COLLABORATIVE');
   readonly nickname = signal('');
+  readonly isPermanent = signal(false);
   readonly error = signal('');
   readonly creating = signal(false);
 
@@ -33,7 +36,7 @@ export class HomeComponent {
     this.creating.set(true);
     this.error.set('');
 
-    this.roomService.createRoom(name, this.controlMode()).subscribe({
+    this.roomService.createRoom(name, this.controlMode(), this.isPermanent()).subscribe({
       next: (room) => {
         this.router.navigate(['/room', room.code], {
           queryParams: { nickname: nick },

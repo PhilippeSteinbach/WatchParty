@@ -41,6 +41,15 @@
         </select>
       </div>
 
+      @if (authService.isLoggedIn()) {
+        <div class="field field--checkbox">
+          <label>
+            <input type="checkbox" [ngModel]="isPermanent()" (ngModelChange)="isPermanent.set($event)" name="isPermanent" />
+            Permanent Room (no expiry)
+          </label>
+        </div>
+      }
+
       @if (error()) {
         <p class="error">{{ error() }}</p>
       }

@@ -7,6 +7,8 @@ export interface Room {
   controlMode: ControlMode;
   participantCount: number;
   createdAt: string;
+  ownerId: string | null;
+  isPermanent: boolean;
 }
 
 export interface Participant {

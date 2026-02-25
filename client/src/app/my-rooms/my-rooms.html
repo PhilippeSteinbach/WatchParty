@@ -1,0 +1,23 @@
+<div class="my-rooms-container">
+  <h2>My Rooms</h2>
+
+  @if (loading()) {
+    <p class="status">Loading…</p>
+  } @else if (error()) {
+    <p class="status error">{{ error() }}</p>
+  } @else if (rooms().length === 0) {
+    <p class="status">You don't have any permanent rooms yet. <a routerLink="/">Create one!</a></p>
+  } @else {
+    <ul class="room-list">
+      @for (room of rooms(); track room.id) {
+        <li class="room-card">
+          <div class="room-info">
+            <span class="room-name">{{ room.name }}</span>
+            <span class="room-code">#{{ room.code }}</span>
+          </div>
+          <a class="join-btn" [routerLink]="['/room', room.code]">Join</a>
+        </li>
+      }
+    </ul>
+  }
+</div>

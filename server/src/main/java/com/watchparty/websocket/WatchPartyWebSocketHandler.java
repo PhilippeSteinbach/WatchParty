@@ -63,6 +63,15 @@ public class WatchPartyWebSocketHandler {
         participant.setConnectionId(sessionId);
         participant.setHost(isFirstParticipant);
         participant.setRoom(room);
+
+        var sessionAttrs = headerAccessor.getSessionAttributes();
+        if (sessionAttrs != null) {
+            var userId = (java.util.UUID) sessionAttrs.get(WebSocketAuthChannelInterceptor.USER_ID_ATTR);
+            if (userId != null) {
+                participant.setUserId(userId);
+            }
+        }
+
         participantRepository.save(participant);
 
         if (isFirstParticipant) {

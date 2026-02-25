@@ -1,0 +1,10 @@
+<nav class="user-menu">
+  @if (authService.isLoggedIn()) {
+    <span class="display-name">{{ authService.currentUser()?.displayName }}</span>
+    <a routerLink="/my-rooms" class="link">My Rooms</a>
+    <button class="logout-btn" (click)="logout()">Sign Out</button>
+  } @else {
+    <a routerLink="/login" class="link">Sign In</a>
+    <a routerLink="/register" class="btn-primary">Register</a>
+  }
+</nav>

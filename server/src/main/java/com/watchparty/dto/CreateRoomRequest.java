@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 
 public record CreateRoomRequest(
         @NotBlank @Size(max = 100) String name,
-        @NotNull ControlMode controlMode
+        @NotNull ControlMode controlMode,
+        boolean isPermanent
 ) {
 }
