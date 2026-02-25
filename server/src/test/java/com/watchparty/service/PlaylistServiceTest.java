@@ -33,6 +33,9 @@ class PlaylistServiceTest {
     @Mock
     private RoomRepository roomRepository;
 
+    @Mock
+    private YouTubeService youTubeService;
+
     @InjectMocks
     private PlaylistService playlistService;
 

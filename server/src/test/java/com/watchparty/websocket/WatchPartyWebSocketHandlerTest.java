@@ -185,12 +185,10 @@ class WatchPartyWebSocketHandlerTest {
 
     @Test
     void whenSyncStateThenBroadcastsCurrentRoomState() {
-        var syncMessage = new PlayerStateMessage("SYNC", null, 0.0, false);
-
         when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(hostParticipant));
         when(participantRepository.findByRoomId(sampleRoom.getId())).thenReturn(List.of(hostParticipant));
 
-        handler.syncState(syncMessage, headerAccessor);
+        handler.syncState(headerAccessor);
 
         verify(messagingTemplate).convertAndSend(eq("/topic/room.ABCD1234"), messageCaptor.capture());
         Object sent = messageCaptor.getValue();

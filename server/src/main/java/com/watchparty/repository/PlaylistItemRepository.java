@@ -16,4 +16,6 @@ public interface PlaylistItemRepository extends JpaRepository<PlaylistItem, UUID
     void deleteByRoomId(UUID roomId);
 
     int countByRoomId(UUID roomId);
+
+    Optional<PlaylistItem> findFirstByRoomIdAndVideoUrlOrderByPositionDesc(UUID roomId, String videoUrl);
 }

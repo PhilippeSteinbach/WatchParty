@@ -18,10 +18,13 @@ public class PlaylistService {
 
     private final PlaylistItemRepository playlistItemRepository;
     private final RoomRepository roomRepository;
+    private final YouTubeService youTubeService;
 
-    public PlaylistService(PlaylistItemRepository playlistItemRepository, RoomRepository roomRepository) {
+    public PlaylistService(PlaylistItemRepository playlistItemRepository, RoomRepository roomRepository,
+                           YouTubeService youTubeService) {
         this.playlistItemRepository = playlistItemRepository;
         this.roomRepository = roomRepository;
+        this.youTubeService = youTubeService;
     }
 
     @Transactional
@@ -36,6 +39,13 @@ public class PlaylistService {
         item.setVideoUrl(videoUrl);
         item.setAddedBy(addedBy);
         item.setPosition(nextPosition);
+
+        YouTubeService.VideoMetadata metadata = youTubeService.fetchMetadata(videoUrl);
+        if (metadata != null) {
+            item.setTitle(metadata.title());
+            item.setThumbnailUrl(metadata.thumbnailUrl());
+            item.setDurationSeconds(metadata.durationSeconds());
+        }
 
         item = playlistItemRepository.save(item);
         return toResponse(item);
@@ -55,6 +65,16 @@ public class PlaylistService {
                 .map(this::toResponse)
                 .toList();
         return new PlaylistResponse(items);
+    }
+
+    @Transactional(readOnly = true)
+    public int getCurrentPosition(UUID roomId, String videoUrl) {
+        if (videoUrl == null || videoUrl.isBlank()) {
+            return 0;
+        }
+        return playlistItemRepository.findFirstByRoomIdAndVideoUrlOrderByPositionDesc(roomId, videoUrl)
+                .map(PlaylistItem::getPosition)
+                .orElse(0);
     }
 
     @Transactional(readOnly = true)

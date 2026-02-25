@@ -114,7 +114,7 @@ public class WatchPartyWebSocketHandler {
 
     @MessageMapping("/room.sync")
     @Transactional(readOnly = true)
-    public void syncState(@Payload PlayerStateMessage message, SimpMessageHeaderAccessor headerAccessor) {
+    public void syncState(SimpMessageHeaderAccessor headerAccessor) {
         String sessionId = headerAccessor.getSessionId();
 
         Participant participant = participantRepository.findByConnectionId(sessionId)
@@ -247,14 +247,14 @@ public class WatchPartyWebSocketHandler {
 
     @MessageMapping("/room.playlist.next")
     @Transactional
-    public void nextPlaylistItem(@Payload Map<String, Object> payload, SimpMessageHeaderAccessor headerAccessor) {
+    public void nextPlaylistItem(SimpMessageHeaderAccessor headerAccessor) {
         String sessionId = headerAccessor.getSessionId();
 
         Participant participant = participantRepository.findByConnectionId(sessionId)
                 .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
 
         Room room = participant.getRoom();
-        int currentPosition = ((Number) payload.get("currentPosition")).intValue();
+        int currentPosition = playlistService.getCurrentPosition(room.getId(), room.getCurrentVideoUrl());
 
         PlaylistItemResponse nextItem = playlistService.getNextItem(room.getId(), currentPosition);
         if (nextItem != null) {
