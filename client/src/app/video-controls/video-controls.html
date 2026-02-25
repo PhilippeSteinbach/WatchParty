@@ -1,0 +1,47 @@
+<div class="video-controls">
+  <button
+    class="ctrl-btn play-pause"
+    (click)="togglePlayPause()"
+    [disabled]="!canControl()"
+    [attr.aria-label]="isPlaying() ? 'Pause' : 'Play'"
+  >
+    @if (isPlaying()) { ⏸ } @else { ▶ }
+  </button>
+
+  <span class="time">{{ formatTime(displayTime()) }}</span>
+
+  <input
+    type="range"
+    class="seek-bar"
+    min="0"
+    [max]="duration()"
+    step="0.1"
+    [value]="displayTime()"
+    (mousedown)="onSeekStart()"
+    (touchstart)="onSeekStart()"
+    (input)="onSeeking($event)"
+    (change)="onSeekEnd($event)"
+    [disabled]="!canControl()"
+    aria-label="Seek"
+  />
+
+  <span class="time">{{ formatTime(duration()) }}</span>
+
+  <button
+    class="ctrl-btn volume-btn"
+    (click)="toggleMute()"
+    [attr.aria-label]="isMuted() ? 'Unmute' : 'Mute'"
+  >
+    @if (isMuted()) { 🔇 } @else if (volume() < 50) { 🔉 } @else { 🔊 }
+  </button>
+
+  <input
+    type="range"
+    class="volume-slider"
+    min="0"
+    max="100"
+    [value]="volume()"
+    (input)="onVolumeChange($event)"
+    aria-label="Volume"
+  />
+</div>

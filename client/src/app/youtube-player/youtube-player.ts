@@ -26,7 +26,6 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
   readonly videoUrl = input('');
   readonly isPlaying = input(false);
   readonly currentTime = input(0);
-  readonly canControl = input(false);
   readonly playbackRate = input(1.0);
 
   readonly playerEvent = output<PlayerState>();
@@ -34,7 +33,6 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
   readonly playerEl = viewChild<ElementRef<HTMLDivElement>>('playerContainer');
 
   private player: YT.Player | null = null;
-  private suppressEvents = false;
   private apiLoaded = false;
   private lastVideoId = '';
 
@@ -52,7 +50,6 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
       const videoId = this.extractVideoId(url);
       if (videoId && videoId !== this.lastVideoId && this.player) {
         this.lastVideoId = videoId;
-        this.suppressEvents = true;
         this.player.loadVideoById(videoId);
       }
     });
@@ -60,7 +57,6 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
     effect(() => {
       const playing = this.isPlaying();
       if (!this.player) return;
-      this.suppressEvents = true;
       if (playing) {
         this.player.playVideo();
       } else {
@@ -73,7 +69,6 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
       if (!this.player) return;
       const diff = Math.abs((this.player.getCurrentTime?.() ?? 0) - time);
       if (diff > 2) {
-        this.suppressEvents = true;
         this.player.seekTo(time, true);
       }
     });
@@ -87,6 +82,18 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
 
   getCurrentTime(): number {
     return this.player?.getCurrentTime?.() ?? 0;
+  }
+
+  getDuration(): number {
+    return this.player?.getDuration?.() ?? 0;
+  }
+
+  seekTo(time: number): void {
+    this.player?.seekTo(time, true);
+  }
+
+  setVolume(volume: number): void {
+    this.player?.setVolume(volume);
   }
 
   private loadYouTubeApi(): void {
@@ -119,7 +126,7 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
       width: '100%',
       height: '100%',
       videoId,
-      playerVars: { autoplay: 0, controls: this.canControl() ? 1 : 0 },
+      playerVars: { autoplay: 0, controls: 0, disablekb: 1, modestbranding: 1 },
       events: {
         onStateChange: (event: YT.OnStateChangeEvent) => {
           this.zone.run(() => this.onPlayerStateChange(event));
@@ -128,32 +135,12 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
     });
   }
 
+  // Only emit ENDED — all other actions come from custom controls
   private onPlayerStateChange(event: YT.OnStateChangeEvent): void {
-    if (this.suppressEvents) {
-      this.suppressEvents = false;
-      return;
-    }
-
-    if (!this.canControl()) return;
-
-    const time = this.player?.getCurrentTime?.() ?? 0;
-
-    if (event.data === YT.PlayerState.PLAYING) {
-      this.playerEvent.emit({
-        action: 'PLAY',
-        currentTimeSeconds: time,
-        isPlaying: true,
-      });
-    } else if (event.data === YT.PlayerState.PAUSED) {
-      this.playerEvent.emit({
-        action: 'PAUSE',
-        currentTimeSeconds: time,
-        isPlaying: false,
-      });
-    } else if (event.data === YT.PlayerState.ENDED) {
+    if (event.data === YT.PlayerState.ENDED) {
       this.playerEvent.emit({
         action: 'ENDED',
-        currentTimeSeconds: time,
+        currentTimeSeconds: this.player?.getCurrentTime?.() ?? 0,
         isPlaying: false,
       });
     }

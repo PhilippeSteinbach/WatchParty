@@ -27,9 +27,17 @@
         [videoUrl]="currentVideoUrl"
         [isPlaying]="isPlaying"
         [currentTime]="currentTime"
-        [canControl]="true"
         [playbackRate]="playbackRate()"
         (playerEvent)="onPlayerEvent($event)"
+      />
+      <app-video-controls
+        [isPlaying]="isPlaying"
+        [currentTime]="polledTime()"
+        [duration]="polledDuration()"
+        [canControl]="true"
+        (playPause)="onPlayPause()"
+        (seek)="onSeek($event)"
+        (volumeChange)="onVolumeChange($event)"
       />
     </div>
 

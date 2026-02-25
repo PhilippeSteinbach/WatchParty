@@ -1,0 +1,98 @@
+.video-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #181825;
+  border-top: 1px solid #313244;
+}
+
+.ctrl-btn {
+  background: none;
+  border: none;
+  color: #cdd6f4;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.25rem 0.4rem;
+  border-radius: 4px;
+  line-height: 1;
+
+  &:hover:not(:disabled) {
+    background: #31324480;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.time {
+  color: #a6adc8;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  min-width: 3.5em;
+  text-align: center;
+  user-select: none;
+}
+
+.seek-bar {
+  flex: 1;
+  height: 4px;
+  appearance: none;
+  background: #45475a;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+
+  &::-webkit-slider-thumb {
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #89b4fa;
+    cursor: pointer;
+  }
+
+  &::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #89b4fa;
+    border: none;
+    cursor: pointer;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.volume-slider {
+  width: 70px;
+  height: 4px;
+  appearance: none;
+  background: #45475a;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+
+  &::-webkit-slider-thumb {
+    appearance: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #cdd6f4;
+    cursor: pointer;
+  }
+
+  &::-moz-range-thumb {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #cdd6f4;
+    border: none;
+    cursor: pointer;
+  }
+}

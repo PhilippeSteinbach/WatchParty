@@ -90,8 +90,12 @@
   flex: 7;
   background: #11111b;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+
+  app-youtube-player {
+    flex: 1;
+    min-height: 0;
+  }
 }
 
 .sidebar {
