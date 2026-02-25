@@ -9,9 +9,9 @@
       "projectName": "watchparty-api",
       "cwd": "${workspaceFolder}/server",
       "env": {
-        "SPRING_PROFILES_ACTIVE": "dev"
+        "SPRING_PROFILES_ACTIVE": "dev,local"
       },
-      "vmArgs": "-Dspring.profiles.active=dev",
+      "vmArgs": "-Dspring.profiles.active=dev,local",
       "preLaunchTask": "db-start"
     },
     {
