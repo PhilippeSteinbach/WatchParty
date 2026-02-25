@@ -1,0 +1,53 @@
+<div class="home-container">
+  <div class="card">
+    <h1>🎬 WatchParty</h1>
+    <p class="subtitle">Watch videos together in sync</p>
+
+    <form (ngSubmit)="createRoom()" class="form">
+      <div class="field">
+        <label for="nickname">Your Nickname</label>
+        <input
+          id="nickname"
+          type="text"
+          placeholder="Enter your nickname"
+          [ngModel]="nickname()"
+          (ngModelChange)="nickname.set($event)"
+          name="nickname"
+        />
+      </div>
+
+      <div class="field">
+        <label for="roomName">Room Name</label>
+        <input
+          id="roomName"
+          type="text"
+          placeholder="Enter room name"
+          [ngModel]="roomName()"
+          (ngModelChange)="roomName.set($event)"
+          name="roomName"
+        />
+      </div>
+
+      <div class="field">
+        <label for="controlMode">Control Mode</label>
+        <select
+          id="controlMode"
+          [ngModel]="controlMode()"
+          (ngModelChange)="controlMode.set($event)"
+          name="controlMode"
+        >
+          <option value="COLLABORATIVE">Collaborative</option>
+          <option value="HOST_ONLY">Host Only</option>
+        </select>
+      </div>
+
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
+      }
+
+      <button type="submit" [disabled]="creating()">
+        {{ creating() ? 'Creating…' : 'Create Room' }}
+      </button>
+    </form>
+  </div>
+</div>

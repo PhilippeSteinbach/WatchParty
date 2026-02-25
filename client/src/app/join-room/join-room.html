@@ -1,0 +1,37 @@
+@if (roomNotFound()) {
+  <div class="center-container">
+    <div class="card">
+      <h2>Room Not Found</h2>
+      <p>{{ error() }}</p>
+    </div>
+  </div>
+} @else if (!connected()) {
+  <div class="center-container">
+    <div class="card">
+      <h2>Join Room</h2>
+      <p class="room-code">Room: {{ roomCode() }}</p>
+
+      <form (ngSubmit)="join()" class="form">
+        <div class="field">
+          <label for="nickname">Your Nickname</label>
+          <input
+            id="nickname"
+            type="text"
+            placeholder="Enter your nickname"
+            [ngModel]="nickname()"
+            (ngModelChange)="nickname.set($event)"
+            name="nickname"
+          />
+        </div>
+
+        @if (error()) {
+          <p class="error">{{ error() }}</p>
+        }
+
+        <button type="submit">Join</button>
+      </form>
+    </div>
+  </div>
+} @else {
+  <app-watch-room [roomCode]="roomCode()" />
+}

@@ -1,0 +1,39 @@
+<div class="watch-room">
+  <header class="toolbar">
+    <div class="room-info">
+      <span class="room-label">Room:</span>
+      <span class="room-code">{{ roomCode() }}</span>
+      <button class="copy-btn" (click)="copyLink()">
+        {{ linkCopied() ? '✓ Copied' : '📋 Copy Link' }}
+      </button>
+      <button class="sync-btn" (click)="requestSync()">🔄 Sync</button>
+    </div>
+
+    <form class="video-form" (ngSubmit)="changeVideo()">
+      <input
+        type="text"
+        placeholder="Paste YouTube URL…"
+        [ngModel]="videoUrlInput()"
+        (ngModelChange)="videoUrlInput.set($event)"
+        name="videoUrl"
+      />
+      <button type="submit">Load</button>
+    </form>
+  </header>
+
+  <div class="main-content">
+    <div class="player-area">
+      <app-youtube-player
+        [videoUrl]="currentVideoUrl"
+        [isPlaying]="isPlaying"
+        [currentTime]="currentTime"
+        [canControl]="true"
+        (playerEvent)="onPlayerEvent($event)"
+      />
+    </div>
+
+    <aside class="sidebar">
+      <app-participant-list [participants]="participants()" />
+    </aside>
+  </div>
+</div>

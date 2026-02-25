@@ -1,0 +1,52 @@
+.participant-list {
+  padding: 1rem;
+
+  h3 {
+    margin: 0 0 1rem;
+    font-size: 0.95rem;
+    color: #a6adc8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+.participant {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  background: #181825;
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #45475a;
+    color: #cdd6f4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  .name {
+    flex: 1;
+    font-size: 0.9rem;
+  }
+
+  .host-badge {
+    font-size: 1rem;
+  }
+}
