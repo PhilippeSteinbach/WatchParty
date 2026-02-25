@@ -47,4 +47,4 @@ jobs:
 
       - name: Test
         working-directory: client
-        run: npx ng test --watch=false --browsers=ChromeHeadless
+        run: npx ng test --watch=false
