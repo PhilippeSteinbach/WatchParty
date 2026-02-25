@@ -8,6 +8,7 @@ import com.watchparty.exception.RoomNotFoundException;
 import com.watchparty.repository.ParticipantRepository;
 import com.watchparty.repository.RoomRepository;
 import com.watchparty.service.ChatService;
+import com.watchparty.service.PlaylistService;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -16,6 +17,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Controller
 public class WatchPartyWebSocketHandler {
@@ -24,15 +27,18 @@ public class WatchPartyWebSocketHandler {
     private final ParticipantRepository participantRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatService chatService;
+    private final PlaylistService playlistService;
 
     public WatchPartyWebSocketHandler(RoomRepository roomRepository,
                                        ParticipantRepository participantRepository,
                                        SimpMessagingTemplate messagingTemplate,
-                                       ChatService chatService) {
+                                       ChatService chatService,
+                                       PlaylistService playlistService) {
         this.roomRepository = roomRepository;
         this.participantRepository = participantRepository;
         this.messagingTemplate = messagingTemplate;
         this.chatService = chatService;
+        this.playlistService = playlistService;
     }
 
     @MessageMapping("/room.join")
@@ -193,6 +199,93 @@ public class WatchPartyWebSocketHandler {
         headerAccessor.setSessionId(sessionId);
         headerAccessor.setLeaveMutable(true);
         return headerAccessor.getMessageHeaders();
+    }
+
+    @MessageMapping("/room.playlist.add")
+    @Transactional
+    public void addPlaylistItem(@Payload AddPlaylistItemRequest request, SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = headerAccessor.getSessionId();
+
+        Participant participant = participantRepository.findByConnectionId(sessionId)
+                .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
+
+        Room room = participant.getRoom();
+        playlistService.addItem(room.getId(), request.videoUrl(), participant.getNickname());
+
+        PlaylistResponse playlist = playlistService.getPlaylist(room.getId());
+        messagingTemplate.convertAndSend("/topic/room." + room.getCode() + ".playlist", playlist);
+    }
+
+    @MessageMapping("/room.playlist.remove")
+    @Transactional
+    public void removePlaylistItem(@Payload Map<String, String> payload, SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = headerAccessor.getSessionId();
+
+        Participant participant = participantRepository.findByConnectionId(sessionId)
+                .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
+
+        Room room = participant.getRoom();
+        UUID itemId = UUID.fromString(payload.get("itemId"));
+        playlistService.removeItem(itemId);
+
+        PlaylistResponse playlist = playlistService.getPlaylist(room.getId());
+        messagingTemplate.convertAndSend("/topic/room." + room.getCode() + ".playlist", playlist);
+    }
+
+    @MessageMapping("/room.playlist")
+    @Transactional(readOnly = true)
+    public void getPlaylist(SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = headerAccessor.getSessionId();
+
+        Participant participant = participantRepository.findByConnectionId(sessionId)
+                .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
+
+        Room room = participant.getRoom();
+        PlaylistResponse playlist = playlistService.getPlaylist(room.getId());
+        messagingTemplate.convertAndSend("/topic/room." + room.getCode() + ".playlist", playlist);
+    }
+
+    @MessageMapping("/room.playlist.next")
+    @Transactional
+    public void nextPlaylistItem(@Payload Map<String, Object> payload, SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = headerAccessor.getSessionId();
+
+        Participant participant = participantRepository.findByConnectionId(sessionId)
+                .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
+
+        Room room = participant.getRoom();
+        int currentPosition = ((Number) payload.get("currentPosition")).intValue();
+
+        PlaylistItemResponse nextItem = playlistService.getNextItem(room.getId(), currentPosition);
+        if (nextItem != null) {
+            room.setCurrentVideoUrl(nextItem.videoUrl());
+            room.setCurrentTimeSeconds(0);
+            room.setPlaying(false);
+            roomRepository.save(room);
+
+            broadcastRoomState(room);
+
+            PlaylistResponse playlist = playlistService.getPlaylist(room.getId());
+            messagingTemplate.convertAndSend("/topic/room." + room.getCode() + ".playlist", playlist);
+        }
+    }
+
+    @MessageMapping("/room.playlist.reorder")
+    @Transactional
+    public void reorderPlaylistItem(@Payload Map<String, Object> payload, SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = headerAccessor.getSessionId();
+
+        Participant participant = participantRepository.findByConnectionId(sessionId)
+                .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
+
+        Room room = participant.getRoom();
+        UUID itemId = UUID.fromString((String) payload.get("itemId"));
+        int newPosition = ((Number) payload.get("newPosition")).intValue();
+
+        playlistService.reorderItem(itemId, newPosition);
+
+        PlaylistResponse playlist = playlistService.getPlaylist(room.getId());
+        messagingTemplate.convertAndSend("/topic/room." + room.getCode() + ".playlist", playlist);
     }
 
     private void broadcastRoomState(Room room) {

@@ -39,3 +39,14 @@ export interface ChatMessage {
   reactions: Record<string, number>;
   sentAt: string;
 }
+
+export interface PlaylistItem {
+  id: string;
+  videoUrl: string;
+  title: string | null;
+  thumbnailUrl: string | null;
+  durationSeconds: number;
+  addedBy: string;
+  position: number;
+  addedAt: string;
+}

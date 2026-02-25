@@ -1,0 +1,48 @@
+<div class="playlist-panel">
+  <form class="add-form" (ngSubmit)="addVideo()">
+    <input
+      type="text"
+      placeholder="Paste video URL…"
+      [ngModel]="urlInput()"
+      (ngModelChange)="urlInput.set($event)"
+      name="videoUrl"
+      aria-label="Video URL"
+    />
+    <button type="submit">Add</button>
+  </form>
+
+  <div class="playlist-list" role="list">
+    @for (item of items(); track item.id) {
+      <div
+        class="playlist-item"
+        [class.now-playing]="isCurrentlyPlaying(item)"
+        role="listitem"
+      >
+        @if (item.thumbnailUrl) {
+          <img
+            class="thumbnail"
+            [src]="item.thumbnailUrl"
+            [alt]="displayTitle(item)"
+          />
+        }
+        <div class="item-info">
+          <span class="item-title">{{ displayTitle(item) }}</span>
+          <span class="item-meta">
+            {{ item.addedBy }} · {{ formatDuration(item.durationSeconds) }}
+          </span>
+        </div>
+        <button
+          class="remove-btn"
+          (click)="removeItem(item.id)"
+          aria-label="Remove item"
+        >
+          ×
+        </button>
+      </div>
+    } @empty {
+      <p class="empty-message">No items in playlist</p>
+    }
+  </div>
+
+  <button class="next-btn" (click)="playNext()">⏭ Skip to Next</button>
+</div>

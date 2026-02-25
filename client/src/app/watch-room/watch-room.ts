@@ -10,12 +10,13 @@ import { WebSocketService } from '../services/websocket.service';
 import { YoutubePlayerComponent } from '../youtube-player/youtube-player';
 import { ParticipantListComponent } from '../participant-list/participant-list';
 import { ChatPanelComponent } from '../chat-panel/chat-panel';
+import { PlaylistPanelComponent } from '../playlist-panel/playlist-panel';
 import { PlayerState } from '../models/room.model';
 
 @Component({
   selector: 'app-watch-room',
   standalone: true,
-  imports: [FormsModule, YoutubePlayerComponent, ParticipantListComponent, ChatPanelComponent],
+  imports: [FormsModule, YoutubePlayerComponent, ParticipantListComponent, ChatPanelComponent, PlaylistPanelComponent],
   templateUrl: './watch-room.html',
   styleUrl: './watch-room.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,6 +30,7 @@ export class WatchRoomComponent {
 
   readonly videoUrlInput = signal('');
   readonly linkCopied = signal(false);
+  readonly activeTab = signal<'chat' | 'playlist'>('chat');
 
   get currentVideoUrl(): string {
     return this.roomState()?.currentVideoUrl ?? '';

@@ -113,4 +113,36 @@
     flex: 1;
     overflow: hidden;
   }
+
+  app-playlist-panel {
+    flex: 1;
+    overflow: hidden;
+  }
+}
+
+.tab-bar {
+  display: flex;
+  border-bottom: 1px solid #313244;
+  flex-shrink: 0;
+
+  .tab-btn {
+    flex: 1;
+    padding: 0.5rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #a6adc8;
+    font-size: 0.85rem;
+    cursor: pointer;
+
+    &:hover {
+      color: #cdd6f4;
+      background: #31324480;
+    }
+
+    &.active {
+      color: #89b4fa;
+      border-bottom-color: #89b4fa;
+    }
+  }
 }
