@@ -29,6 +29,7 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
   readonly playbackRate = input(1.0);
 
   readonly playerEvent = output<PlayerState>();
+  readonly overlayClick = output<void>();
 
   readonly playerEl = viewChild<ElementRef<HTMLDivElement>>('playerContainer');
 
@@ -94,6 +95,10 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
 
   setVolume(volume: number): void {
     this.player?.setVolume(volume);
+  }
+
+  onOverlayClick(): void {
+    this.overlayClick.emit();
   }
 
   private loadYouTubeApi(): void {

@@ -29,6 +29,7 @@
         [currentTime]="currentTime"
         [playbackRate]="playbackRate()"
         (playerEvent)="onPlayerEvent($event)"
+        (overlayClick)="onPlayPause()"
       />
       <app-video-controls
         [isPlaying]="isPlaying"
