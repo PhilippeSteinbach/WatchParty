@@ -27,6 +27,7 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
   readonly isPlaying = input(false);
   readonly currentTime = input(0);
   readonly canControl = input(false);
+  readonly playbackRate = input(1.0);
 
   readonly playerEvent = output<PlayerState>();
 
@@ -76,6 +77,16 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
         this.player.seekTo(time, true);
       }
     });
+
+    effect(() => {
+      const rate = this.playbackRate();
+      if (!this.player) return;
+      this.player.setPlaybackRate(rate);
+    });
+  }
+
+  getCurrentTime(): number {
+    return this.player?.getCurrentTime?.() ?? 0;
   }
 
   private loadYouTubeApi(): void {
