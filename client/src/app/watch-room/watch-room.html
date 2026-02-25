@@ -34,6 +34,27 @@
 
     <aside class="sidebar">
       <app-participant-list [participants]="participants()" />
+      <div class="tab-bar">
+        <button
+          class="tab-btn"
+          [class.active]="activeTab() === 'chat'"
+          (click)="activeTab.set('chat')"
+        >
+          Chat
+        </button>
+        <button
+          class="tab-btn"
+          [class.active]="activeTab() === 'playlist'"
+          (click)="activeTab.set('playlist')"
+        >
+          Playlist
+        </button>
+      </div>
+      @if (activeTab() === 'chat') {
+        <app-chat-panel />
+      } @else {
+        <app-playlist-panel />
+      }
     </aside>
   </div>
 </div>

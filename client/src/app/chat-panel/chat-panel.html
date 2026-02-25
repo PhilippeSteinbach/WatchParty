@@ -1,0 +1,57 @@
+<div class="chat-panel">
+  <h3>Chat</h3>
+
+  <div class="messages" #scrollContainer>
+    @for (msg of messages(); track msg.id) {
+      <div
+        class="message"
+        (mouseenter)="hoveredMessageId.set(msg.id)"
+        (mouseleave)="hoveredMessageId.set(null)"
+      >
+        <div class="message-header">
+          <span class="nickname">{{ msg.nickname }}</span>
+          <span class="timestamp">{{ relativeTime(msg.sentAt) }}</span>
+        </div>
+        <div class="message-content">{{ msg.content }}</div>
+
+        @if (reactionEntries(msg.reactions).length > 0) {
+          <div class="reactions">
+            @for (entry of reactionEntries(msg.reactions); track entry[0]) {
+              <span class="reaction-badge">{{ entry[0] }} {{ entry[1] }}</span>
+            }
+          </div>
+        }
+
+        @if (hoveredMessageId() === msg.id) {
+          <div class="reaction-bar">
+            <app-emoji-picker
+              [messageId]="msg.id"
+              (reactionSelected)="onReaction($event)"
+            />
+          </div>
+        }
+      </div>
+    } @empty {
+      <div class="empty-chat">No messages yet. Say hi! 👋</div>
+    }
+  </div>
+
+  <form class="chat-input" (ngSubmit)="sendMessage()">
+    <input
+      type="text"
+      placeholder="Type a message…"
+      [ngModel]="messageInput()"
+      (ngModelChange)="messageInput.set($event)"
+      name="chatMessage"
+      [maxlength]="MAX_LENGTH"
+      aria-label="Chat message"
+    />
+    <button
+      type="submit"
+      [disabled]="!messageInput().trim()"
+      aria-label="Send message"
+    >
+      Send
+    </button>
+  </form>
+</div>

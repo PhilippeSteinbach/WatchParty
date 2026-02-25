@@ -87,7 +87,7 @@
 }
 
 .player-area {
-  flex: 1;
+  flex: 7;
   background: #11111b;
   display: flex;
   align-items: center;
@@ -95,8 +95,54 @@
 }
 
 .sidebar {
-  width: 260px;
+  flex: 3;
+  min-width: 280px;
+  max-width: 360px;
   background: #1e1e2e;
   border-left: 1px solid #313244;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  app-participant-list {
+    flex-shrink: 0;
+    border-bottom: 1px solid #313244;
+  }
+
+  app-chat-panel {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  app-playlist-panel {
+    flex: 1;
+    overflow: hidden;
+  }
+}
+
+.tab-bar {
+  display: flex;
+  border-bottom: 1px solid #313244;
+  flex-shrink: 0;
+
+  .tab-btn {
+    flex: 1;
+    padding: 0.5rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #a6adc8;
+    font-size: 0.85rem;
+    cursor: pointer;
+
+    &:hover {
+      color: #cdd6f4;
+      background: #31324480;
+    }
+
+    &.active {
+      color: #89b4fa;
+      border-bottom-color: #89b4fa;
+    }
+  }
 }

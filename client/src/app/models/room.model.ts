@@ -31,3 +31,22 @@ export interface RoomState {
   isPlaying: boolean;
   participants: Participant[];
 }
+
+export interface ChatMessage {
+  id: string;
+  nickname: string;
+  content: string;
+  reactions: Record<string, number>;
+  sentAt: string;
+}
+
+export interface PlaylistItem {
+  id: string;
+  videoUrl: string;
+  title: string | null;
+  thumbnailUrl: string | null;
+  durationSeconds: number;
+  addedBy: string;
+  position: number;
+  addedAt: string;
+}

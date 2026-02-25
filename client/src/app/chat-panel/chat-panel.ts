@@ -1,0 +1,76 @@
+import {
+  AfterViewChecked,
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { WebSocketService } from '../services/websocket.service';
+import { EmojiPickerComponent } from '../emoji-picker/emoji-picker';
+
+@Component({
+  selector: 'app-chat-panel',
+  standalone: true,
+  imports: [FormsModule, EmojiPickerComponent],
+  templateUrl: './chat-panel.html',
+  styleUrl: './chat-panel.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ChatPanelComponent implements AfterViewChecked {
+  private readonly ws = inject(WebSocketService);
+
+  readonly messages = this.ws.chatMessages;
+  readonly messageInput = signal('');
+  readonly hoveredMessageId = signal<string | null>(null);
+
+  private readonly scrollContainer = viewChild<ElementRef<HTMLElement>>('scrollContainer');
+  private shouldScroll = false;
+
+  readonly MAX_LENGTH = 500;
+
+  ngAfterViewChecked(): void {
+    if (this.shouldScroll) {
+      this.scrollToBottom();
+      this.shouldScroll = false;
+    }
+  }
+
+  sendMessage(): void {
+    const content = this.messageInput().trim();
+    if (!content || content.length > this.MAX_LENGTH) return;
+
+    this.ws.sendChatMessage(content);
+    this.messageInput.set('');
+    this.shouldScroll = true;
+  }
+
+  onReaction(event: { messageId: string; emoji: string }): void {
+    this.ws.addReaction(event.messageId, event.emoji);
+  }
+
+  relativeTime(isoDate: string): string {
+    const diff = Date.now() - new Date(isoDate).getTime();
+    const seconds = Math.floor(diff / 1000);
+    if (seconds < 60) return 'just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }
+
+  reactionEntries(reactions: Record<string, number>): [string, number][] {
+    return Object.entries(reactions).filter(([, count]) => count > 0);
+  }
+
+  private scrollToBottom(): void {
+    const el = this.scrollContainer()?.nativeElement;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }
+}
