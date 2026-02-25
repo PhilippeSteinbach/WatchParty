@@ -1,0 +1,27 @@
+# Java / Maven
+server/target/
+server/*.class
+server/*.jar
+server/*.war
+server/.mvn/wrapper/maven-wrapper.jar
+
+# Angular / Node
+client/node_modules/
+client/dist/
+client/.angular/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+*.env
+*.env.local
