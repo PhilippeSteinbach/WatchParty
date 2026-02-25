@@ -5,6 +5,8 @@ import com.watchparty.dto.CreateRoomRequest;
 import com.watchparty.dto.RoomResponse;
 import com.watchparty.entity.ControlMode;
 import com.watchparty.exception.RoomNotFoundException;
+import com.watchparty.security.JwtAuthenticationFilter;
+import com.watchparty.service.JwtService;
 import com.watchparty.service.RoomService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +48,9 @@ class RoomControllerTest {
 
     @MockitoBean
     private RoomService roomService;
+
+    @MockitoBean
+    private JwtService jwtService;
 
     @Test
     void whenCreateRoomThenReturns201() throws Exception {
