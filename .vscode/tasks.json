@@ -4,7 +4,10 @@
     {
       "label": "stop-all",
       "type": "shell",
-      "command": "$ports = 4200, 8080; foreach ($port in $ports) { Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue } }; docker compose -f docker-compose.dev.yml down 2>$null; Write-Host 'All services stopped.'",
+      "command": "fuser -k 4200/tcp 8080/tcp 2>/dev/null; docker compose -f docker-compose.dev.yml down 2>/dev/null; echo 'All services stopped.'",
+      "windows": {
+        "command": "$ports = 4200, 8080; foreach ($port in $ports) { Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue } }; docker compose -f docker-compose.dev.yml down 2>$null; Write-Host 'All services stopped.'"
+      },
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -31,13 +34,23 @@
     {
       "label": "server-run",
       "type": "shell",
-      "command": "./mvnw.cmd spring-boot:run",
+      "command": "./mvnw spring-boot:run",
+      "windows": {
+        "command": "./mvnw.cmd spring-boot:run",
+        "options": {
+          "cwd": "${workspaceFolder}/server",
+          "env": {
+            "JAVA_HOME": "C:\\Java\\jdk-21.0.6+7",
+            "SPRING_PROFILES_ACTIVE": "dev,local"
+          }
+        }
+      },
       "isBackground": true,
       "dependsOn": ["db-start"],
       "options": {
         "cwd": "${workspaceFolder}/server",
         "env": {
-          "JAVA_HOME": "C:\\Java\\jdk-21.0.6+7",
+          "JAVA_HOME": "/usr/lib/jvm/java-25-openjdk",
           "SPRING_PROFILES_ACTIVE": "dev,local"
         }
       },
@@ -83,11 +96,20 @@
     {
       "label": "server-build",
       "type": "shell",
-      "command": "./mvnw.cmd clean compile -B -q",
+      "command": "./mvnw clean compile -B -q",
+      "windows": {
+        "command": "./mvnw.cmd clean compile -B -q",
+        "options": {
+          "cwd": "${workspaceFolder}/server",
+          "env": {
+            "JAVA_HOME": "C:\\Java\\jdk-21.0.6+7"
+          }
+        }
+      },
       "options": {
         "cwd": "${workspaceFolder}/server",
         "env": {
-          "JAVA_HOME": "C:\\Java\\jdk-21.0.6+7"
+          "JAVA_HOME": "/usr/lib/jvm/java-25-openjdk"
         }
       },
       "group": "build",
@@ -96,11 +118,20 @@
     {
       "label": "server-test",
       "type": "shell",
-      "command": "./mvnw.cmd test -B",
+      "command": "./mvnw test -B",
+      "windows": {
+        "command": "./mvnw.cmd test -B",
+        "options": {
+          "cwd": "${workspaceFolder}/server",
+          "env": {
+            "JAVA_HOME": "C:\\Java\\jdk-21.0.6+7"
+          }
+        }
+      },
       "options": {
         "cwd": "${workspaceFolder}/server",
         "env": {
-          "JAVA_HOME": "C:\\Java\\jdk-21.0.6+7"
+          "JAVA_HOME": "/usr/lib/jvm/java-25-openjdk"
         }
       },
       "group": "test",
