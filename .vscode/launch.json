@@ -40,12 +40,12 @@
   "compounds": [
     {
       "name": "Full Stack: Server + Client (Chrome)",
-      "configurations": ["Client: Angular (Chrome)"],
+      "configurations": ["Server: Spring Boot", "Client: Angular (Chrome)"],
       "stopAll": true
     },
     {
       "name": "Full Stack: Server + Client (Edge)",
-      "configurations": ["Client: Angular (Edge)"],
+      "configurations": ["Server: Spring Boot", "Client: Angular (Edge)"],
       "stopAll": true
     }
   ]

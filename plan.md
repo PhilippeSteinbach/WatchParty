@@ -129,7 +129,6 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
 - [x] Fix `/room.sync` endpoint: removed erroneous `@Payload PlayerStateMessage` parameter (client sends empty body)
 - [x] Fix `/room.playlist.next` endpoint: server now derives current position from room state instead of expecting client payload
 - [x] Video player fills designated space (added `:host` sizing to `YoutubePlayerComponent`)
-- [x] Browser auto-opens on `ng serve` (`angular.json` → `"open": true`)
 
 ### Verification
 - Chat messages appear live for all participants
@@ -206,6 +205,83 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
 - Permanent rooms survive server restarts
 - Anonymous rooms are cleaned up after 24h
 - Non-logged-in users can still create and join rooms
+
+---
+
+## Phase 3.5: UX Polish, Bug Fixes & Layout Overhaul (in progress)
+
+**Goal:** Improved home page, room management, player stability, and full-viewport layout.
+
+### Home Page Redesign
+- [x] Landing view with hero section (Create Room / Join Room buttons)
+- [x] Separate Create and Join forms behind navigation (back button)
+- [x] Auto-use display name as nickname when logged in
+- [x] Link to register for permanent rooms when anonymous
+- [x] Query param support (`?view=create` / `?view=join`)
+
+### My Rooms – Room Deletion
+- [x] Delete button per room with trash icon
+- [x] Confirmation modal dialog before deletion
+- [x] `RoomService.deleteRoom()` integration
+- [x] Optimistic UI removal from list on success
+
+### User Menu – Branding
+- [x] "🎬 WatchParty" home link in navbar (left-aligned, pushes auth links right)
+
+### Server Fixes
+- [x] `playNow` sets `isPlaying: true` (was `false`, causing immediate pause)
+- [x] `broadcastRoomState` sends `calculateExpectedPosition()` instead of raw `currentTimeSeconds` (accurate sync for late joiners)
+- [x] `handleParticipantLeave`: clear host and save room instead of deleting when last participant leaves (permanent rooms survive)
+- [x] `handleParticipantLeave`: re-fetch room from repository to avoid stale entity
+- [x] Playlist history sent to joining user via `/user/queue/playlist.history`
+- [x] Client subscribes to `/user/queue/playlist.history` on connect
+- [x] Remove redundant `/app/room.playlist` publish on connect
+- [x] `YouTubeService.searchRelated()`: sanitise query string (strip special chars, limit length)
+
+### Player Sync & Overlay Improvements
+- [x] **Video sync on reload/join**: use `cueVideoById` (no auto-play) when `isPlaying` is false, `loadVideoById` when true
+- [x] **Force-pause safety net**: `onPlayerStateChange` detects YouTube auto-play when state says paused → forces pause
+- [x] **Player onReady**: seek to `currentTime` and play/pause based on room state when YouTube API initialises
+- [x] **Overlay state signals**: `showOverlayContent` / `videoEverStarted` for smarter overlay visibility (only show after first play, show recommendations only when paused after playing)
+- [x] Overlay only rendered when `videoUrl` is present
+- [x] Recommendations heading localised ("Vorschläge"), buttons with tooltips
+- [x] Recommendation cards: vertical list layout with thumbnail duration badges
+- [x] `VideoRecommendation.durationSeconds` field added to model
+- [x] `formatDuration()` helper in YoutubePlayerComponent
+
+### Video Controls Enhancements
+- [x] `hasVideo` input: disabled play button when no video loaded
+- [x] `:host { display: block }` for proper flex participation
+
+### Watch Room Improvements
+- [x] Default active tab changed to `playlist` (was `chat`)
+- [x] Playlist tab moved before Chat tab in sidebar
+- [x] `displayRecommendations` computed signal for template binding
+- [x] Recommendations fetched via RxJS `toObservable` + `distinctUntilChanged` pipeline (replaces effect with stale tracking)
+- [x] Private `extractYouTubeId()` method (no dependency on player ref)
+
+### Full-Viewport Layout Fix
+- [x] **Global layout** (`styles.scss`): `app-root` flex column `100vh`, `app-user-menu` flex-shrink: 0, `router-outlet + *` fills remaining space
+- [x] **Removed `height: 100vh`** from `.watch-room` → uses `flex: 1` to fill parent
+- [x] **Flex chain**: `:host` styles added to `JoinRoomComponent`, `WatchRoomComponent` (`display: flex; flex-direction: column`)
+- [x] `app-watch-room` styled from parent (`flex: 1; min-height: 0; overflow: hidden`)
+- [x] `app-youtube-player`: `position: relative` on host; `.youtube-wrapper` uses `position: absolute; inset: 0` to contain iframe within flex-determined area
+- [x] `app-video-controls`: `flex-shrink: 0` prevents controls being pushed off-screen
+- [x] `overflow: hidden` on `.watch-room` prevents any page scrolling
+- [x] Fixed `min-height: 100vh` → `100%` on home, login, register, join-room pages
+
+### Developer Workflow
+- [x] VS Code launch compounds include both Server and Client configurations
+- [x] `client-serve` task depends on `db-start` only (not `server-run`) for independent startup
+- [x] Removed `"open": true` from `angular.json` serve options
+
+### Verification
+- Video controls bar always visible at bottom of player area (no scrolling)
+- Reloading page with paused video stays paused
+- Reloading page with playing video resumes playing
+- Joining a room auto-joins for logged-in users
+- Home page shows landing → create/join flow
+- Rooms can be deleted from My Rooms page
 
 ---
 

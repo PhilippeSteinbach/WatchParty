@@ -74,7 +74,7 @@
       "type": "shell",
       "command": "npx ng serve --proxy-config proxy.conf.json",
       "isBackground": true,
-      "dependsOn": ["server-run"],
+      "dependsOn": ["db-start"],
       "options": {
         "cwd": "${workspaceFolder}/client"
       },

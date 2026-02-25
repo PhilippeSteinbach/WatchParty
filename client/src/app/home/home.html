@@ -1,62 +1,76 @@
-<div class="home-container">
-  <div class="card">
-    <h1>🎬 WatchParty</h1>
-    <p class="subtitle">Watch videos together in sync</p>
+<div class="home">
 
-    <form (ngSubmit)="createRoom()" class="form">
-      <div class="field">
-        <label for="nickname">Your Nickname</label>
-        <input
-          id="nickname"
-          type="text"
-          placeholder="Enter your nickname"
-          [ngModel]="nickname()"
-          (ngModelChange)="nickname.set($event)"
-          name="nickname"
-        />
+  @if (view() === 'landing') {
+    <div class="hero">
+      <div class="hero-icon">🎬</div>
+      <h1>WatchParty</h1>
+      <p class="tagline">Watch videos together — perfectly in sync.</p>
+      <div class="hero-actions">
+        <button class="btn-primary" (click)="showView('create')">Create Room</button>
+        <button class="btn-secondary" (click)="showView('join')">Join Room</button>
       </div>
+      @if (auth.isLoggedIn()) {
+        <p class="logged-hint">Logged in as <strong>{{ auth.currentUser()?.displayName }}</strong></p>
+      }
+    </div>
 
-      <div class="field">
-        <label for="roomName">Room Name</label>
-        <input
-          id="roomName"
-          type="text"
-          placeholder="Enter room name"
-          [ngModel]="roomName()"
-          (ngModelChange)="roomName.set($event)"
-          name="roomName"
-        />
-      </div>
+  } @else if (view() === 'create') {
+    <div class="card">
+      <button class="back-btn" (click)="view.set('landing')" aria-label="Back">← Back</button>
+      <h2>Create a Room</h2>
+      @if (!auth.isLoggedIn()) {
+        <p class="hint">Room expires in 24 hours. <a routerLink="/register">Register</a> for permanent rooms.</p>
+      }
 
-      <div class="field">
-        <label for="controlMode">Control Mode</label>
-        <select
-          id="controlMode"
-          [ngModel]="controlMode()"
-          (ngModelChange)="controlMode.set($event)"
-          name="controlMode"
-        >
-          <option value="COLLABORATIVE">Collaborative</option>
-          <option value="HOST_ONLY">Host Only</option>
-        </select>
-      </div>
-
-      @if (authService.isLoggedIn()) {
-        <div class="field field--checkbox">
-          <label>
-            <input type="checkbox" [ngModel]="isPermanent()" (ngModelChange)="isPermanent.set($event)" name="isPermanent" />
-            Permanent Room (no expiry)
-          </label>
+      <form (ngSubmit)="createRoom()" class="form">
+        <div class="field">
+          <label for="roomName">Room Name</label>
+          <input id="roomName" type="text" placeholder="My Watch Party" [ngModel]="roomName()" (ngModelChange)="roomName.set($event)" name="roomName" />
         </div>
-      }
 
-      @if (error()) {
-        <p class="error">{{ error() }}</p>
-      }
+        <div class="field">
+          <label for="controlMode">Control Mode</label>
+          <select id="controlMode" [ngModel]="controlMode()" (ngModelChange)="controlMode.set($event)" name="controlMode">
+            <option value="COLLABORATIVE">Collaborative – everyone can control</option>
+            <option value="HOST_ONLY">Host Only – only the host controls</option>
+          </select>
+        </div>
 
-      <button type="submit" [disabled]="creating()">
-        {{ creating() ? 'Creating…' : 'Create Room' }}
-      </button>
-    </form>
-  </div>
+        @if (!auth.isLoggedIn()) {
+          <div class="field">
+            <label for="nickname">Your Nickname</label>
+            <input id="nickname" type="text" placeholder="Enter your nickname" [ngModel]="nickname()" (ngModelChange)="nickname.set($event)" name="nickname" />
+          </div>
+        }
+
+        @if (error()) {
+          <p class="error">{{ error() }}</p>
+        }
+
+        <button type="submit" [disabled]="creating()">
+          {{ creating() ? 'Creating…' : 'Create Room' }}
+        </button>
+      </form>
+    </div>
+
+  } @else {
+    <div class="card">
+      <button class="back-btn" (click)="view.set('landing')" aria-label="Back">← Back</button>
+      <h2>Join a Room</h2>
+
+      <form (ngSubmit)="joinRoom()" class="form">
+        <div class="field">
+          <label for="joinCode">Room Code</label>
+          <input id="joinCode" type="text" placeholder="e.g. ABC12345" [ngModel]="joinCode()" (ngModelChange)="joinCode.set($event)" name="joinCode" autocomplete="off" />
+        </div>
+
+        @if (error()) {
+          <p class="error">{{ error() }}</p>
+        }
+
+        <button type="submit">Join Room</button>
+      </form>
+    </div>
+  }
+
 </div>

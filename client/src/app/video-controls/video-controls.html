@@ -1,12 +1,20 @@
 <div class="video-controls">
-  <button
-    class="ctrl-btn play-pause"
-    (click)="togglePlayPause()"
-    [disabled]="!canControl()"
-    [attr.aria-label]="isPlaying() ? 'Pause' : 'Play'"
-  >
-    @if (isPlaying()) { ⏸ } @else { ▶ }
-  </button>
+  @if (hasVideo()) {
+    <button
+      class="ctrl-btn play-pause"
+      (click)="togglePlayPause()"
+      [disabled]="!canControl()"
+      [attr.aria-label]="isPlaying() ? 'Pause' : 'Play'"
+    >
+      @if (isPlaying()) { ⏸ } @else { ▶ }
+    </button>
+  } @else {
+    <button
+      class="ctrl-btn play-pause"
+      disabled
+      aria-label="Play"
+    >▶</button>
+  }
 
   <span class="time">{{ formatTime(displayTime()) }}</span>
 

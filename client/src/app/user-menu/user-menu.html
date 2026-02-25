@@ -1,4 +1,5 @@
 <nav class="user-menu">
+  <a routerLink="/" class="home-link">🎬 WatchParty</a>
   @if (authService.isLoggedIn()) {
     <span class="display-name">{{ authService.currentUser()?.displayName }}</span>
     <a routerLink="/my-rooms" class="link">My Rooms</a>

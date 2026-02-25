@@ -15,11 +15,30 @@ export class MyRoomsComponent implements OnInit {
   readonly rooms = signal<Room[]>([]);
   readonly loading = signal(true);
   readonly error = signal('');
+  readonly confirmDeleteCode = signal<string | null>(null);
 
   ngOnInit(): void {
     this.roomService.getMyRooms().subscribe({
       next: (rooms) => { this.rooms.set(rooms); this.loading.set(false); },
       error: () => { this.error.set('Failed to load rooms.'); this.loading.set(false); }
+    });
+  }
+
+  confirmDelete(code: string): void {
+    this.confirmDeleteCode.set(code);
+  }
+
+  cancelDelete(): void {
+    this.confirmDeleteCode.set(null);
+  }
+
+  deleteRoom(): void {
+    const code = this.confirmDeleteCode();
+    if (!code) return;
+    this.confirmDeleteCode.set(null);
+    this.roomService.deleteRoom(code).subscribe({
+      next: () => this.rooms.update(rooms => rooms.filter(r => r.code !== code)),
+      error: () => this.error.set('Failed to delete room.'),
     });
   }
 }

@@ -28,7 +28,7 @@
         [isPlaying]="isPlaying"
         [currentTime]="currentTime"
         [playbackRate]="playbackRate()"
-        [recommendations]="recommendations()"
+        [recommendations]="displayRecommendations()"
         (playerEvent)="onPlayerEvent($event)"
         (overlayClick)="onPlayPause()"
         (playRecommendation)="onPlayRecommendation($event)"
@@ -39,6 +39,7 @@
         [currentTime]="polledTime()"
         [duration]="polledDuration()"
         [canControl]="true"
+        [hasVideo]="!!currentVideoUrl"
         (playPause)="onPlayPause()"
         (seek)="onSeek($event)"
         (volumeChange)="onVolumeChange($event)"
@@ -53,6 +54,13 @@
         @if (!sidebarCollapsed()) {
           <button
             class="tab-btn"
+            [class.active]="activeTab() === 'playlist'"
+            (click)="activeTab.set('playlist')"
+          >
+            Playlist
+          </button>
+          <button
+            class="tab-btn"
             [class.active]="activeTab() === 'chat'"
             (click)="activeTab.set('chat')"
           >
@@ -60,13 +68,6 @@
             @if (unreadChatCount() > 0) {
               <span class="unread-badge" aria-label="unread messages">{{ unreadChatCount() }}</span>
             }
-          </button>
-          <button
-            class="tab-btn"
-            [class.active]="activeTab() === 'playlist'"
-            (click)="activeTab.set('playlist')"
-          >
-            Playlist
           </button>
         }
         <button

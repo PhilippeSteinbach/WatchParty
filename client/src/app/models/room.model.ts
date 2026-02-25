@@ -67,4 +67,5 @@ export interface VideoRecommendation {
   title: string;
   thumbnailUrl: string;
   channelName: string;
+  durationSeconds?: number;
 }

@@ -11,6 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { WebSocketService } from '../services/websocket.service';
 import { RoomService } from '../services/room.service';
 import { WatchRoomComponent } from '../watch-room/watch-room';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-join-room',
@@ -24,6 +25,7 @@ export class JoinRoomComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly ws = inject(WebSocketService);
   private readonly roomService = inject(RoomService);
+  private readonly auth = inject(AuthService);
 
   readonly nickname = signal('');
   readonly roomCode = signal('');
@@ -38,11 +40,19 @@ export class JoinRoomComponent implements OnInit, OnDestroy {
     const queryNick = this.route.snapshot.queryParamMap.get('nickname') ?? '';
     if (queryNick) {
       this.nickname.set(queryNick);
-      this.join();
     }
 
-    // Verify room exists
+    // Verify room exists, then auto-join if logged in
     this.roomService.getRoom(code).subscribe({
+      next: () => {
+        const user = this.auth.currentUser();
+        if (user) {
+          this.nickname.set(user.displayName);
+          this.join();
+        } else if (queryNick) {
+          this.join();
+        }
+      },
       error: () => {
         this.roomNotFound.set(true);
         this.error.set('Room not found.');

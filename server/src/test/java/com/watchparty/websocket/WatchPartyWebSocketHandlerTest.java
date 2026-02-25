@@ -173,14 +173,15 @@ class WatchPartyWebSocketHandlerTest {
     }
 
     @Test
-    void whenLeaveRoomAndLastParticipantThenDeletesRoom() {
+    void whenLeaveRoomAndLastParticipantThenClearsHostConnectionId() {
         when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(hostParticipant));
         when(participantRepository.findByRoomId(sampleRoom.getId())).thenReturn(Collections.emptyList());
 
         handler.leaveRoom(headerAccessor);
 
         verify(participantRepository).delete(hostParticipant);
-        verify(roomRepository).delete(sampleRoom);
+        assertNull(sampleRoom.getHostConnectionId());
+        verify(roomRepository).save(sampleRoom);
         verify(messagingTemplate, never()).convertAndSend(anyString(), any(RoomStateMessage.class));
     }
 

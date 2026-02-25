@@ -80,6 +80,10 @@ public class WatchPartyWebSocketHandler {
         }
 
         broadcastRoomState(room);
+
+        PlaylistResponse playlist = playlistService.getPlaylist(room.getId());
+        messagingTemplate.convertAndSendToUser(sessionId, "/queue/playlist.history", playlist,
+                createHeaders(sessionId));
     }
 
     @MessageMapping("/room.leave")
@@ -202,7 +206,10 @@ public class WatchPartyWebSocketHandler {
         }
 
         Participant participant = participantOpt.get();
-        Room room = participant.getRoom();
+        UUID roomId = participant.getRoom().getId();
+        Room room = roomRepository.findById(roomId).orElse(null);
+        if (room == null) return;
+
         boolean wasHost = participant.isHost();
 
         participantRepository.delete(participant);
@@ -210,7 +217,8 @@ public class WatchPartyWebSocketHandler {
         List<Participant> remaining = participantRepository.findByRoomId(room.getId());
 
         if (remaining.isEmpty()) {
-            roomRepository.delete(room);
+            room.setHostConnectionId(null);
+            roomRepository.save(room);
             return;
         }
 
@@ -306,7 +314,7 @@ public class WatchPartyWebSocketHandler {
 
         room.setCurrentVideoUrl(request.videoUrl());
         room.setCurrentTimeSeconds(0);
-        room.setPlaying(false);
+        room.setPlaying(true);
         room.setStateUpdatedAt(Instant.now());
         roomRepository.save(room);
 
@@ -399,7 +407,7 @@ public class WatchPartyWebSocketHandler {
         var roomState = new RoomStateMessage(
                 room.getCode(),
                 room.getCurrentVideoUrl(),
-                room.getCurrentTimeSeconds(),
+                calculateExpectedPosition(room),
                 room.isPlaying(),
                 participantMessages);
 

@@ -66,6 +66,13 @@ export class WebSocketService {
           });
         });
 
+        this.client!.subscribe('/user/queue/playlist.history', (message: IMessage) => {
+          this.zone.run(() => {
+            const body = JSON.parse(message.body) as { items: PlaylistItem[] };
+            this.playlistItems.set(body.items);
+          });
+        });
+
         this.client!.subscribe(`/topic/room.${roomCode}.playlist`, (message: IMessage) => {
           this.zone.run(() => {
             const body = JSON.parse(message.body) as { items: PlaylistItem[] };
@@ -86,11 +93,6 @@ export class WebSocketService {
 
         this.client!.publish({
           destination: '/app/room.chat.history',
-          body: '',
-        });
-
-        this.client!.publish({
-          destination: '/app/room.playlist',
           body: '',
         });
       },
