@@ -1,4 +1,30 @@
 <div class="youtube-wrapper">
   <div #playerContainer></div>
-  <div class="click-overlay" (click)="onOverlayClick()"></div>
+  <div class="click-overlay" [class.paused]="!isPlaying()" (click)="onOverlayClick()">
+    @if (!isPlaying()) {
+      <div class="pause-content">
+        <div class="play-icon" aria-hidden="true">▶</div>
+        @if (recommendations().length > 0) {
+          <div class="recommendations" (click)="$event.stopPropagation()">
+            <h3 class="rec-heading">Up Next</h3>
+            <div class="rec-grid">
+              @for (rec of recommendations(); track rec.videoId) {
+                <div class="rec-card">
+                  <img [src]="rec.thumbnailUrl" [alt]="rec.title" />
+                  <div class="rec-info">
+                    <span class="rec-title">{{ rec.title }}</span>
+                    <span class="rec-channel">{{ rec.channelName }}</span>
+                  </div>
+                  <div class="rec-actions">
+                    <button class="rec-play" (click)="onPlayRec(rec)">▶</button>
+                    <button class="rec-queue" (click)="onQueueRec(rec)">+</button>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
 </div>

@@ -107,6 +107,14 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: min-width 0.2s ease, max-width 0.2s ease, flex 0.2s ease;
+
+  &.collapsed {
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: none;
+    width: 36px;
+  }
 
   app-participant-list {
     flex-shrink: 0;
@@ -121,6 +129,30 @@
   app-playlist-panel {
     flex: 1;
     overflow: hidden;
+  }
+}
+
+.sidebar-toggle {
+  flex-shrink: 0;
+  width: 32px;
+  background: none;
+  color: #a6adc8;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  padding: 0.5rem 0;
+
+  &:hover {
+    color: #89b4fa;
+    background: #31324480;
+  }
+
+  .collapsed & {
+    width: 100%;
   }
 }
 
@@ -147,6 +179,22 @@
     &.active {
       color: #89b4fa;
       border-bottom-color: #89b4fa;
+    }
+
+    .unread-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      margin-left: 6px;
+      border-radius: 50%;
+      background: #f38ba8;
+      color: #1e1e2e;
+      font-size: 0.7rem;
+      font-weight: 700;
+      line-height: 1;
     }
   }
 }

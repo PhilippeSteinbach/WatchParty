@@ -28,8 +28,11 @@
         [isPlaying]="isPlaying"
         [currentTime]="currentTime"
         [playbackRate]="playbackRate()"
+        [recommendations]="recommendations()"
         (playerEvent)="onPlayerEvent($event)"
         (overlayClick)="onPlayPause()"
+        (playRecommendation)="onPlayRecommendation($event)"
+        (queueRecommendation)="onQueueRecommendation($event)"
       />
       <app-video-controls
         [isPlaying]="isPlaying"
@@ -42,28 +45,44 @@
       />
     </div>
 
-    <aside class="sidebar">
-      <app-participant-list [participants]="participants()" />
+    <aside class="sidebar" [class.collapsed]="sidebarCollapsed()">
+      @if (!sidebarCollapsed()) {
+        <app-participant-list [participants]="participants()" />
+      }
       <div class="tab-bar">
+        @if (!sidebarCollapsed()) {
+          <button
+            class="tab-btn"
+            [class.active]="activeTab() === 'chat'"
+            (click)="activeTab.set('chat')"
+          >
+            Chat
+            @if (unreadChatCount() > 0) {
+              <span class="unread-badge" aria-label="unread messages">{{ unreadChatCount() }}</span>
+            }
+          </button>
+          <button
+            class="tab-btn"
+            [class.active]="activeTab() === 'playlist'"
+            (click)="activeTab.set('playlist')"
+          >
+            Playlist
+          </button>
+        }
         <button
-          class="tab-btn"
-          [class.active]="activeTab() === 'chat'"
-          (click)="activeTab.set('chat')"
+          class="sidebar-toggle"
+          (click)="sidebarCollapsed.set(!sidebarCollapsed())"
+          [attr.aria-label]="sidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
         >
-          Chat
-        </button>
-        <button
-          class="tab-btn"
-          [class.active]="activeTab() === 'playlist'"
-          (click)="activeTab.set('playlist')"
-        >
-          Playlist
+          {{ sidebarCollapsed() ? '◀' : '▶' }}
         </button>
       </div>
-      @if (activeTab() === 'chat') {
-        <app-chat-panel />
-      } @else {
-        <app-playlist-panel />
+      @if (!sidebarCollapsed()) {
+        @if (activeTab() === 'chat') {
+          <app-chat-panel />
+        } @else {
+          <app-playlist-panel />
+        }
       }
     </aside>
   </div>

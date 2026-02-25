@@ -58,3 +58,11 @@ export interface SyncCorrection {
   playbackRate: number;
   correctionType: SyncCorrectionType;
 }
+
+export interface VideoRecommendation {
+  videoId: string;
+  videoUrl: string;
+  title: string;
+  thumbnailUrl: string;
+  channelName: string;
+}

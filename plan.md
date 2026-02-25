@@ -139,6 +139,42 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
 
 ---
 
+## Phase 2.5: UX Improvements & Developer Experience ✅
+
+**Goal:** Quality-of-life improvements for the UI (sidebar, chat, overlay) and developer workflow (VS Code tasks).
+
+### Developer Workflow
+- [x] `stop-all` VS Code task – kills processes on ports 4200/8080 and runs `docker compose down`
+- [x] Task dependency chain: `db-start` → `server-run` → `client-serve` (frontend waits for backend)
+- [x] Background tasks with problem matchers for automatic readiness detection
+- [x] `presentation.close: true` on background tasks to auto-close terminals on stop
+- [x] Fix `server-run` profile activation: use `SPRING_PROFILES_ACTIVE` env var instead of Maven `-D` flag
+
+### Server – Recommendations & Fixes
+- [x] Fix `WatchPartyWebSocketHandler` compilation error: inject missing `PlaylistItemRepository`
+- [x] Fix `YouTubeService.fetchMetadata()`: always generate thumbnail URL from video ID (no API key needed)
+- [x] `VideoRecommendation` DTO for recommendation responses
+- [x] `VideoController` – `GET /api/videos/{videoId}/recommendations` endpoint
+- [x] `YouTubeService.searchRelated()` – search YouTube by current video title for related content
+
+### Client – UI Enhancements
+- [x] **Unread chat badge** – pink circle with unread message count on the chat tab button
+- [x] **Collapsible sidebar** – toggle arrow in the tab-bar row, collapses/expands the sidebar
+- [x] **Pause overlay** – fully opaque overlay (`#11111b`) hides YouTube's unclickable recommendations
+- [x] **Custom recommendations** – grid of related video cards with "Play Now" / "Queue" buttons when paused
+- [x] **Thumbnail fallback** – client-side `thumbnailFor()` extracts video ID and constructs thumbnail URL
+- [x] **Optimistic play/pause** – local `isPlaying` signal for instant overlay response (no server round-trip wait)
+- [x] **Recommendation autoplay** – "Play Now" sends CHANGE_VIDEO + delayed PLAY action to start video immediately
+
+### Verification
+- Sidebar collapses/expands without overlapping other UI elements
+- Unread badge appears and clears correctly when switching tabs
+- Pause overlay shows custom recommendations and hides YouTube's
+- Clicking play or recommendation dismisses overlay immediately
+- Thumbnails display in playlist without API key
+
+---
+
 ## Phase 3: Authentication & Persistence
 
 **Goal:** Optional registration, permanent rooms, JWT auth.

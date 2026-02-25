@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.time.Duration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,8 +33,14 @@ public class YouTubeService {
 
     public VideoMetadata fetchMetadata(String videoUrl) {
         String videoId = extractVideoId(videoUrl);
-        if (videoId == null || apiKey == null || apiKey.isBlank()) {
+        if (videoId == null) {
             return null;
+        }
+
+        String thumbnail = "https://img.youtube.com/vi/" + videoId + "/mqdefault.jpg";
+
+        if (apiKey == null || apiKey.isBlank()) {
+            return new VideoMetadata(null, thumbnail, 0);
         }
 
         try {
@@ -43,18 +51,17 @@ public class YouTubeService {
 
             JsonNode items = response != null ? response.get("items") : null;
             if (items == null || items.isEmpty()) {
-                return null;
+                return new VideoMetadata(null, thumbnail, 0);
             }
 
             JsonNode item = items.get(0);
             String title = item.path("snippet").path("title").asText(null);
-            String thumbnail = "https://img.youtube.com/vi/" + videoId + "/mqdefault.jpg";
             int duration = parseDuration(item.path("contentDetails").path("duration").asText(""));
 
             return new VideoMetadata(title, thumbnail, duration);
         } catch (Exception e) {
             log.warn("Failed to fetch YouTube metadata for {}: {}", videoId, e.getMessage());
-            return null;
+            return new VideoMetadata(null, thumbnail, 0);
         }
     }
 
@@ -79,5 +86,53 @@ public class YouTubeService {
         int min = m.group(2) != null ? Integer.parseInt(m.group(2)) : 0;
         int s = m.group(3) != null ? Integer.parseInt(m.group(3)) : 0;
         return h * 3600 + min * 60 + s;
+    }
+
+    public List<com.watchparty.dto.VideoRecommendation> searchRelated(String videoId, int maxResults) {
+        if (apiKey == null || apiKey.isBlank() || videoId == null || videoId.isBlank()) {
+            return List.of();
+        }
+
+        try {
+            VideoMetadata metadata = fetchMetadata("https://www.youtube.com/watch?v=" + videoId);
+            String query = (metadata != null && metadata.title() != null) ? metadata.title() : videoId;
+
+            JsonNode response = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/search")
+                            .queryParam("part", "snippet")
+                            .queryParam("type", "video")
+                            .queryParam("maxResults", maxResults + 1)
+                            .queryParam("q", query)
+                            .queryParam("key", apiKey)
+                            .build())
+                    .retrieve()
+                    .body(JsonNode.class);
+
+            JsonNode items = response != null ? response.get("items") : null;
+            if (items == null || items.isEmpty()) {
+                return List.of();
+            }
+
+            List<com.watchparty.dto.VideoRecommendation> results = new ArrayList<>();
+            for (JsonNode item : items) {
+                String id = item.path("id").path("videoId").asText(null);
+                if (id == null || id.equals(videoId)) continue;
+
+                JsonNode snippet = item.path("snippet");
+                String title = snippet.path("title").asText("Untitled");
+                String channel = snippet.path("channelTitle").asText("");
+                String thumbnail = "https://img.youtube.com/vi/" + id + "/mqdefault.jpg";
+
+                results.add(new com.watchparty.dto.VideoRecommendation(
+                        id, "https://www.youtube.com/watch?v=" + id, title, thumbnail, channel));
+
+                if (results.size() >= maxResults) break;
+            }
+            return results;
+        } catch (Exception e) {
+            log.warn("Failed to search related videos for {}: {}", videoId, e.getMessage());
+            return List.of();
+        }
     }
 }

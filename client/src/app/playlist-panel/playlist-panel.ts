@@ -73,4 +73,17 @@ export class PlaylistPanelComponent {
   displayTitle(item: PlaylistItem): string {
     return item.title ?? item.videoUrl;
   }
+
+  thumbnailFor(item: PlaylistItem): string | null {
+    if (item.thumbnailUrl) return item.thumbnailUrl;
+    const id = this.extractVideoId(item.videoUrl);
+    return id ? `https://img.youtube.com/vi/${id}/mqdefault.jpg` : null;
+  }
+
+  private extractVideoId(url: string): string | null {
+    const short = url.match(/youtu\.be\/([^?&]+)/);
+    if (short) return short[1];
+    const long = url.match(/[?&]v=([^&]+)/);
+    return long ? long[1] : null;
+  }
 }

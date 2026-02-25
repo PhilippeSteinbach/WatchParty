@@ -2,6 +2,15 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "stop-all",
+      "type": "shell",
+      "command": "$ports = 4200, 8080; foreach ($port in $ports) { Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue } }; docker compose -f docker-compose.dev.yml down 2>$null; Write-Host 'All services stopped.'",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "db-start",
       "type": "shell",
       "command": "docker compose -f docker-compose.dev.yml up -d",
@@ -20,10 +29,39 @@
       "problemMatcher": []
     },
     {
+      "label": "server-run",
+      "type": "shell",
+      "command": "./mvnw.cmd spring-boot:run",
+      "isBackground": true,
+      "dependsOn": ["db-start"],
+      "options": {
+        "cwd": "${workspaceFolder}/server",
+        "env": {
+          "JAVA_HOME": "C:\\Java\\jdk-21.0.6+7",
+          "SPRING_PROFILES_ACTIVE": "dev,local"
+        }
+      },
+      "problemMatcher": {
+        "owner": "spring-boot",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Starting WatchPartyApplication",
+          "endsPattern": "Started WatchPartyApplication"
+        }
+      },
+      "presentation": {
+        "close": true
+      }
+    },
+    {
       "label": "client-serve",
       "type": "shell",
       "command": "npx ng serve --proxy-config proxy.conf.json",
       "isBackground": true,
+      "dependsOn": ["server-run"],
       "options": {
         "cwd": "${workspaceFolder}/client"
       },
@@ -37,6 +75,9 @@
           "beginsPattern": "Building...",
           "endsPattern": "Application bundle generation complete"
         }
+      },
+      "presentation": {
+        "close": true
       }
     },
     {

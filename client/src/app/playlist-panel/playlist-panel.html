@@ -29,10 +29,10 @@
         cdkDrag
       >
         <span class="drag-handle" cdkDragHandle>⠿</span>
-        @if (item.thumbnailUrl) {
+        @if (thumbnailFor(item); as thumb) {
           <img
             class="thumbnail"
-            [src]="item.thumbnailUrl"
+            [src]="thumb"
             [alt]="displayTitle(item)"
           />
         }

@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   input,
   signal,
@@ -10,12 +11,13 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { WebSocketService } from '../services/websocket.service';
+import { VideoRecommendationService } from '../services/video-recommendation.service';
 import { YoutubePlayerComponent } from '../youtube-player/youtube-player';
 import { VideoControlsComponent } from '../video-controls/video-controls';
 import { ParticipantListComponent } from '../participant-list/participant-list';
 import { ChatPanelComponent } from '../chat-panel/chat-panel';
 import { PlaylistPanelComponent } from '../playlist-panel/playlist-panel';
-import { PlayerState } from '../models/room.model';
+import { PlayerState, VideoRecommendation } from '../models/room.model';
 
 @Component({
   selector: 'app-watch-room',
@@ -27,6 +29,7 @@ import { PlayerState } from '../models/room.model';
 })
 export class WatchRoomComponent implements OnDestroy {
   private readonly ws = inject(WebSocketService);
+  private readonly recService = inject(VideoRecommendationService);
 
   readonly roomCode = input.required<string>();
   readonly roomState = this.ws.roomState;
@@ -35,20 +38,30 @@ export class WatchRoomComponent implements OnDestroy {
   readonly videoUrlInput = signal('');
   readonly linkCopied = signal(false);
   readonly activeTab = signal<'chat' | 'playlist'>('chat');
+  readonly sidebarCollapsed = signal(false);
+  private readonly lastSeenChatCount = signal(0);
+  readonly unreadChatCount = computed(() =>
+    Math.max(0, this.ws.chatMessages().length - this.lastSeenChatCount())
+  );
   readonly playbackRate = signal(1.0);
   readonly polledTime = signal(0);
   readonly polledDuration = signal(0);
+  readonly recommendations = signal<VideoRecommendation[]>([]);
 
   readonly playerRef = viewChild(YoutubePlayerComponent);
 
   private positionReportInterval: ReturnType<typeof setInterval> | null = null;
   private timePollingInterval: ReturnType<typeof setInterval> | null = null;
+  private lastRecVideoId = '';
 
   constructor() {
     // Start periodic position reporting when connected and playing
     effect(() => {
       const state = this.ws.roomState();
-      if (state?.isPlaying) {
+      if (!state) return;
+      // Clear local override once server state arrives
+      this.localIsPlaying.set(null);
+      if (state.isPlaying) {
         this.startPositionReporting();
       } else {
         this.stopPositionReporting();
@@ -67,6 +80,23 @@ export class WatchRoomComponent implements OnDestroy {
         this.playerRef()?.seekTo(correction.targetTimeSeconds);
       } else if (correction.correctionType === 'RATE_RESET') {
         this.playbackRate.set(1.0);
+      }
+    });
+
+    // Reset unread count when chat tab is active
+    effect(() => {
+      if (this.activeTab() === 'chat') {
+        this.lastSeenChatCount.set(this.ws.chatMessages().length);
+      }
+    });
+
+    // Fetch recommendations when video changes
+    effect(() => {
+      const url = this.roomState()?.currentVideoUrl ?? '';
+      const videoId = this.playerRef()?.extractVideoId(url) ?? '';
+      if (videoId && videoId !== this.lastRecVideoId) {
+        this.lastRecVideoId = videoId;
+        this.recService.getRecommendations(videoId).subscribe(recs => this.recommendations.set(recs));
       }
     });
 
@@ -105,6 +135,9 @@ export class WatchRoomComponent implements OnDestroy {
     this.playbackRate.set(1.0);
   }
 
+  // Local override for immediate UI feedback; null = use server state
+  private readonly localIsPlaying = signal<boolean | null>(null);
+
   get currentVideoUrl(): string {
     return this.roomState()?.currentVideoUrl ?? '';
   }
@@ -114,7 +147,7 @@ export class WatchRoomComponent implements OnDestroy {
   }
 
   get isPlaying(): boolean {
-    return this.roomState()?.isPlaying ?? false;
+    return this.localIsPlaying() ?? this.roomState()?.isPlaying ?? false;
   }
 
   changeVideo(): void {
@@ -140,9 +173,10 @@ export class WatchRoomComponent implements OnDestroy {
     const time = player?.getCurrentTime() ?? 0;
     const newIsPlaying = !this.isPlaying;
 
-    // Apply locally immediately for responsive feel
+    this.localIsPlaying.set(newIsPlaying);
+
     if (newIsPlaying) {
-      player?.seekTo(time); // ensures position is synced before play
+      player?.seekTo(time);
     }
 
     this.ws.sendPlayerAction({
@@ -176,5 +210,27 @@ export class WatchRoomComponent implements OnDestroy {
 
   requestSync(): void {
     this.ws.requestSync();
+  }
+
+  onPlayRecommendation(rec: VideoRecommendation): void {
+    this.localIsPlaying.set(true);
+    this.ws.sendPlayerAction({
+      action: 'CHANGE_VIDEO',
+      videoUrl: rec.videoUrl,
+      currentTimeSeconds: 0,
+      isPlaying: false,
+    });
+    // Server forces isPlaying=false on CHANGE_VIDEO, so follow up with PLAY
+    setTimeout(() => {
+      this.ws.sendPlayerAction({
+        action: 'PLAY',
+        currentTimeSeconds: 0,
+        isPlaying: true,
+      });
+    }, 300);
+  }
+
+  onQueueRecommendation(rec: VideoRecommendation): void {
+    this.ws.addToPlaylist(rec.videoUrl);
   }
 }

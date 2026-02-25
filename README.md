@@ -20,6 +20,9 @@ Synchrones YouTube-Schauen in virtuellen Räumen mit Echtzeit-Chat, Webcam/Mikro
 - 🔐 **Optionale Registrierung** – Registrierte User können permanente Räume erstellen
 - 🤝 **Steuerungsmodi** – Collaborative (jeder steuert) oder Host-Mode (nur Host steuert)
 - 📋 **Playlist** – Videos via URL hinzufügen, "Sofort abspielen" oder "An Playlist anhängen"
-- 💬 **Live-Chat** – Text-Nachrichten mit Quick-Reactions (Emoji)
+- 💬 **Live-Chat** – Text-Nachrichten mit Quick-Reactions (Emoji) und Unread-Badge
 - 🎥 **Webcam & Mikrofon** – Optionales Audio/Video via WebRTC (Mesh, bis 6 User)
 - ⚡ **Latenz-Kompensation** – Automatische Drift-Korrektur (gradual catchup / hard-seek)
+- 📺 **Video-Empfehlungen** – Eigene Empfehlungen bei pausiertem Video (Play Now / zur Playlist hinzufügen)
+- 📁 **Einklappbare Sidebar** – Chat & Playlist in ein-/ausklappbarer Seitenleiste
+- 🛠️ **Developer Workflow** – VS Code Tasks mit Dependency-Chain (DB → Server → Client) und Stop-All Task

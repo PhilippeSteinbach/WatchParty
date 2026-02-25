@@ -11,7 +11,7 @@ import {
   NgZone,
   inject,
 } from '@angular/core';
-import { PlayerState } from '../models/room.model';
+import { PlayerState, VideoRecommendation } from '../models/room.model';
 
 @Component({
   selector: 'app-youtube-player',
@@ -27,9 +27,12 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
   readonly isPlaying = input(false);
   readonly currentTime = input(0);
   readonly playbackRate = input(1.0);
+  readonly recommendations = input<VideoRecommendation[]>([]);
 
   readonly playerEvent = output<PlayerState>();
   readonly overlayClick = output<void>();
+  readonly playRecommendation = output<VideoRecommendation>();
+  readonly queueRecommendation = output<VideoRecommendation>();
 
   readonly playerEl = viewChild<ElementRef<HTMLDivElement>>('playerContainer');
 
@@ -101,6 +104,14 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
     this.overlayClick.emit();
   }
 
+  onPlayRec(rec: VideoRecommendation): void {
+    this.playRecommendation.emit(rec);
+  }
+
+  onQueueRec(rec: VideoRecommendation): void {
+    this.queueRecommendation.emit(rec);
+  }
+
   private loadYouTubeApi(): void {
     if ((window as unknown as Record<string, unknown>)['YT']) {
       this.apiLoaded = true;
@@ -131,7 +142,7 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
       width: '100%',
       height: '100%',
       videoId,
-      playerVars: { autoplay: 0, controls: 0, disablekb: 1, modestbranding: 1 },
+      playerVars: { autoplay: 0, controls: 0, disablekb: 1, modestbranding: 1, rel: 0, iv_load_policy: 3 },
       events: {
         onStateChange: (event: YT.OnStateChangeEvent) => {
           this.zone.run(() => this.onPlayerStateChange(event));

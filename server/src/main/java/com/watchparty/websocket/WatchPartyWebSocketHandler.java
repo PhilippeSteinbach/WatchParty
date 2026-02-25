@@ -6,6 +6,7 @@ import com.watchparty.entity.Participant;
 import com.watchparty.entity.Room;
 import com.watchparty.exception.RoomNotFoundException;
 import com.watchparty.repository.ParticipantRepository;
+import com.watchparty.repository.PlaylistItemRepository;
 import com.watchparty.repository.RoomRepository;
 import com.watchparty.service.ChatService;
 import com.watchparty.service.PlaylistService;
@@ -27,17 +28,20 @@ public class WatchPartyWebSocketHandler {
 
     private final RoomRepository roomRepository;
     private final ParticipantRepository participantRepository;
+    private final PlaylistItemRepository playlistItemRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatService chatService;
     private final PlaylistService playlistService;
 
     public WatchPartyWebSocketHandler(RoomRepository roomRepository,
                                        ParticipantRepository participantRepository,
+                                       PlaylistItemRepository playlistItemRepository,
                                        SimpMessagingTemplate messagingTemplate,
                                        ChatService chatService,
                                        PlaylistService playlistService) {
         this.roomRepository = roomRepository;
         this.participantRepository = participantRepository;
+        this.playlistItemRepository = playlistItemRepository;
         this.messagingTemplate = messagingTemplate;
         this.chatService = chatService;
         this.playlistService = playlistService;
