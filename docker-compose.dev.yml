@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: watchparty-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: watchparty
+      POSTGRES_USER: watchparty
+      POSTGRES_PASSWORD: watchparty
+    volumes:
+      - watchparty-pgdata:/var/lib/postgresql/data
+
+volumes:
+  watchparty-pgdata:
