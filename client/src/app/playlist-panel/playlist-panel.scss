@@ -8,12 +8,12 @@
 
 .add-form {
   display: flex;
+  flex-direction: column;
   gap: 0.5rem;
   padding: 0.75rem;
   border-bottom: 1px solid #313244;
 
   input {
-    flex: 1;
     background: #181825;
     border: 1px solid #45475a;
     border-radius: 6px;
@@ -27,12 +27,35 @@
     }
   }
 
-  button {
+  .add-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .queue-btn {
+    flex: 1;
+    background: #313244;
+    color: #cdd6f4;
+    border: none;
+    border-radius: 6px;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+      background: #45475a;
+    }
+  }
+
+  .play-now-btn {
+    flex: 1;
     background: #89b4fa;
     color: #1e1e2e;
     border: none;
     border-radius: 6px;
-    padding: 0.5rem 0.75rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
 
@@ -66,6 +89,37 @@
   }
 }
 
+.drag-handle {
+  cursor: grab;
+  color: #6c7086;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  user-select: none;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.cdk-drag-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  background: #313244;
+  color: #cdd6f4;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.3;
+}
+
+.cdk-drag-animating {
+  transition: transform 200ms ease;
+}
+
 .thumbnail {
   width: 48px;
   height: 36px;
@@ -92,6 +146,23 @@
 .item-meta {
   font-size: 0.75rem;
   color: #a6adc8;
+}
+
+.item-play-btn {
+  background: none;
+  border: none;
+  color: #a6adc8;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  border-radius: 4px;
+  flex-shrink: 0;
+
+  &:hover {
+    color: #a6e3a1;
+    background: #45475a;
+  }
 }
 
 .remove-btn {

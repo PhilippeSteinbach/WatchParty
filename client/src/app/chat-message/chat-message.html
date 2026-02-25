@@ -1,0 +1,28 @@
+<div
+  class="message"
+  (mouseenter)="hovered.set(true)"
+  (mouseleave)="hovered.set(false)"
+>
+  <div class="message-header">
+    <span class="nickname">{{ message().nickname }}</span>
+    <span class="timestamp">{{ relativeTime(message().sentAt) }}</span>
+  </div>
+  <div class="message-content">{{ message().content }}</div>
+
+  @if (reactionEntries(message().reactions).length > 0) {
+    <div class="reactions">
+      @for (entry of reactionEntries(message().reactions); track entry[0]) {
+        <span class="reaction-badge">{{ entry[0] }} {{ entry[1] }}</span>
+      }
+    </div>
+  }
+
+  @if (hovered()) {
+    <div class="reaction-bar">
+      <app-emoji-picker
+        [messageId]="message().id"
+        (reactionSelected)="onReaction($event)"
+      />
+    </div>
+  }
+</div>

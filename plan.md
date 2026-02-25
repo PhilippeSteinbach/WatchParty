@@ -4,13 +4,13 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
 
 ---
 
-## Phase 0: Project Scaffolding & Infrastructure
+## Phase 0: Project Scaffolding & Infrastructure ✅
 
 **Goal:** Runnable project structure with build, test, and Docker.
 
 ### Server
-- [ ] Create Spring Boot 3 project with Maven in `server/` (Java 21+)
-- [ ] Add dependencies in `pom.xml`:
+- [x] Create Spring Boot 3 project with Maven in `server/` (Java 21+)
+- [x] Add dependencies in `pom.xml`:
   - `spring-boot-starter-web`
   - `spring-boot-starter-data-jpa`
   - `spring-boot-starter-websocket`
@@ -20,21 +20,21 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
   - `postgresql` driver
   - `flyway-core`
   - `jjwt` (io.jsonwebtoken)
-- [ ] Configure `WatchPartyApplication.java` main class
-- [ ] Create `application.yml` + `application-dev.yml` (PostgreSQL connection, JWT settings, YouTube API key placeholder via environment variables)
-- [ ] Add `Dockerfile` + `.dockerignore`
+- [x] Configure `WatchPartyApplication.java` main class
+- [x] Create `application.yml` + `application-dev.yml` (PostgreSQL connection, JWT settings, YouTube API key placeholder via environment variables)
+- [x] Add `Dockerfile` + `.dockerignore`
 
 ### Client
-- [ ] Scaffold Angular project in `client/`: `ng new watch-party --standalone --style=scss --routing`
-- [ ] Enable strict mode in `tsconfig.json`
-- [ ] Install dependencies: `@stomp/stompjs`, `sockjs-client`, `@types/youtube`
-- [ ] Create `proxy.conf.json` for API calls in development
-- [ ] Add `Dockerfile` (multi-stage: Node build → Nginx)
+- [x] Scaffold Angular project in `client/`: `ng new watch-party --standalone --style=scss --routing`
+- [x] Enable strict mode in `tsconfig.json`
+- [x] Install dependencies: `@stomp/stompjs`, `sockjs-client`, `@types/youtube`
+- [x] Create `proxy.conf.json` for API calls in development
+- [x] Add `Dockerfile` (multi-stage: Node build → Nginx)
 
 ### Infrastructure
-- [ ] Create `docker-compose.yml` in repo root with services: `db` (PostgreSQL 16), `api` (Spring Boot), `client` (Nginx)
-- [ ] Configure volumes for DB persistence, ports: 4200, 8080, 5432
-- [ ] Add CI workflow in `.github/workflows/`: build + test for both projects
+- [x] Create `docker-compose.yml` in repo root with services: `db` (PostgreSQL 16), `api` (Spring Boot), `client` (Nginx)
+- [x] Configure volumes for DB persistence, ports: 4200, 8080, 5432
+- [x] Add CI workflow in `.github/workflows/`: build + test for both projects
 
 ### Verification
 - `docker compose up` starts all 3 services
@@ -43,46 +43,46 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
 
 ---
 
-## Phase 1: MVP – Room System & Synchronized YouTube Player
+## Phase 1: MVP – Room System & Synchronized YouTube Player ✅
 
 **Goal:** Create rooms, join via link, watch YouTube videos synchronously. Anonymous participation with nickname.
 
 ### Server – Domain & Data
-- [ ] Create `Room` entity (JPA `@Entity`): `id` (UUID), `code` (String, 6-8 chars, unique), `name`, `controlMode` (enum: COLLABORATIVE | HOST_ONLY), `hostConnectionId`, `currentVideoUrl`, `currentTime` (Duration), `isPlaying`, `createdAt`, `expiresAt`
-- [ ] Create `Participant` entity: `id`, `roomId`, `nickname`, `connectionId`, `isHost`, `joinedAt`
-- [ ] Create `RoomRepository` and `ParticipantRepository` (Spring Data JPA)
-- [ ] Create initial Flyway migration
+- [x] Create `Room` entity (JPA `@Entity`): `id` (UUID), `code` (String, 6-8 chars, unique), `name`, `controlMode` (enum: COLLABORATIVE | HOST_ONLY), `hostConnectionId`, `currentVideoUrl`, `currentTime` (Duration), `isPlaying`, `createdAt`, `expiresAt`
+- [x] Create `Participant` entity: `id`, `roomId`, `nickname`, `connectionId`, `isHost`, `joinedAt`
+- [x] Create `RoomRepository` and `ParticipantRepository` (Spring Data JPA)
+- [x] Create initial Flyway migration
 
 ### Server – Room API (REST Controllers)
-- [ ] `POST /api/rooms` → Create room (Name, ControlMode), return room code
-- [ ] `GET /api/rooms/{code}` → Get room details
-- [ ] `DELETE /api/rooms/{code}` → Close room (host only)
-- [ ] Jakarta Bean Validation: room name required, max 100 chars
-- [ ] Problem Details responses for errors (RFC 9457)
+- [x] `POST /api/rooms` → Create room (Name, ControlMode), return room code
+- [x] `GET /api/rooms/{code}` → Get room details
+- [x] `DELETE /api/rooms/{code}` → Close room (host only)
+- [x] Jakarta Bean Validation: room name required, max 100 chars
+- [x] Problem Details responses for errors (RFC 9457)
 
 ### Server – WebSocket Handler (`WatchPartyWebSocketHandler`)
-- [ ] `joinRoom(roomCode, nickname)` → Add participant to session group, validate nickname, return current player state
-- [ ] `leaveRoom()` → Remove participant, on host leave: assign new host or close room
-- [ ] `play()` / `pause()` / `seek(timeSeconds)` → Check permissions (ControlMode), broadcast to group
-- [ ] `changeVideo(videoUrl)` → Change video, broadcast
-- [ ] `syncState()` → Periodic state sync (heartbeat every 5s)
-- [ ] Handle session disconnect for cleanup
+- [x] `joinRoom(roomCode, nickname)` → Add participant to session group, validate nickname, return current player state
+- [x] `leaveRoom()` → Remove participant, on host leave: assign new host or close room
+- [x] `play()` / `pause()` / `seek(timeSeconds)` → Check permissions (ControlMode), broadcast to group
+- [x] `changeVideo(videoUrl)` → Change video, broadcast
+- [x] `syncState()` → Periodic state sync (heartbeat every 5s)
+- [x] Handle session disconnect for cleanup
 
 ### Client – Room Creation & Joining
-- [ ] `RoomService` – HTTP calls to Room API, room state as signals
-- [ ] `WebSocketService` – Manage STOMP/SockJS connection, expose events as signals
-- [ ] `HomeComponent` – Create room (name, control mode), result: shareable link
-- [ ] `JoinRoomComponent` – Enter nickname, join room (route: `/room/:code`)
-- [ ] Routing: `/` → Home, `/room/:code` → WatchRoom
-- [ ] Model interfaces: `Room`, `Participant`, `PlayerState`, `RoomSettings`
+- [x] `RoomService` – HTTP calls to Room API, room state as signals
+- [x] `WebSocketService` – Manage STOMP/SockJS connection, expose events as signals
+- [x] `HomeComponent` – Create room (name, control mode), result: shareable link
+- [x] `JoinRoomComponent` – Enter nickname, join room (route: `/room/:code`)
+- [x] Routing: `/` → Home, `/room/:code` → WatchRoom
+- [x] Model interfaces: `Room`, `Participant`, `PlayerState`, `RoomSettings`
 
 ### Client – YouTube Player & Sync
-- [ ] `WatchRoomComponent` – Main container with player, participant list
-- [ ] `YoutubePlayerComponent` – YouTube IFrame API integration
-- [ ] Forward player events (`onStateChange`) to WebSocket
-- [ ] Apply incoming WebSocket events to player (play/pause/seek)
-- [ ] Respect control mode: disable controls for non-hosts in Host-Mode
-- [ ] `ParticipantListComponent` – Show participants, mark host
+- [x] `WatchRoomComponent` – Main container with player, participant list
+- [x] `YoutubePlayerComponent` – YouTube IFrame API integration
+- [x] Forward player events (`onStateChange`) to WebSocket
+- [x] Apply incoming WebSocket events to player (play/pause/seek)
+- [x] Respect control mode: disable controls for non-hosts in Host-Mode
+- [x] `ParticipantListComponent` – Show participants, mark host
 
 ### Latency Compensation (Basic)
 - [ ] Client sends current playback position to server periodically
@@ -97,33 +97,39 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
 
 ---
 
-## Phase 2: Live Chat & Playlist
+## Phase 2: Live Chat & Playlist ✅
 
 **Goal:** Text chat with emoji reactions and video playlist.
 
 ### Server – Chat
-- [ ] `ChatMessage` entity (JPA `@Entity`): `id`, `roomId`, `nickname`, `content`, `reactions` (JSON column via `@JdbcTypeCode`), `sentAt`
-- [ ] WebSocket message handlers: `sendMessage(content)`, `addReaction(messageId, emoji)`
-- [ ] Persist messages in DB (last 200 per room), load history on join
-- [ ] Validation: max 500 chars, rate limiting (max 5 messages/10s per user)
+- [x] `ChatMessage` entity (JPA `@Entity`): `id`, `roomId`, `nickname`, `content`, `reactions` (JSON column via `@JdbcTypeCode`), `sentAt`
+- [x] WebSocket message handlers: `sendMessage(content)`, `addReaction(messageId, emoji)`
+- [x] Persist messages in DB (last 200 per room), load history on join
+- [x] Validation: max 500 chars, rate limiting (max 5 messages/10s per user)
 
 ### Client – Chat UI
-- [ ] `ChatPanelComponent` – Message list with auto-scroll, input field
-- [ ] `ChatMessageComponent` – Single message with nickname, timestamp, reaction buttons
-- [ ] `EmojiPickerComponent` – Quick reactions (6-8 standard emojis: 👍❤️😂😮😢🔥)
-- [ ] Chat state in signals: `messages`, `isLoading`
+- [x] `ChatPanelComponent` – Message list with auto-scroll, input field
+- [x] `ChatMessageComponent` – Single message with nickname, timestamp, reaction buttons
+- [x] `EmojiPickerComponent` – Quick reactions (6-8 standard emojis: 👍❤️😂😮😢🔥)
+- [x] Chat state in signals: `messages`, `isLoading`
 
 ### Server – Playlist
-- [ ] `PlaylistItem` entity (JPA `@Entity`): `id`, `roomId`, `videoUrl`, `title`, `thumbnailUrl`, `duration`, `addedBy`, `position`, `addedAt`
-- [ ] WebSocket message handlers: `addToPlaylist(videoUrl)`, `playNow(videoUrl)`, `removeFromPlaylist(itemId)`, `reorderPlaylist(itemId, newPosition)`, `skipToNext()`
-- [ ] `YouTubeService` – Fetch video metadata (title, thumbnail, duration) from YouTube Data API v3
-- [ ] Auto-play next video when current one ends
+- [x] `PlaylistItem` entity (JPA `@Entity`): `id`, `roomId`, `videoUrl`, `title`, `thumbnailUrl`, `duration`, `addedBy`, `position`, `addedAt`
+- [x] WebSocket message handlers: `addToPlaylist(videoUrl)`, `playNow(videoUrl)`, `removeFromPlaylist(itemId)`, `reorderPlaylist(itemId, newPosition)`, `skipToNext()`
+- [x] `YouTubeService` – Fetch video metadata (title, thumbnail, duration) from YouTube Data API v3
+- [x] Auto-play next video when current one ends
 
 ### Client – Playlist UI
-- [ ] `PlaylistPanelComponent` – Video list with drag & drop reorder
-- [ ] `AddVideoComponent` – URL input with "Play Now" / "Add to Queue" buttons, video metadata preview
-- [ ] `PlaylistService` – Signal-based playlist state
-- [ ] Angular CDK `DragDropModule` for reorder
+- [x] `PlaylistPanelComponent` – Video list with drag & drop reorder
+- [x] Add video form with "Add to Queue" / "Play Now" buttons
+- [x] `PlaylistService` – Signal-based playlist state
+- [x] Angular CDK `DragDropModule` for reorder
+
+### Bug Fixes (discovered during Phase 2)
+- [x] Fix `/room.sync` endpoint: removed erroneous `@Payload PlayerStateMessage` parameter (client sends empty body)
+- [x] Fix `/room.playlist.next` endpoint: server now derives current position from room state instead of expecting client payload
+- [x] Video player fills designated space (added `:host` sizing to `YoutubePlayerComponent`)
+- [x] Browser auto-opens on `ng serve` (`angular.json` → `"open": true`)
 
 ### Verification
 - Chat messages appear live for all participants

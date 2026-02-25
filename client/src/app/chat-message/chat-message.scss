@@ -1,0 +1,56 @@
+.message {
+  position: relative;
+  background: #181825;
+  border-radius: 6px;
+  padding: 0.5rem 0.65rem;
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.2rem;
+
+  .nickname {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #89b4fa;
+  }
+
+  .timestamp {
+    font-size: 0.7rem;
+    color: #6c7086;
+  }
+}
+
+.message-content {
+  font-size: 0.9rem;
+  color: #cdd6f4;
+  word-break: break-word;
+}
+
+.reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+}
+
+.reaction-badge {
+  background: #313244;
+  border-radius: 10px;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.75rem;
+  color: #cdd6f4;
+}
+
+.reaction-bar {
+  position: absolute;
+  top: -0.5rem;
+  right: 0.5rem;
+  background: #1e1e2e;
+  border: 1px solid #313244;
+  border-radius: 6px;
+  padding: 0.2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
