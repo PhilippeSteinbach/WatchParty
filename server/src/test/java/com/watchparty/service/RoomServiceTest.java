@@ -48,10 +48,10 @@ class RoomServiceTest {
 
     @Test
     void whenCreateRoomThenReturnsSavedRoom() {
-        var request = new CreateRoomRequest("Movie Night", ControlMode.COLLABORATIVE);
+        var request = new CreateRoomRequest("Movie Night", ControlMode.COLLABORATIVE, false);
         when(roomRepository.save(any(Room.class))).thenReturn(sampleRoom);
 
-        var response = roomService.createRoom(request);
+        var response = roomService.createRoom(request, null);
 
         assertNotNull(response);
         assertEquals("Movie Night", response.name());

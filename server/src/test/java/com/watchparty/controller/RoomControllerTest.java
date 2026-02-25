@@ -49,12 +49,12 @@ class RoomControllerTest {
 
     @Test
     void whenCreateRoomThenReturns201() throws Exception {
-        var request = new CreateRoomRequest("Movie Night", ControlMode.COLLABORATIVE);
+        var request = new CreateRoomRequest("Movie Night", ControlMode.COLLABORATIVE, false);
         var response = new RoomResponse(
                 UUID.randomUUID(), "ABCD1234", "Movie Night",
-                ControlMode.COLLABORATIVE, 0, Instant.now()
+                ControlMode.COLLABORATIVE, 0, Instant.now(), null, false
         );
-        when(roomService.createRoom(any(CreateRoomRequest.class))).thenReturn(response);
+        when(roomService.createRoom(any(CreateRoomRequest.class), any())).thenReturn(response);
 
         mockMvc.perform(post("/api/rooms")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -67,7 +67,7 @@ class RoomControllerTest {
 
     @Test
     void whenCreateRoomWithInvalidRequestThenReturns400() throws Exception {
-        var invalidRequest = new CreateRoomRequest("", null);
+        var invalidRequest = new CreateRoomRequest("", null, false);
 
         mockMvc.perform(post("/api/rooms")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -79,7 +79,7 @@ class RoomControllerTest {
     void whenGetRoomThenReturnsRoom() throws Exception {
         var response = new RoomResponse(
                 UUID.randomUUID(), "ABCD1234", "Movie Night",
-                ControlMode.HOST_ONLY, 3, Instant.now()
+                ControlMode.HOST_ONLY, 3, Instant.now(), null, false
         );
         when(roomService.findByCode("ABCD1234")).thenReturn(response);
 
