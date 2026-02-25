@@ -15,7 +15,7 @@ export interface Participant {
   isHost: boolean;
 }
 
-export type PlayerAction = 'PLAY' | 'PAUSE' | 'SEEK' | 'CHANGE_VIDEO' | 'SYNC';
+export type PlayerAction = 'PLAY' | 'PAUSE' | 'SEEK' | 'CHANGE_VIDEO' | 'SYNC' | 'ENDED';
 
 export interface PlayerState {
   action: PlayerAction;

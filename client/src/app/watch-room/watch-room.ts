@@ -57,6 +57,10 @@ export class WatchRoomComponent {
   }
 
   onPlayerEvent(action: PlayerState): void {
+    if (action.action === 'ENDED') {
+      this.ws.playNext();
+      return;
+    }
     this.ws.sendPlayerAction(action);
   }
 

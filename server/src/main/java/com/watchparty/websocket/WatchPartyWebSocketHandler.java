@@ -216,6 +216,28 @@ public class WatchPartyWebSocketHandler {
         messagingTemplate.convertAndSend("/topic/room." + room.getCode() + ".playlist", playlist);
     }
 
+    @MessageMapping("/room.playlist.playNow")
+    @Transactional
+    public void playNow(@Payload AddPlaylistItemRequest request, SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = headerAccessor.getSessionId();
+
+        Participant participant = participantRepository.findByConnectionId(sessionId)
+                .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
+
+        Room room = participant.getRoom();
+        playlistService.addItem(room.getId(), request.videoUrl(), participant.getNickname());
+
+        room.setCurrentVideoUrl(request.videoUrl());
+        room.setCurrentTimeSeconds(0);
+        room.setPlaying(false);
+        roomRepository.save(room);
+
+        broadcastRoomState(room);
+
+        PlaylistResponse playlist = playlistService.getPlaylist(room.getId());
+        messagingTemplate.convertAndSend("/topic/room." + room.getCode() + ".playlist", playlist);
+    }
+
     @MessageMapping("/room.playlist.remove")
     @Transactional
     public void removePlaylistItem(@Payload Map<String, String> payload, SimpMessageHeaderAccessor headerAccessor) {

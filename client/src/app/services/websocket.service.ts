@@ -139,6 +139,15 @@ export class WebSocketService {
     }
   }
 
+  playNow(videoUrl: string): void {
+    if (this.client?.active) {
+      this.client.publish({
+        destination: '/app/room.playlist.playNow',
+        body: JSON.stringify({ videoUrl }),
+      });
+    }
+  }
+
   removeFromPlaylist(itemId: string): void {
     if (this.client?.active) {
       this.client.publish({

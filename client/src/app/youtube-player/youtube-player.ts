@@ -139,6 +139,12 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
         currentTimeSeconds: time,
         isPlaying: false,
       });
+    } else if (event.data === YT.PlayerState.ENDED) {
+      this.playerEvent.emit({
+        action: 'ENDED',
+        currentTimeSeconds: time,
+        isPlaying: false,
+      });
     }
   }
 

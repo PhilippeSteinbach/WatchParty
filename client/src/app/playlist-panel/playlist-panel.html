@@ -1,5 +1,5 @@
 <div class="playlist-panel">
-  <form class="add-form" (ngSubmit)="addVideo()">
+  <div class="add-form">
     <input
       type="text"
       placeholder="Paste video URL…"
@@ -7,17 +7,28 @@
       (ngModelChange)="urlInput.set($event)"
       name="videoUrl"
       aria-label="Video URL"
+      (keydown.enter)="addToQueue()"
     />
-    <button type="submit">Add</button>
-  </form>
+    <div class="add-actions">
+      <button class="queue-btn" (click)="addToQueue()">+ Queue</button>
+      <button class="play-now-btn" (click)="playNow()">▶ Play Now</button>
+    </div>
+  </div>
 
-  <div class="playlist-list" role="list">
+  <div
+    class="playlist-list"
+    role="list"
+    cdkDropList
+    (cdkDropListDropped)="onDrop($event)"
+  >
     @for (item of items(); track item.id) {
       <div
         class="playlist-item"
         [class.now-playing]="isCurrentlyPlaying(item)"
         role="listitem"
+        cdkDrag
       >
+        <span class="drag-handle" cdkDragHandle>⠿</span>
         @if (item.thumbnailUrl) {
           <img
             class="thumbnail"
@@ -32,6 +43,13 @@
           </span>
         </div>
         <button
+          class="item-play-btn"
+          (click)="playItem(item)"
+          aria-label="Play now"
+        >
+          ▶
+        </button>
+        <button
           class="remove-btn"
           (click)="removeItem(item.id)"
           aria-label="Remove item"
@@ -44,5 +62,5 @@
     }
   </div>
 
-  <button class="next-btn" (click)="playNext()">⏭ Skip to Next</button>
+  <button class="next-btn" (click)="skipToNext()">⏭ Skip to Next</button>
 </div>

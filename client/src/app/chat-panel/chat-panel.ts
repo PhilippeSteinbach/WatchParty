@@ -9,12 +9,12 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { WebSocketService } from '../services/websocket.service';
-import { EmojiPickerComponent } from '../emoji-picker/emoji-picker';
+import { ChatMessageComponent } from '../chat-message/chat-message';
 
 @Component({
   selector: 'app-chat-panel',
   standalone: true,
-  imports: [FormsModule, EmojiPickerComponent],
+  imports: [FormsModule, ChatMessageComponent],
   templateUrl: './chat-panel.html',
   styleUrl: './chat-panel.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -24,7 +24,6 @@ export class ChatPanelComponent implements AfterViewChecked {
 
   readonly messages = this.ws.chatMessages;
   readonly messageInput = signal('');
-  readonly hoveredMessageId = signal<string | null>(null);
 
   private readonly scrollContainer = viewChild<ElementRef<HTMLElement>>('scrollContainer');
   private shouldScroll = false;
@@ -49,22 +48,6 @@ export class ChatPanelComponent implements AfterViewChecked {
 
   onReaction(event: { messageId: string; emoji: string }): void {
     this.ws.addReaction(event.messageId, event.emoji);
-  }
-
-  relativeTime(isoDate: string): string {
-    const diff = Date.now() - new Date(isoDate).getTime();
-    const seconds = Math.floor(diff / 1000);
-    if (seconds < 60) return 'just now';
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
-  }
-
-  reactionEntries(reactions: Record<string, number>): [string, number][] {
-    return Object.entries(reactions).filter(([, count]) => count > 0);
   }
 
   private scrollToBottom(): void {
