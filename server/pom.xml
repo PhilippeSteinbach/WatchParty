@@ -13,7 +13,7 @@
 
     <groupId>com.watchparty</groupId>
     <artifactId>watchparty-api</artifactId>
-    <version>0.7.0</version>
+    <version>0.7.1</version>
     <name>WatchParty API</name>
     <description>WatchParty – Watch YouTube videos together</description>
 
