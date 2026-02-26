@@ -22,7 +22,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-@SuppressWarnings("null")
 @ExtendWith(MockitoExtension.class)
 class ChatServiceTest {
 
@@ -52,7 +51,7 @@ class ChatServiceTest {
     void whenSendMessageThenSavesAndReturnsResponse() {
         when(chatMessageRepository.countByRoomIdAndNicknameAndSentAtAfter(eq(roomId), eq("Alice"), any(Instant.class)))
                 .thenReturn(0L);
-        when(roomRepository.findById(roomId)).thenReturn(Optional.of(sampleRoom));
+        when(roomRepository.findById(Objects.requireNonNull(roomId))).thenReturn(Optional.of(sampleRoom));
 
         ChatMessage savedMessage = new ChatMessage();
         savedMessage.setId(UUID.randomUUID());
@@ -102,7 +101,7 @@ class ChatServiceTest {
         message.setReactions(new HashMap<>(Map.of("👍", 2)));
         message.setSentAt(Instant.now());
 
-        when(chatMessageRepository.findById(messageId)).thenReturn(Optional.of(message));
+        when(chatMessageRepository.findById(Objects.requireNonNull(messageId))).thenReturn(Optional.of(message));
         when(chatMessageRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         ChatMessageResponse response = chatService.addReaction(messageId, "👍");
@@ -114,7 +113,7 @@ class ChatServiceTest {
     @Test
     void whenAddReactionToNonExistentMessageThenThrows() {
         UUID messageId = UUID.randomUUID();
-        when(chatMessageRepository.findById(messageId)).thenReturn(Optional.empty());
+        when(chatMessageRepository.findById(Objects.requireNonNull(messageId))).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class,
                 () -> chatService.addReaction(messageId, "👍"));

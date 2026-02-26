@@ -12,9 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
-@SuppressWarnings("null")
 @Service
 public class ChatService {
 
@@ -40,7 +40,7 @@ public class ChatService {
                     + " messages per " + RATE_LIMIT_WINDOW_SECONDS + " seconds");
         }
 
-        Room room = roomRepository.findById(roomId)
+        Room room = roomRepository.findById(Objects.requireNonNull(roomId))
                 .orElseThrow(() -> new EntityNotFoundException("Room not found: " + roomId));
 
         ChatMessage message = new ChatMessage();
@@ -55,10 +55,10 @@ public class ChatService {
     @Transactional
     @NonNull
     public ChatMessageResponse addReaction(UUID messageId, String emoji) {
-        ChatMessage message = chatMessageRepository.findById(messageId)
+        ChatMessage message = chatMessageRepository.findById(Objects.requireNonNull(messageId))
                 .orElseThrow(() -> new EntityNotFoundException("Message not found: " + messageId));
 
-        message.getReactions().merge(emoji, 1, Integer::sum);
+        message.getReactions().merge(emoji, 1, (a, b) -> a + b);
         message = chatMessageRepository.save(message);
         return toResponse(message);
     }
@@ -67,11 +67,12 @@ public class ChatService {
     @NonNull
     public List<ChatMessageResponse> getChatHistory(UUID roomId) {
         List<ChatMessage> messages = chatMessageRepository.findTop200ByRoomIdOrderBySentAtDesc(roomId);
-        return messages.reversed().stream()
+        return Objects.requireNonNull(messages.reversed().stream()
                 .map(this::toResponse)
-                .toList();
+                .toList());
     }
 
+    @NonNull
     private ChatMessageResponse toResponse(ChatMessage message) {
         return new ChatMessageResponse(
                 message.getId(),

@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -22,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@SuppressWarnings("null")
 @ExtendWith(MockitoExtension.class)
 class RoomServiceTest {
 
@@ -64,7 +64,7 @@ class RoomServiceTest {
 
     @Test
     void whenFindByCodeThenReturnsRoom() {
-        when(roomRepository.findByCode("ABCD1234")).thenReturn(Optional.of(sampleRoom));
+        when(roomRepository.findByCode("ABCD1234")).thenReturn(Optional.of(Objects.requireNonNull(sampleRoom)));
         when(participantRepository.findByRoomId(sampleRoom.getId())).thenReturn(Collections.emptyList());
 
         var response = roomService.findByCode("ABCD1234");
@@ -83,7 +83,7 @@ class RoomServiceTest {
 
     @Test
     void whenDeleteByCodeThenDeletes() {
-        when(roomRepository.findByCode("ABCD1234")).thenReturn(Optional.of(sampleRoom));
+        when(roomRepository.findByCode("ABCD1234")).thenReturn(Optional.of(Objects.requireNonNull(sampleRoom)));
 
         roomService.deleteByCode("ABCD1234");
 

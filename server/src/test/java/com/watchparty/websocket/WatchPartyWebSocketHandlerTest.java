@@ -25,6 +25,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,7 +34,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-@SuppressWarnings("null")
 @ExtendWith(MockitoExtension.class)
 class WatchPartyWebSocketHandlerTest {
 
@@ -93,8 +93,8 @@ class WatchPartyWebSocketHandlerTest {
     void whenJoinRoomThenCreatesParticipantAndBroadcastsState() {
         var joinMessage = new JoinRoomMessage("ABCD1234", "Alice");
 
-        when(roomRepository.findByCode("ABCD1234")).thenReturn(Optional.of(sampleRoom));
-        when(participantRepository.findByRoomId(sampleRoom.getId()))
+        when(roomRepository.findByCode("ABCD1234")).thenReturn(Optional.of(Objects.requireNonNull(sampleRoom)));
+        when(participantRepository.findByRoomId(Objects.requireNonNull(sampleRoom.getId())))
                 .thenReturn(Collections.emptyList())
                 .thenReturn(List.of(hostParticipant));
         when(participantRepository.save(any(Participant.class))).thenReturn(hostParticipant);
@@ -110,7 +110,7 @@ class WatchPartyWebSocketHandlerTest {
         assertEquals("session-1", saved.getConnectionId());
         assertTrue(saved.isHost());
 
-        verify(roomRepository).save(sampleRoom);
+        verify(roomRepository).save(Objects.requireNonNull(sampleRoom));
         verify(messagingTemplate).convertAndSend(eq("/topic/room.ABCD1234"), any(RoomStateMessage.class));
     }
 
@@ -127,12 +127,12 @@ class WatchPartyWebSocketHandlerTest {
         sampleRoom.setControlMode(ControlMode.HOST_ONLY);
         var playerMessage = new PlayerStateMessage("PAUSE", null, 50.0, false);
 
-        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(hostParticipant));
+        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(Objects.requireNonNull(hostParticipant)));
 
         handler.playerAction(playerMessage, headerAccessor);
 
         assertFalse(sampleRoom.isPlaying());
-        verify(roomRepository).save(sampleRoom);
+        verify(roomRepository).save(Objects.requireNonNull(sampleRoom));
         verify(messagingTemplate).convertAndSend(eq("/topic/room.ABCD1234"), eq(playerMessage));
     }
 
@@ -151,7 +151,7 @@ class WatchPartyWebSocketHandlerTest {
         headerAccessor.setSessionId("session-2");
         var playerMessage = new PlayerStateMessage("PLAY", null, 0.0, true);
 
-        when(participantRepository.findByConnectionId("session-2")).thenReturn(Optional.of(nonHost));
+        when(participantRepository.findByConnectionId("session-2")).thenReturn(Optional.of(Objects.requireNonNull(nonHost)));
 
         handler.playerAction(playerMessage, headerAccessor);
 
@@ -169,9 +169,9 @@ class WatchPartyWebSocketHandlerTest {
         remainingParticipant.setRoom(sampleRoom);
         remainingParticipant.setJoinedAt(Instant.now());
 
-        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(hostParticipant));
-        when(roomRepository.findById(sampleRoom.getId())).thenReturn(Optional.of(sampleRoom));
-        when(participantRepository.findByRoomId(sampleRoom.getId()))
+        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(Objects.requireNonNull(hostParticipant)));
+        when(roomRepository.findById(Objects.requireNonNull(sampleRoom.getId()))).thenReturn(Optional.of(Objects.requireNonNull(sampleRoom)));
+        when(participantRepository.findByRoomId(Objects.requireNonNull(sampleRoom.getId())))
                 .thenReturn(List.of(remainingParticipant));
 
         handler.leaveRoom(headerAccessor);
@@ -183,29 +183,29 @@ class WatchPartyWebSocketHandlerTest {
         assertTrue(captor.getValue().isHost());
         assertEquals("Bob", captor.getValue().getNickname());
 
-        verify(roomRepository).save(sampleRoom);
+        verify(roomRepository).save(Objects.requireNonNull(sampleRoom));
         assertEquals("session-2", sampleRoom.getHostConnectionId());
         verify(messagingTemplate).convertAndSend(eq("/topic/room.ABCD1234"), any(RoomStateMessage.class));
     }
 
     @Test
     void whenLeaveRoomAndLastParticipantThenClearsHostConnectionId() {
-        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(hostParticipant));
-        when(roomRepository.findById(sampleRoom.getId())).thenReturn(Optional.of(sampleRoom));
-        when(participantRepository.findByRoomId(sampleRoom.getId())).thenReturn(Collections.emptyList());
+        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(Objects.requireNonNull(hostParticipant)));
+        when(roomRepository.findById(Objects.requireNonNull(sampleRoom.getId()))).thenReturn(Optional.of(Objects.requireNonNull(sampleRoom)));
+        when(participantRepository.findByRoomId(Objects.requireNonNull(sampleRoom.getId()))).thenReturn(Collections.emptyList());
 
         handler.leaveRoom(headerAccessor);
 
         verify(participantRepository).delete(hostParticipant);
         assertNull(sampleRoom.getHostConnectionId());
-        verify(roomRepository).save(sampleRoom);
+        verify(roomRepository).save(Objects.requireNonNull(sampleRoom));
         verify(messagingTemplate, never()).convertAndSend(anyString(), any(RoomStateMessage.class));
     }
 
     @Test
     void whenSyncStateThenBroadcastsCurrentRoomState() {
-        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(hostParticipant));
-        when(participantRepository.findByRoomId(sampleRoom.getId())).thenReturn(List.of(hostParticipant));
+        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(Objects.requireNonNull(hostParticipant)));
+        when(participantRepository.findByRoomId(Objects.requireNonNull(sampleRoom.getId()))).thenReturn(List.of(hostParticipant));
 
         handler.syncState(headerAccessor);
 
@@ -225,7 +225,7 @@ class WatchPartyWebSocketHandlerTest {
         sampleRoom.setPlaying(true);
         sampleRoom.setStateUpdatedAt(Instant.now());
 
-        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(hostParticipant));
+        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(Objects.requireNonNull(hostParticipant)));
 
         // Client reports position 10s behind expected (~100s)
         var report = new PositionReportMessage(90.0);
@@ -244,7 +244,7 @@ class WatchPartyWebSocketHandlerTest {
         sampleRoom.setPlaying(true);
         sampleRoom.setStateUpdatedAt(Instant.now());
 
-        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(hostParticipant));
+        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(Objects.requireNonNull(hostParticipant)));
 
         // Client reports position 1s behind expected (~100s)
         var report = new PositionReportMessage(99.0);
@@ -263,7 +263,7 @@ class WatchPartyWebSocketHandlerTest {
         sampleRoom.setPlaying(true);
         sampleRoom.setStateUpdatedAt(Instant.now());
 
-        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(hostParticipant));
+        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(Objects.requireNonNull(hostParticipant)));
 
         // Client reports position within 0.5s tolerance
         var report = new PositionReportMessage(100.2);
@@ -277,7 +277,7 @@ class WatchPartyWebSocketHandlerTest {
         sampleRoom.setCurrentTimeSeconds(100.0);
         sampleRoom.setPlaying(false);
 
-        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(hostParticipant));
+        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(Objects.requireNonNull(hostParticipant)));
 
         var report = new PositionReportMessage(90.0);
         handler.reportPosition(report, headerAccessor);
@@ -312,14 +312,14 @@ class WatchPartyWebSocketHandlerTest {
     @Test
     void whenPlayerActionThenSetsStateUpdatedAt() {
         var playerMessage = new PlayerStateMessage("PAUSE", null, 50.0, false);
-        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(hostParticipant));
+        when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(Objects.requireNonNull(hostParticipant)));
 
         assertNull(sampleRoom.getStateUpdatedAt());
 
         handler.playerAction(playerMessage, headerAccessor);
 
         assertNotNull(sampleRoom.getStateUpdatedAt());
-        verify(roomRepository).save(sampleRoom);
+        verify(roomRepository).save(Objects.requireNonNull(sampleRoom));
     }
 
     @Test
@@ -370,8 +370,8 @@ class WatchPartyWebSocketHandlerTest {
     void whenJoinRoomThenSendsSessionInfo() {
         var joinMessage = new JoinRoomMessage("ABCD1234", "Alice");
 
-        when(roomRepository.findByCode("ABCD1234")).thenReturn(Optional.of(sampleRoom));
-        when(participantRepository.findByRoomId(sampleRoom.getId()))
+        when(roomRepository.findByCode("ABCD1234")).thenReturn(Optional.of(Objects.requireNonNull(sampleRoom)));
+        when(participantRepository.findByRoomId(Objects.requireNonNull(sampleRoom.getId())))
                 .thenReturn(Collections.emptyList())
                 .thenReturn(List.of(hostParticipant));
         when(participantRepository.save(any(Participant.class))).thenReturn(hostParticipant);

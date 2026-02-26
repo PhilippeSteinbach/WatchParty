@@ -16,7 +16,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-@SuppressWarnings("null")
 @Service
 public class PlaylistService {
 
@@ -36,7 +35,7 @@ public class PlaylistService {
         Objects.requireNonNull(videoUrl, "videoUrl must not be null");
         Objects.requireNonNull(addedBy, "addedBy must not be null");
 
-        Room room = roomRepository.findById(roomId)
+        Room room = roomRepository.findById(Objects.requireNonNull(roomId))
                 .orElseThrow(() -> new EntityNotFoundException("Room not found: " + roomId));
 
         int nextPosition = playlistItemRepository.countByRoomId(roomId) + 1;
@@ -59,9 +58,9 @@ public class PlaylistService {
 
     @Transactional
     public void removeItem(UUID itemId) {
-        PlaylistItem item = playlistItemRepository.findById(itemId)
+        PlaylistItem item = playlistItemRepository.findById(Objects.requireNonNull(itemId))
                 .orElseThrow(() -> new EntityNotFoundException("Playlist item not found: " + itemId));
-        playlistItemRepository.delete(item);
+        playlistItemRepository.delete(Objects.requireNonNull(item));
     }
 
     @Transactional(readOnly = true)
@@ -92,7 +91,7 @@ public class PlaylistService {
 
     @Transactional
     public void reorderItem(UUID itemId, int newPosition) {
-        PlaylistItem item = playlistItemRepository.findById(itemId)
+        PlaylistItem item = playlistItemRepository.findById(Objects.requireNonNull(itemId))
                 .orElseThrow(() -> new EntityNotFoundException("Playlist item not found: " + itemId));
 
         List<PlaylistItem> items = playlistItemRepository.findByRoomIdOrderByPositionAsc(item.getRoom().getId());

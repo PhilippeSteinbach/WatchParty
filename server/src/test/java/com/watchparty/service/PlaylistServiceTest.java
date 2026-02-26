@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@SuppressWarnings("null")
 @ExtendWith(MockitoExtension.class)
 class PlaylistServiceTest {
 
@@ -55,7 +55,7 @@ class PlaylistServiceTest {
 
     @Test
     void whenAddItemThenCreatesItemWithCorrectPosition() {
-        when(roomRepository.findById(roomId)).thenReturn(Optional.of(sampleRoom));
+        when(roomRepository.findById(Objects.requireNonNull(roomId))).thenReturn(Optional.of(sampleRoom));
         when(playlistItemRepository.countByRoomId(roomId)).thenReturn(2);
 
         PlaylistItem savedItem = createItem(UUID.randomUUID(), "https://youtube.com/watch?v=abc", "Alice", 3);
@@ -97,17 +97,17 @@ class PlaylistServiceTest {
         UUID itemId = UUID.randomUUID();
         PlaylistItem item = createItem(itemId, "https://youtube.com/watch?v=1", "Alice", 1);
 
-        when(playlistItemRepository.findById(itemId)).thenReturn(Optional.of(item));
+        when(playlistItemRepository.findById(Objects.requireNonNull(itemId))).thenReturn(Optional.of(item));
 
         playlistService.removeItem(itemId);
 
-        verify(playlistItemRepository).delete(item);
+        verify(playlistItemRepository).delete(Objects.requireNonNull(item));
     }
 
     @Test
     void whenRemoveNonExistentItemThenThrows() {
         UUID itemId = UUID.randomUUID();
-        when(playlistItemRepository.findById(itemId)).thenReturn(Optional.empty());
+        when(playlistItemRepository.findById(Objects.requireNonNull(itemId))).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class, () -> playlistService.removeItem(itemId));
     }

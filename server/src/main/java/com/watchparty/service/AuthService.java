@@ -12,7 +12,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-@SuppressWarnings("null")
 @Service
 public class AuthService {
 
@@ -53,7 +52,7 @@ public class AuthService {
             if (!jwtService.isRefreshToken(claims)) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token type");
             }
-            User user = userRepository.findById(java.util.UUID.fromString(claims.getSubject()))
+            User user = userRepository.findById(java.util.Objects.requireNonNull(java.util.UUID.fromString(claims.getSubject())))
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
             return buildAuthResponse(user);
         } catch (JwtException e) {
