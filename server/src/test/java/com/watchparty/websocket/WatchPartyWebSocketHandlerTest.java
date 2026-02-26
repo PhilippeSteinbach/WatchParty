@@ -320,4 +320,67 @@ class WatchPartyWebSocketHandlerTest {
         assertNotNull(sampleRoom.getStateUpdatedAt());
         verify(roomRepository).save(sampleRoom);
     }
+
+    @Test
+    void whenWebRtcOfferThenForwardsToTarget() {
+        var offer = new WebRtcOfferMessage("session-2", "sdp-offer-data");
+
+        handler.webRtcOffer(offer, headerAccessor);
+
+        verify(messagingTemplate).convertAndSendToUser(
+                eq("session-2"), eq("/queue/webrtc.signal"), messageCaptor.capture(), any(MessageHeaders.class));
+        var envelope = (WebRtcSignalEnvelope) messageCaptor.getValue();
+        assertEquals("offer", envelope.type());
+        assertEquals("session-1", envelope.fromConnectionId());
+        assertEquals("sdp-offer-data", envelope.sdp());
+    }
+
+    @Test
+    void whenWebRtcAnswerThenForwardsToTarget() {
+        var answer = new WebRtcAnswerMessage("session-2", "sdp-answer-data");
+
+        handler.webRtcAnswer(answer, headerAccessor);
+
+        verify(messagingTemplate).convertAndSendToUser(
+                eq("session-2"), eq("/queue/webrtc.signal"), messageCaptor.capture(), any(MessageHeaders.class));
+        var envelope = (WebRtcSignalEnvelope) messageCaptor.getValue();
+        assertEquals("answer", envelope.type());
+        assertEquals("session-1", envelope.fromConnectionId());
+        assertEquals("sdp-answer-data", envelope.sdp());
+    }
+
+    @Test
+    void whenWebRtcIceCandidateThenForwardsToTarget() {
+        var ice = new WebRtcIceCandidateMessage("session-2", "candidate-data", "audio", 0);
+
+        handler.webRtcIceCandidate(ice, headerAccessor);
+
+        verify(messagingTemplate).convertAndSendToUser(
+                eq("session-2"), eq("/queue/webrtc.signal"), messageCaptor.capture(), any(MessageHeaders.class));
+        var envelope = (WebRtcSignalEnvelope) messageCaptor.getValue();
+        assertEquals("ice-candidate", envelope.type());
+        assertEquals("session-1", envelope.fromConnectionId());
+        assertEquals("candidate-data", envelope.candidate());
+        assertEquals("audio", envelope.sdpMid());
+        assertEquals(0, envelope.sdpMLineIndex());
+    }
+
+    @Test
+    void whenJoinRoomThenSendsSessionInfo() {
+        var joinMessage = new JoinRoomMessage("ABCD1234", "Alice");
+
+        when(roomRepository.findByCode("ABCD1234")).thenReturn(Optional.of(sampleRoom));
+        when(participantRepository.findByRoomId(sampleRoom.getId()))
+                .thenReturn(Collections.emptyList())
+                .thenReturn(List.of(hostParticipant));
+        when(participantRepository.save(any(Participant.class))).thenReturn(hostParticipant);
+        when(playlistService.getPlaylist(sampleRoom.getId()))
+                .thenReturn(new PlaylistResponse(Collections.emptyList()));
+
+        handler.joinRoom(joinMessage, headerAccessor);
+
+        // Verify session.info was sent
+        verify(messagingTemplate).convertAndSendToUser(
+                eq("session-1"), eq("/queue/session.info"), messageCaptor.capture(), any(MessageHeaders.class));
+    }
 }

@@ -1,0 +1,39 @@
+<div class="media-controls">
+  @if (!isActive()) {
+    <button
+      class="media-btn start-btn"
+      (click)="startMedia.emit()"
+      aria-label="Start camera and microphone"
+      title="Start camera & mic"
+    >
+      📹 Join Video
+    </button>
+  } @else {
+    <button
+      class="media-btn"
+      [class.off]="!isCameraOn()"
+      (click)="toggleCamera.emit()"
+      [attr.aria-label]="isCameraOn() ? 'Turn off camera' : 'Turn on camera'"
+      [title]="isCameraOn() ? 'Turn off camera' : 'Turn on camera'"
+    >
+      {{ isCameraOn() ? '📹' : '🚫' }}
+    </button>
+    <button
+      class="media-btn"
+      [class.off]="!isMicOn()"
+      (click)="toggleMic.emit()"
+      [attr.aria-label]="isMicOn() ? 'Mute microphone' : 'Unmute microphone'"
+      [title]="isMicOn() ? 'Mute' : 'Unmute'"
+    >
+      {{ isMicOn() ? '🎤' : '🔇' }}
+    </button>
+    <button
+      class="media-btn stop-btn"
+      (click)="stopMedia.emit()"
+      aria-label="Leave video call"
+      title="Leave video"
+    >
+      ✖
+    </button>
+  }
+</div>

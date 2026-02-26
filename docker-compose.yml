@@ -24,11 +24,19 @@ services:
       DB_PORT: 5432
       DB_NAME: watchparty
       DB_USERNAME: watchparty
-      DB_PASSWORD: watchparty
-      SPRING_PROFILES_ACTIVE: dev
+      DB_PASSWORD: ${DB_PASSWORD:-watchparty}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in production}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:*}
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   client:
     build: ./client

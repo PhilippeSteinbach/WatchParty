@@ -1,4 +1,13 @@
 <div class="watch-room">
+  <!-- Toast notifications -->
+  @if (notifications().length > 0) {
+    <div class="toast-container" aria-live="polite">
+      @for (note of notifications(); track $index) {
+        <div class="toast">{{ note }}</div>
+      }
+    </div>
+  }
+
   <header class="toolbar">
     <div class="room-info">
       <span class="room-label">Room:</span>
@@ -9,41 +18,75 @@
       <button class="sync-btn" (click)="requestSync()">🔄 Sync</button>
     </div>
 
-    <form class="video-form" (ngSubmit)="changeVideo()">
-      <input
-        type="text"
-        placeholder="Paste YouTube URL…"
-        [ngModel]="videoUrlInput()"
-        (ngModelChange)="videoUrlInput.set($event)"
-        name="videoUrl"
-      />
-      <button type="submit">Load</button>
-    </form>
+    <div class="toolbar-right">
+      @if (!webRtc.isActive()) {
+        <app-media-controls
+          [isActive]="false"
+          [isCameraOn]="false"
+          [isMicOn]="false"
+          (startMedia)="onStartMedia()"
+        />
+      }
+
+      <form class="video-form" (ngSubmit)="changeVideo()">
+        <input
+          type="text"
+          placeholder="Paste YouTube URL…"
+          [ngModel]="videoUrlInput()"
+          (ngModelChange)="videoUrlInput.set($event)"
+          name="videoUrl"
+        />
+        <button type="submit">Load</button>
+      </form>
+    </div>
   </header>
+
+  @if (webRtc.isActive() || webRtc.remoteStreams().length > 0) {
+    <div class="video-grid-area">
+      <app-video-grid
+        [localStream]="webRtc.localStream()"
+        [remoteStreams]="webRtc.remoteStreams()"
+        [isCameraOn]="webRtc.isCameraOn()"
+        [isMicOn]="webRtc.isMicOn()"
+        (toggleCamera)="onToggleCamera()"
+        (toggleMic)="onToggleMic()"
+        (stopMedia)="onStopMedia()"
+      />
+    </div>
+  }
 
   <div class="main-content">
     <div class="player-area">
-      <app-youtube-player
-        [videoUrl]="currentVideoUrl"
-        [isPlaying]="isPlaying"
-        [currentTime]="currentTime"
-        [playbackRate]="playbackRate()"
-        [recommendations]="displayRecommendations()"
-        (playerEvent)="onPlayerEvent($event)"
-        (overlayClick)="onPlayPause()"
-        (playRecommendation)="onPlayRecommendation($event)"
-        (queueRecommendation)="onQueueRecommendation($event)"
-      />
-      <app-video-controls
-        [isPlaying]="isPlaying"
-        [currentTime]="polledTime()"
-        [duration]="polledDuration()"
-        [canControl]="true"
-        [hasVideo]="!!currentVideoUrl"
-        (playPause)="onPlayPause()"
-        (seek)="onSeek($event)"
-        (volumeChange)="onVolumeChange($event)"
-      />
+      @if (currentVideoUrl) {
+        <div class="youtube-area">
+          <app-youtube-player
+            [videoUrl]="currentVideoUrl"
+            [isPlaying]="isPlaying"
+            [currentTime]="currentTime"
+            [playbackRate]="playbackRate()"
+            [recommendations]="displayRecommendations()"
+            (playerEvent)="onPlayerEvent($event)"
+            (overlayClick)="onPlayPause()"
+            (playRecommendation)="onPlayRecommendation($event)"
+            (queueRecommendation)="onQueueRecommendation($event)"
+          />
+        </div>
+        <app-video-controls
+          [isPlaying]="isPlaying"
+          [currentTime]="polledTime()"
+          [duration]="polledDuration()"
+          [canControl]="true"
+          [hasVideo]="!!currentVideoUrl"
+          (playPause)="onPlayPause()"
+          (seek)="onSeek($event)"
+          (volumeChange)="onVolumeChange($event)"
+        />
+      } @else {
+        <div class="empty-player-placeholder">
+          <span class="placeholder-icon" aria-hidden="true">🎬</span>
+          <p class="placeholder-text">Füge ein Video über die URL-Leiste oben oder die Playlist hinzu, um loszulegen.</p>
+        </div>
+      }
     </div>
 
     <aside class="sidebar" [class.collapsed]="sidebarCollapsed()">

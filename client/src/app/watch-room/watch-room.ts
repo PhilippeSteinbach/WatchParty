@@ -8,30 +8,35 @@ import {
   effect,
   viewChild,
   OnDestroy,
+  HostListener,
 } from '@angular/core';
 import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { switchMap, map, distinctUntilChanged } from 'rxjs/operators';
+import { switchMap, map, distinctUntilChanged, pairwise } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { WebSocketService } from '../services/websocket.service';
+import { WebRtcService } from '../services/webrtc.service';
 import { VideoRecommendationService } from '../services/video-recommendation.service';
 import { YoutubePlayerComponent } from '../youtube-player/youtube-player';
 import { VideoControlsComponent } from '../video-controls/video-controls';
 import { ParticipantListComponent } from '../participant-list/participant-list';
 import { ChatPanelComponent } from '../chat-panel/chat-panel';
 import { PlaylistPanelComponent } from '../playlist-panel/playlist-panel';
+import { VideoGridComponent } from '../video-grid/video-grid';
+import { MediaControlsComponent } from '../media-controls/media-controls';
 import { PlaylistItem, PlayerState, VideoRecommendation } from '../models/room.model';
 
 @Component({
   selector: 'app-watch-room',
   standalone: true,
-  imports: [FormsModule, YoutubePlayerComponent, VideoControlsComponent, ParticipantListComponent, ChatPanelComponent, PlaylistPanelComponent],
+  imports: [FormsModule, YoutubePlayerComponent, VideoControlsComponent, ParticipantListComponent, ChatPanelComponent, PlaylistPanelComponent, VideoGridComponent, MediaControlsComponent],
   templateUrl: './watch-room.html',
   styleUrl: './watch-room.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WatchRoomComponent implements OnDestroy {
   private readonly ws = inject(WebSocketService);
+  readonly webRtc = inject(WebRtcService);
   private readonly recService = inject(VideoRecommendationService);
 
   readonly roomCode = input.required<string>();
@@ -50,6 +55,7 @@ export class WatchRoomComponent implements OnDestroy {
   readonly polledTime = signal(0);
   readonly polledDuration = signal(0);
   readonly recommendations = signal<VideoRecommendation[]>([]);
+  readonly notifications = signal<string[]>([]);
 
   /** YouTube API recommendations for the currently playing video */
   readonly displayRecommendations = computed<VideoRecommendation[]>(() => this.recommendations());
@@ -111,6 +117,55 @@ export class WatchRoomComponent implements OnDestroy {
         this.polledDuration.set(player.getDuration());
       }
     }, 250);
+
+    // Track participant join/leave for toast notifications
+    toObservable(this.ws.participants).pipe(
+      pairwise(),
+      takeUntilDestroyed()
+    ).subscribe(([prev, curr]) => {
+      const prevIds = new Set(prev.map(p => p.id));
+      const currIds = new Set(curr.map(p => p.id));
+      for (const p of curr) {
+        if (!prevIds.has(p.id)) {
+          this.addNotification(`${p.nickname} joined the room`);
+        }
+      }
+      for (const p of prev) {
+        if (!currIds.has(p.id)) {
+          this.addNotification(`${p.nickname} left the room`);
+        }
+      }
+    });
+  }
+
+  @HostListener('window:keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent): void {
+    // Ignore when typing in input/textarea
+    const target = event.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+    switch (event.code) {
+      case 'Space':
+        event.preventDefault();
+        this.onPlayPause();
+        break;
+      case 'KeyM':
+        if (this.webRtc.isActive()) {
+          this.webRtc.toggleMic();
+        }
+        break;
+      case 'KeyF':
+        this.toggleFullscreen();
+        break;
+    }
+  }
+
+  private toggleFullscreen(): void {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      document.documentElement.requestFullscreen();
+    }
   }
 
   ngOnDestroy(): void {
@@ -118,6 +173,7 @@ export class WatchRoomComponent implements OnDestroy {
     if (this.timePollingInterval) {
       clearInterval(this.timePollingInterval);
     }
+    this.webRtc.stop();
   }
 
   private startPositionReporting(): void {
@@ -235,6 +291,33 @@ export class WatchRoomComponent implements OnDestroy {
 
   onQueueRecommendation(rec: VideoRecommendation): void {
     this.ws.addToPlaylist(rec.videoUrl);
+  }
+
+  async onStartMedia(): Promise<void> {
+    try {
+      await this.webRtc.start();
+    } catch {
+      // Error is already stored in webRtc.mediaError
+    }
+  }
+
+  onStopMedia(): void {
+    this.webRtc.stop();
+  }
+
+  onToggleCamera(): void {
+    this.webRtc.toggleCamera();
+  }
+
+  onToggleMic(): void {
+    this.webRtc.toggleMic();
+  }
+
+  addNotification(message: string): void {
+    this.notifications.update(n => [...n, message]);
+    setTimeout(() => {
+      this.notifications.update(n => n.slice(1));
+    }, 4000);
   }
 
   private extractYouTubeId(url: string): string {

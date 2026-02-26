@@ -15,6 +15,7 @@ export interface Participant {
   id: string;
   nickname: string;
   isHost: boolean;
+  connectionId: string;
 }
 
 export type PlayerAction = 'PLAY' | 'PAUSE' | 'SEEK' | 'CHANGE_VIDEO' | 'SYNC' | 'ENDED';
@@ -68,4 +69,21 @@ export interface VideoRecommendation {
   thumbnailUrl: string;
   channelName: string;
   durationSeconds?: number;
+}
+
+export type WebRtcSignalType = 'offer' | 'answer' | 'ice-candidate';
+
+export interface WebRtcSignalEnvelope {
+  type: WebRtcSignalType;
+  fromConnectionId: string;
+  sdp?: string;
+  candidate?: string;
+  sdpMid?: string;
+  sdpMLineIndex?: number;
+}
+
+export interface RemotePeer {
+  connectionId: string;
+  nickname: string;
+  stream: MediaStream | null;
 }
