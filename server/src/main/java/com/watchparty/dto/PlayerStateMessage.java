@@ -1,8 +1,10 @@
 package com.watchparty.dto;
 
+import org.jspecify.annotations.Nullable;
+
 public record PlayerStateMessage(
         String action,
-        String videoUrl,
+        @Nullable String videoUrl,
         double currentTimeSeconds,
         boolean isPlaying) {
 }

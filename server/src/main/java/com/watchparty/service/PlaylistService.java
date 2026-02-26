@@ -7,12 +7,16 @@ import com.watchparty.entity.Room;
 import com.watchparty.repository.PlaylistItemRepository;
 import com.watchparty.repository.RoomRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
+@SuppressWarnings("null")
 @Service
 public class PlaylistService {
 
@@ -29,26 +33,28 @@ public class PlaylistService {
 
     @Transactional
     public PlaylistItemResponse addItem(UUID roomId, String videoUrl, String addedBy) {
+        Objects.requireNonNull(videoUrl, "videoUrl must not be null");
+        Objects.requireNonNull(addedBy, "addedBy must not be null");
+
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found: " + roomId));
 
         int nextPosition = playlistItemRepository.countByRoomId(roomId) + 1;
 
-        var item = new PlaylistItem();
+        PlaylistItem item = new PlaylistItem();
         item.setRoom(room);
         item.setVideoUrl(videoUrl);
         item.setAddedBy(addedBy);
         item.setPosition(nextPosition);
 
-        YouTubeService.VideoMetadata metadata = youTubeService.fetchMetadata(videoUrl);
-        if (metadata != null) {
+        youTubeService.fetchMetadata(videoUrl).ifPresent(metadata -> {
             item.setTitle(metadata.title());
             item.setThumbnailUrl(metadata.thumbnailUrl());
             item.setDurationSeconds(metadata.durationSeconds());
-        }
+        });
 
-        item = playlistItemRepository.save(item);
-        return toResponse(item);
+        PlaylistItem saved = playlistItemRepository.save(item);
+        return toResponse(saved);
     }
 
     @Transactional
@@ -59,6 +65,7 @@ public class PlaylistService {
     }
 
     @Transactional(readOnly = true)
+    @NonNull
     public PlaylistResponse getPlaylist(UUID roomId) {
         List<PlaylistItemResponse> items = playlistItemRepository.findByRoomIdOrderByPositionAsc(roomId)
                 .stream()
@@ -78,10 +85,9 @@ public class PlaylistService {
     }
 
     @Transactional(readOnly = true)
-    public PlaylistItemResponse getNextItem(UUID roomId, int currentPosition) {
+    public Optional<PlaylistItemResponse> getNextItem(UUID roomId, int currentPosition) {
         return playlistItemRepository.findFirstByRoomIdAndPositionGreaterThanOrderByPositionAsc(roomId, currentPosition)
-                .map(this::toResponse)
-                .orElse(null);
+                .map(this::toResponse);
     }
 
     @Transactional

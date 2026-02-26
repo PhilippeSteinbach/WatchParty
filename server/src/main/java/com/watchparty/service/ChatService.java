@@ -6,6 +6,7 @@ import com.watchparty.entity.Room;
 import com.watchparty.repository.ChatMessageRepository;
 import com.watchparty.repository.RoomRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +14,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+@SuppressWarnings("null")
 @Service
 public class ChatService {
 
@@ -28,6 +30,7 @@ public class ChatService {
     }
 
     @Transactional
+    @NonNull
     public ChatMessageResponse sendMessage(UUID roomId, String nickname, String content) {
         Instant windowStart = Instant.now().minusSeconds(RATE_LIMIT_WINDOW_SECONDS);
         long recentCount = chatMessageRepository.countByRoomIdAndNicknameAndSentAtAfter(roomId, nickname, windowStart);
@@ -40,7 +43,7 @@ public class ChatService {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found: " + roomId));
 
-        var message = new ChatMessage();
+        ChatMessage message = new ChatMessage();
         message.setRoom(room);
         message.setNickname(nickname);
         message.setContent(content);
@@ -50,6 +53,7 @@ public class ChatService {
     }
 
     @Transactional
+    @NonNull
     public ChatMessageResponse addReaction(UUID messageId, String emoji) {
         ChatMessage message = chatMessageRepository.findById(messageId)
                 .orElseThrow(() -> new EntityNotFoundException("Message not found: " + messageId));
@@ -60,6 +64,7 @@ public class ChatService {
     }
 
     @Transactional(readOnly = true)
+    @NonNull
     public List<ChatMessageResponse> getChatHistory(UUID roomId) {
         List<ChatMessage> messages = chatMessageRepository.findTop200ByRoomIdOrderBySentAtDesc(roomId);
         return messages.reversed().stream()

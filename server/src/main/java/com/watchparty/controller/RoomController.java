@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +30,7 @@ public class RoomController {
     @ApiResponse(responseCode = "201", description = "Room created successfully")
     public RoomResponse createRoom(
             @Valid @RequestBody CreateRoomRequest request,
-            @AuthenticationPrincipal AuthenticatedUser user) {
+            @AuthenticationPrincipal @Nullable AuthenticatedUser user) {
         return roomService.createRoom(request, user != null ? user.userId() : null);
     }
 

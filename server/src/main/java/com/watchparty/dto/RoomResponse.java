@@ -1,6 +1,7 @@
 package com.watchparty.dto;
 
 import com.watchparty.entity.ControlMode;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -12,7 +13,7 @@ public record RoomResponse(
         ControlMode controlMode,
         int participantCount,
         Instant createdAt,
-        UUID ownerId,
+        @Nullable UUID ownerId,
         boolean isPermanent
 ) {
 }

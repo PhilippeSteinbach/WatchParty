@@ -1,6 +1,8 @@
 package com.watchparty.entity;
 
 import jakarta.persistence.*;
+import org.jspecify.annotations.Nullable;
+
 import java.time.Instant;
 import java.util.UUID;
 
@@ -23,7 +25,7 @@ public class Participant {
     private boolean isHost;
 
     @Column(name = "user_id")
-    private UUID userId;
+    private @Nullable UUID userId;
 
     @Column(name = "joined_at", nullable = false, updatable = false)
     private Instant joinedAt;
@@ -85,6 +87,6 @@ public class Participant {
         this.room = room;
     }
 
-    public UUID getUserId() { return userId; }
-    public void setUserId(UUID userId) { this.userId = userId; }
+    public @Nullable UUID getUserId() { return userId; }
+    public void setUserId(@Nullable UUID userId) { this.userId = userId; }
 }

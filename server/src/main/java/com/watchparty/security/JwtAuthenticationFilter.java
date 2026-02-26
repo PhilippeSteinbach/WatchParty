@@ -1,11 +1,13 @@
 package com.watchparty.security;
 
 import com.watchparty.service.JwtService;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -25,16 +27,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain chain)
             throws ServletException, IOException {
-        var header = request.getHeader("Authorization");
+        String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
-            var token = header.substring(7);
+            String token = header.substring(7);
             try {
-                var claims = jwtService.parseToken(token);
+                Claims claims = jwtService.parseToken(token);
                 if (jwtService.isAccessToken(claims)) {
-                    var userId = UUID.fromString(claims.getSubject());
-                    var email = claims.get("email", String.class);
+                    UUID userId = UUID.fromString(claims.getSubject());
+                    String email = claims.get("email", String.class);
                     var principal = new AuthenticatedUser(userId, email);
                     var auth = new UsernamePasswordAuthenticationToken(principal, null, List.of());
                     SecurityContextHolder.getContext().setAuthentication(auth);

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Global exception handler returning RFC 9457 Problem Details responses.
@@ -22,7 +23,7 @@ public class GlobalExceptionHandler {
                 "Validation failed"
         );
         problemDetail.setTitle("Bad Request");
-        problemDetail.setType(URI.create("https://watchparty.com/errors/validation"));
+        problemDetail.setType(Objects.requireNonNull(URI.create("https://watchparty.com/errors/validation")));
 
         var errors = ex.getBindingResult().getFieldErrors().stream()
                 .map(error -> Map.of("field", error.getField(), "message", error.getDefaultMessage()))
@@ -39,7 +40,7 @@ public class GlobalExceptionHandler {
                 ex.getMessage()
         );
         problemDetail.setTitle("Not Found");
-        problemDetail.setType(URI.create("https://watchparty.com/errors/room-not-found"));
+        problemDetail.setType(Objects.requireNonNull(URI.create("https://watchparty.com/errors/room-not-found")));
         return problemDetail;
     }
 
@@ -63,5 +64,4 @@ public class GlobalExceptionHandler {
         return problemDetail;
     }
 
-    private record FieldError(String field, String message) {}
 }

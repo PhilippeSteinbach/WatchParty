@@ -10,6 +10,7 @@ import com.watchparty.repository.PlaylistItemRepository;
 import com.watchparty.repository.RoomRepository;
 import com.watchparty.service.ChatService;
 import com.watchparty.service.PlaylistService;
+import org.springframework.lang.NonNull;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -23,6 +24,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 @Controller
@@ -52,7 +55,7 @@ public class WatchPartyWebSocketHandler {
     @MessageMapping("/room.join")
     @Transactional
     public void joinRoom(@Payload JoinRoomMessage message, SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
+        String sessionId = requireSessionId(headerAccessor);
 
         Room room = roomRepository.findByCode(message.roomCode())
                 .orElseThrow(() -> new RoomNotFoundException(message.roomCode()));
@@ -66,9 +69,9 @@ public class WatchPartyWebSocketHandler {
         participant.setHost(isFirstParticipant);
         participant.setRoom(room);
 
-        var sessionAttrs = headerAccessor.getSessionAttributes();
+        Map<String, Object> sessionAttrs = headerAccessor.getSessionAttributes();
         if (sessionAttrs != null) {
-            var userId = (java.util.UUID) sessionAttrs.get(WebSocketAuthChannelInterceptor.USER_ID_ATTR);
+            UUID userId = (UUID) sessionAttrs.get(WebSocketAuthChannelInterceptor.USER_ID_ATTR);
             if (userId != null) {
                 participant.setUserId(userId);
             }
@@ -85,7 +88,7 @@ public class WatchPartyWebSocketHandler {
 
         // Send the session ID back so the client knows its own connectionId for WebRTC
         messagingTemplate.convertAndSendToUser(sessionId, "/queue/session.info",
-                Map.of("connectionId", sessionId),
+                Objects.requireNonNull(Map.of("connectionId", sessionId)),
                 createHeaders(sessionId));
 
         PlaylistResponse playlist = playlistService.getPlaylist(room.getId());
@@ -107,14 +110,14 @@ public class WatchPartyWebSocketHandler {
     @MessageMapping("/room.leave")
     @Transactional
     public void leaveRoom(SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
+        String sessionId = requireSessionId(headerAccessor);
         handleParticipantLeave(sessionId);
     }
 
     @MessageMapping("/room.player")
     @Transactional
     public void playerAction(@Payload PlayerStateMessage message, SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
+        String sessionId = requireSessionId(headerAccessor);
 
         Participant participant = participantRepository.findByConnectionId(sessionId)
                 .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
@@ -159,7 +162,7 @@ public class WatchPartyWebSocketHandler {
     @MessageMapping("/room.sync")
     @Transactional(readOnly = true)
     public void syncState(SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
+        String sessionId = requireSessionId(headerAccessor);
 
         Participant participant = participantRepository.findByConnectionId(sessionId)
                 .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
@@ -171,7 +174,7 @@ public class WatchPartyWebSocketHandler {
     @MessageMapping("/room.position.report")
     @Transactional(readOnly = true)
     public void reportPosition(@Payload PositionReportMessage report, SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
+        String sessionId = requireSessionId(headerAccessor);
 
         Participant participant = participantRepository.findByConnectionId(sessionId)
                 .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
@@ -218,15 +221,17 @@ public class WatchPartyWebSocketHandler {
     }
 
     public void handleParticipantLeave(String sessionId) {
-        var participantOpt = participantRepository.findByConnectionId(sessionId);
+        Optional<Participant> participantOpt = participantRepository.findByConnectionId(sessionId);
         if (participantOpt.isEmpty()) {
             return;
         }
 
         Participant participant = participantOpt.get();
-        UUID roomId = participant.getRoom().getId();
-        Room room = roomRepository.findById(roomId).orElse(null);
-        if (room == null) return;
+        UUID roomId = Objects.requireNonNull(participant.getRoom().getId());
+        Optional<Room> roomOpt = roomRepository.findById(roomId);
+        if (roomOpt.isEmpty()) return;
+
+        Room room = roomOpt.get();
 
         boolean wasHost = participant.isHost();
 
@@ -254,7 +259,7 @@ public class WatchPartyWebSocketHandler {
     @MessageMapping("/room.chat")
     @Transactional
     public void chatMessage(@Payload ChatMessageRequest message, SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
+        String sessionId = requireSessionId(headerAccessor);
 
         Participant participant = participantRepository.findByConnectionId(sessionId)
                 .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
@@ -267,7 +272,7 @@ public class WatchPartyWebSocketHandler {
     @MessageMapping("/room.chat.reaction")
     @Transactional
     public void chatReaction(@Payload ChatReactionRequest request, SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
+        String sessionId = requireSessionId(headerAccessor);
 
         Participant participant = participantRepository.findByConnectionId(sessionId)
                 .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
@@ -280,7 +285,7 @@ public class WatchPartyWebSocketHandler {
     @MessageMapping("/room.chat.history")
     @Transactional(readOnly = true)
     public void chatHistory(SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
+        String sessionId = requireSessionId(headerAccessor);
 
         Participant participant = participantRepository.findByConnectionId(sessionId)
                 .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
@@ -289,6 +294,11 @@ public class WatchPartyWebSocketHandler {
         List<ChatMessageResponse> history = chatService.getChatHistory(room.getId());
         messagingTemplate.convertAndSendToUser(sessionId, "/queue/chat.history", history,
                 createHeaders(sessionId));
+    }
+
+    @NonNull
+    private static String requireSessionId(SimpMessageHeaderAccessor headerAccessor) {
+        return Objects.requireNonNull(headerAccessor.getSessionId(), "WebSocket session ID must not be null");
     }
 
     private org.springframework.messaging.MessageHeaders createHeaders(String sessionId) {
@@ -301,7 +311,7 @@ public class WatchPartyWebSocketHandler {
     @MessageMapping("/room.playlist.add")
     @Transactional
     public void addPlaylistItem(@Payload AddPlaylistItemRequest request, SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
+        String sessionId = requireSessionId(headerAccessor);
 
         Participant participant = participantRepository.findByConnectionId(sessionId)
                 .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
@@ -316,7 +326,7 @@ public class WatchPartyWebSocketHandler {
     @MessageMapping("/room.playlist.add-bulk")
     @Transactional
     public void addBulkPlaylistItems(@Payload BulkAddPlaylistRequest request, SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
+        String sessionId = requireSessionId(headerAccessor);
 
         Participant participant = participantRepository.findByConnectionId(sessionId)
                 .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
@@ -333,7 +343,7 @@ public class WatchPartyWebSocketHandler {
     @MessageMapping("/room.playlist.playNow")
     @Transactional
     public void playNow(@Payload AddPlaylistItemRequest request, SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
+        String sessionId = requireSessionId(headerAccessor);
 
         Participant participant = participantRepository.findByConnectionId(sessionId)
                 .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
@@ -362,7 +372,7 @@ public class WatchPartyWebSocketHandler {
     @MessageMapping("/room.playlist.remove")
     @Transactional
     public void removePlaylistItem(@Payload Map<String, String> payload, SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
+        String sessionId = requireSessionId(headerAccessor);
 
         Participant participant = participantRepository.findByConnectionId(sessionId)
                 .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
@@ -378,7 +388,7 @@ public class WatchPartyWebSocketHandler {
     @MessageMapping("/room.playlist")
     @Transactional(readOnly = true)
     public void getPlaylist(SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
+        String sessionId = requireSessionId(headerAccessor);
 
         Participant participant = participantRepository.findByConnectionId(sessionId)
                 .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
@@ -391,7 +401,7 @@ public class WatchPartyWebSocketHandler {
     @MessageMapping("/room.playlist.next")
     @Transactional
     public void nextPlaylistItem(SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
+        String sessionId = requireSessionId(headerAccessor);
 
         Participant participant = participantRepository.findByConnectionId(sessionId)
                 .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
@@ -399,9 +409,9 @@ public class WatchPartyWebSocketHandler {
         Room room = participant.getRoom();
         int currentPosition = playlistService.getCurrentPosition(room.getId(), room.getCurrentVideoUrl());
 
-        PlaylistItemResponse nextItem = playlistService.getNextItem(room.getId(), currentPosition);
-        if (nextItem != null) {
-            room.setCurrentVideoUrl(nextItem.videoUrl());
+        Optional<PlaylistItemResponse> nextItem = playlistService.getNextItem(room.getId(), currentPosition);
+        if (nextItem.isPresent()) {
+            room.setCurrentVideoUrl(nextItem.get().videoUrl());
             room.setCurrentTimeSeconds(0);
             room.setPlaying(true);
             room.setStateUpdatedAt(Instant.now());
@@ -417,7 +427,7 @@ public class WatchPartyWebSocketHandler {
     @MessageMapping("/room.playlist.reorder")
     @Transactional
     public void reorderPlaylistItem(@Payload Map<String, Object> payload, SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
+        String sessionId = requireSessionId(headerAccessor);
 
         Participant participant = participantRepository.findByConnectionId(sessionId)
                 .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
@@ -432,39 +442,40 @@ public class WatchPartyWebSocketHandler {
         messagingTemplate.convertAndSend("/topic/room." + room.getCode() + ".playlist", playlist);
     }
 
-    private static final int MAX_WEBRTC_PARTICIPANTS = 6;
-
     @MessageMapping("/room.webrtc.offer")
     public void webRtcOffer(@Payload WebRtcOfferMessage message, SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
+        String sessionId = requireSessionId(headerAccessor);
+        String targetId = Objects.requireNonNull(message.targetConnectionId());
         messagingTemplate.convertAndSendToUser(
-                message.targetConnectionId(), "/queue/webrtc.signal",
+                targetId, "/queue/webrtc.signal",
                 WebRtcSignalEnvelope.offer(sessionId, message.sdp()),
-                createHeaders(message.targetConnectionId()));
+                createHeaders(targetId));
     }
 
     @MessageMapping("/room.webrtc.answer")
     public void webRtcAnswer(@Payload WebRtcAnswerMessage message, SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
+        String sessionId = requireSessionId(headerAccessor);
+        String targetId = Objects.requireNonNull(message.targetConnectionId());
         messagingTemplate.convertAndSendToUser(
-                message.targetConnectionId(), "/queue/webrtc.signal",
+                targetId, "/queue/webrtc.signal",
                 WebRtcSignalEnvelope.answer(sessionId, message.sdp()),
-                createHeaders(message.targetConnectionId()));
+                createHeaders(targetId));
     }
 
     @MessageMapping("/room.webrtc.ice")
     public void webRtcIceCandidate(@Payload WebRtcIceCandidateMessage message, SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
+        String sessionId = requireSessionId(headerAccessor);
+        String targetId = Objects.requireNonNull(message.targetConnectionId());
         messagingTemplate.convertAndSendToUser(
-                message.targetConnectionId(), "/queue/webrtc.signal",
+                targetId, "/queue/webrtc.signal",
                 WebRtcSignalEnvelope.iceCandidate(sessionId, message.candidate(), message.sdpMid(), message.sdpMLineIndex()),
-                createHeaders(message.targetConnectionId()));
+                createHeaders(targetId));
     }
 
     @MessageMapping("/room.webrtc.camera-state")
     @Transactional(readOnly = true)
     public void webRtcCameraState(@Payload Map<String, Object> payload, SimpMessageHeaderAccessor headerAccessor) {
-        String sessionId = headerAccessor.getSessionId();
+        String sessionId = requireSessionId(headerAccessor);
         boolean enabled = Boolean.TRUE.equals(payload.get("enabled"));
 
         Participant participant = participantRepository.findByConnectionId(sessionId)

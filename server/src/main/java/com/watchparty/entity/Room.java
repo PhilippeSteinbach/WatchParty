@@ -1,6 +1,8 @@
 package com.watchparty.entity;
 
 import jakarta.persistence.*;
+import org.jspecify.annotations.Nullable;
+
 import java.time.Instant;
 import java.util.UUID;
 import java.security.SecureRandom;
@@ -29,10 +31,10 @@ public class Room {
     private ControlMode controlMode;
 
     @Column(name = "host_connection_id")
-    private String hostConnectionId;
+    private @Nullable String hostConnectionId;
 
     @Column(name = "current_video_url")
-    private String currentVideoUrl;
+    private @Nullable String currentVideoUrl;
 
     @Column(name = "current_time_seconds", nullable = false)
     private double currentTimeSeconds;
@@ -41,16 +43,16 @@ public class Room {
     private boolean isPlaying;
 
     @Column(name = "state_updated_at")
-    private Instant stateUpdatedAt;
+    private @Nullable Instant stateUpdatedAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     @Column(name = "expires_at")
-    private Instant expiresAt;
+    private @Nullable Instant expiresAt;
 
     @Column(name = "owner_id")
-    private UUID ownerId;
+    private @Nullable UUID ownerId;
 
     @Column(name = "is_permanent", nullable = false)
     private boolean isPermanent;
@@ -106,19 +108,19 @@ public class Room {
         this.controlMode = controlMode;
     }
 
-    public String getHostConnectionId() {
+    public @Nullable String getHostConnectionId() {
         return hostConnectionId;
     }
 
-    public void setHostConnectionId(String hostConnectionId) {
+    public void setHostConnectionId(@Nullable String hostConnectionId) {
         this.hostConnectionId = hostConnectionId;
     }
 
-    public String getCurrentVideoUrl() {
+    public @Nullable String getCurrentVideoUrl() {
         return currentVideoUrl;
     }
 
-    public void setCurrentVideoUrl(String currentVideoUrl) {
+    public void setCurrentVideoUrl(@Nullable String currentVideoUrl) {
         this.currentVideoUrl = currentVideoUrl;
     }
 
@@ -146,24 +148,24 @@ public class Room {
         this.createdAt = createdAt;
     }
 
-    public Instant getExpiresAt() {
+    public @Nullable Instant getExpiresAt() {
         return expiresAt;
     }
 
-    public void setExpiresAt(Instant expiresAt) {
+    public void setExpiresAt(@Nullable Instant expiresAt) {
         this.expiresAt = expiresAt;
     }
 
-    public Instant getStateUpdatedAt() {
+    public @Nullable Instant getStateUpdatedAt() {
         return stateUpdatedAt;
     }
 
-    public void setStateUpdatedAt(Instant stateUpdatedAt) {
+    public void setStateUpdatedAt(@Nullable Instant stateUpdatedAt) {
         this.stateUpdatedAt = stateUpdatedAt;
     }
 
-    public UUID getOwnerId() { return ownerId; }
-    public void setOwnerId(UUID ownerId) { this.ownerId = ownerId; }
+    public @Nullable UUID getOwnerId() { return ownerId; }
+    public void setOwnerId(@Nullable UUID ownerId) { this.ownerId = ownerId; }
 
     public boolean isPermanent() { return isPermanent; }
     public void setPermanent(boolean permanent) { isPermanent = permanent; }

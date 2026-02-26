@@ -14,7 +14,7 @@ public class WebSocketEventListener implements ApplicationListener<SessionDiscon
     }
 
     @Override
-    public void onApplicationEvent(SessionDisconnectEvent event) {
+    public void onApplicationEvent(@org.springframework.lang.NonNull SessionDisconnectEvent event) {
         String sessionId = event.getSessionId();
         handler.handleParticipantLeave(sessionId);
     }

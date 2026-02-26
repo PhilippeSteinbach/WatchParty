@@ -5,12 +5,14 @@ import com.watchparty.dto.LoginRequest;
 import com.watchparty.dto.RegisterRequest;
 import com.watchparty.entity.User;
 import com.watchparty.repository.UserRepository;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+@SuppressWarnings("null")
 @Service
 public class AuthService {
 
@@ -28,7 +30,7 @@ public class AuthService {
         if (userRepository.existsByEmail(request.email())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
         }
-        var user = new User();
+        User user = new User();
         user.setEmail(request.email());
         user.setDisplayName(request.displayName());
         user.setPasswordHash(passwordEncoder.encode(request.password()));
@@ -37,7 +39,7 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        var user = userRepository.findByEmail(request.email())
+        User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
@@ -47,11 +49,11 @@ public class AuthService {
 
     public AuthResponse refresh(String refreshToken) {
         try {
-            var claims = jwtService.parseToken(refreshToken);
+            Claims claims = jwtService.parseToken(refreshToken);
             if (!jwtService.isRefreshToken(claims)) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token type");
             }
-            var user = userRepository.findById(java.util.UUID.fromString(claims.getSubject()))
+            User user = userRepository.findById(java.util.UUID.fromString(claims.getSubject()))
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
             return buildAuthResponse(user);
         } catch (JwtException e) {

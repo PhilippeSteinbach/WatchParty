@@ -34,12 +34,14 @@ export class VideoGridComponent {
   private readonly remoteVideoRefs = viewChildren<ElementRef<HTMLVideoElement>>('remoteVideo');
 
   constructor() {
-    // Attach local stream to the local video element
+    // Attach local stream to the local video element (always muted to prevent self-echo)
     effect(() => {
       const stream = this.localStream();
       const refs = this.localVideoRef();
       if (refs.length > 0 && stream) {
-        refs[0].nativeElement.srcObject = stream;
+        const el = refs[0].nativeElement;
+        el.srcObject = stream;
+        el.muted = true;
       }
     });
 
