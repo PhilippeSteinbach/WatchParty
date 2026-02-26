@@ -1,5 +1,6 @@
 package com.watchparty.service;
 
+import com.watchparty.entity.Room;
 import com.watchparty.repository.ParticipantRepository;
 import com.watchparty.repository.RoomRepository;
 import org.slf4j.Logger;
@@ -44,9 +45,9 @@ public class RoomCleanupService {
     @Scheduled(fixedRate = 10 * 60 * 1000)
     @Transactional
     public void deleteExpiredRooms() {
-        List<?> expired = roomRepository.findByExpiresAtBeforeAndIsPermanentFalse(Instant.now());
+        List<Room> expired = roomRepository.findByExpiresAtBeforeAndIsPermanentFalse(Instant.now());
         if (!expired.isEmpty()) {
-            roomRepository.deleteAll((Iterable) expired);
+            roomRepository.deleteAll(expired);
             log.info("Cleaned up {} expired anonymous room(s)", expired.size());
         }
     }

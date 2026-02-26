@@ -6,6 +6,7 @@ import com.watchparty.entity.Room;
 import com.watchparty.exception.RoomNotFoundException;
 import com.watchparty.repository.ParticipantRepository;
 import com.watchparty.repository.RoomRepository;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,8 +25,8 @@ public class RoomService {
     }
 
     @Transactional
-    public RoomResponse createRoom(CreateRoomRequest request, UUID ownerId) {
-        var room = new Room();
+    public RoomResponse createRoom(CreateRoomRequest request, @Nullable UUID ownerId) {
+        Room room = new Room();
         room.setName(request.name());
         room.setControlMode(request.controlMode());
         if (ownerId != null && request.isPermanent()) {
@@ -38,7 +39,7 @@ public class RoomService {
 
     @Transactional(readOnly = true)
     public RoomResponse findByCode(String code) {
-        var room = roomRepository.findByCode(code)
+        Room room = roomRepository.findByCode(code)
                 .orElseThrow(() -> new RoomNotFoundException(code));
         int participantCount = participantRepository.findByRoomId(room.getId()).size();
         return toResponse(room, participantCount);

@@ -9,9 +9,12 @@ import org.springframework.web.client.RestClient;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.time.Duration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 
 @Service
 public class YouTubeService {
@@ -31,20 +34,21 @@ public class YouTubeService {
         this.restClient = RestClient.create("https://www.googleapis.com/youtube/v3");
     }
 
-    public record VideoMetadata(String title, String thumbnailUrl, int durationSeconds) {}
-    public record PlaylistInfo(String title, int videoCount, List<PlaylistVideoItem> items) {}
+    public record VideoMetadata(@Nullable String title, String thumbnailUrl, int durationSeconds) {}
+    public record PlaylistInfo(@Nullable String title, int videoCount, List<PlaylistVideoItem> items) {}
     public record PlaylistVideoItem(String videoId, String videoUrl, String title, String thumbnailUrl, int durationSeconds) {}
 
-    public VideoMetadata fetchMetadata(String videoUrl) {
-        String videoId = extractVideoId(videoUrl);
-        if (videoId == null) {
-            return null;
+    public Optional<VideoMetadata> fetchMetadata(String videoUrl) {
+        Optional<String> videoIdOpt = extractVideoId(videoUrl);
+        if (videoIdOpt.isEmpty()) {
+            return Optional.empty();
         }
 
+        String videoId = videoIdOpt.get();
         String thumbnail = "https://img.youtube.com/vi/" + videoId + "/mqdefault.jpg";
 
         if (apiKey == null || apiKey.isBlank()) {
-            return new VideoMetadata(null, thumbnail, 0);
+            return Optional.of(new VideoMetadata(null, thumbnail, 0));
         }
 
         try {
@@ -55,30 +59,30 @@ public class YouTubeService {
 
             JsonNode items = response != null ? response.get("items") : null;
             if (items == null || items.isEmpty()) {
-                return new VideoMetadata(null, thumbnail, 0);
+                return Optional.of(new VideoMetadata(null, thumbnail, 0));
             }
 
             JsonNode item = items.get(0);
             String title = item.path("snippet").path("title").asText(null);
             int duration = parseDuration(item.path("contentDetails").path("duration").asText(""));
 
-            return new VideoMetadata(title, thumbnail, duration);
+            return Optional.of(new VideoMetadata(title, thumbnail, duration));
         } catch (Exception e) {
             log.warn("Failed to fetch YouTube metadata for {}: {}", videoId, e.getMessage());
-            return new VideoMetadata(null, thumbnail, 0);
+            return Optional.of(new VideoMetadata(null, thumbnail, 0));
         }
     }
 
-    String extractVideoId(String url) {
+    Optional<String> extractVideoId(String url) {
         if (url == null || url.isBlank()) {
-            return null;
+            return Optional.empty();
         }
         Matcher shortMatcher = SHORT_URL.matcher(url);
         if (shortMatcher.find()) {
-            return shortMatcher.group(1);
+            return Optional.of(shortMatcher.group(1));
         }
         Matcher longMatcher = LONG_URL.matcher(url);
-        return longMatcher.find() ? longMatcher.group(1) : null;
+        return longMatcher.find() ? Optional.of(longMatcher.group(1)) : Optional.empty();
     }
 
     int parseDuration(String iso) {
@@ -92,9 +96,10 @@ public class YouTubeService {
         return h * 3600 + min * 60 + s;
     }
 
-    public PlaylistInfo fetchPlaylistItems(String playlistId) {
+    public Optional<PlaylistInfo> fetchPlaylistItems(String playlistId) {
+        Objects.requireNonNull(playlistId, "playlistId must not be null");
         if (apiKey == null || apiKey.isBlank()) {
-            return null;
+            return Optional.empty();
         }
 
         try {
@@ -145,19 +150,19 @@ public class YouTubeService {
                 pageToken = response.has("nextPageToken") ? response.get("nextPageToken").asText() : null;
             } while (pageToken != null);
 
-            return new PlaylistInfo(playlistTitle, items.size(), items);
+            return Optional.of(new PlaylistInfo(playlistTitle, items.size(), items));
         } catch (Exception e) {
             log.warn("Failed to fetch playlist items for {}: {}", playlistId, e.getMessage());
-            return null;
+            return Optional.empty();
         }
     }
 
-    public String extractPlaylistId(String url) {
+    public Optional<String> extractPlaylistId(String url) {
         if (url == null || url.isBlank()) {
-            return null;
+            return Optional.empty();
         }
         Matcher matcher = PLAYLIST_ID.matcher(url);
-        return matcher.find() ? matcher.group(1) : null;
+        return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
     }
 
     public List<com.watchparty.dto.VideoRecommendation> searchRelated(String videoId, int maxResults) {
@@ -166,8 +171,9 @@ public class YouTubeService {
         }
 
         try {
-            VideoMetadata metadata = fetchMetadata("https://www.youtube.com/watch?v=" + videoId);
-            String rawQuery = (metadata != null && metadata.title() != null) ? metadata.title() : videoId;
+            Optional<VideoMetadata> metadata = fetchMetadata("https://www.youtube.com/watch?v=" + videoId);
+            String rawQuery = metadata.map(VideoMetadata::title).orElse(videoId);
+            if (rawQuery == null) rawQuery = videoId;
             String query = rawQuery.replaceAll("[^\\p{L}\\p{N}\\s]", " ").trim().replaceAll("\\s+", " ");
             if (query.length() > 60) query = query.substring(0, 60).trim();
 

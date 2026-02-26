@@ -1,6 +1,7 @@
 package com.watchparty.websocket;
 
 import com.watchparty.service.JwtService;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -9,6 +10,7 @@ import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -28,14 +30,14 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
-        var accessor = StompHeaderAccessor.wrap(message);
+        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
-            var authHeader = accessor.getFirstNativeHeader("Authorization");
+            String authHeader = accessor.getFirstNativeHeader("Authorization");
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 try {
-                    var claims = jwtService.parseToken(authHeader.substring(7));
+                    Claims claims = jwtService.parseToken(authHeader.substring(7));
                     if (jwtService.isAccessToken(claims)) {
-                        var sessionAttrs = accessor.getSessionAttributes();
+                        Map<String, Object> sessionAttrs = accessor.getSessionAttributes();
                         if (sessionAttrs != null) {
                             sessionAttrs.put(USER_ID_ATTR, UUID.fromString(claims.getSubject()));
                         }

@@ -40,7 +40,7 @@ public class ChatService {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found: " + roomId));
 
-        var message = new ChatMessage();
+        ChatMessage message = new ChatMessage();
         message.setRoom(room);
         message.setNickname(nickname);
         message.setContent(content);

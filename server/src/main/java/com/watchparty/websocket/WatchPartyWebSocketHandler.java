@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Controller
@@ -66,9 +67,9 @@ public class WatchPartyWebSocketHandler {
         participant.setHost(isFirstParticipant);
         participant.setRoom(room);
 
-        var sessionAttrs = headerAccessor.getSessionAttributes();
+        Map<String, Object> sessionAttrs = headerAccessor.getSessionAttributes();
         if (sessionAttrs != null) {
-            var userId = (java.util.UUID) sessionAttrs.get(WebSocketAuthChannelInterceptor.USER_ID_ATTR);
+            UUID userId = (UUID) sessionAttrs.get(WebSocketAuthChannelInterceptor.USER_ID_ATTR);
             if (userId != null) {
                 participant.setUserId(userId);
             }
@@ -218,15 +219,17 @@ public class WatchPartyWebSocketHandler {
     }
 
     public void handleParticipantLeave(String sessionId) {
-        var participantOpt = participantRepository.findByConnectionId(sessionId);
+        Optional<Participant> participantOpt = participantRepository.findByConnectionId(sessionId);
         if (participantOpt.isEmpty()) {
             return;
         }
 
         Participant participant = participantOpt.get();
         UUID roomId = participant.getRoom().getId();
-        Room room = roomRepository.findById(roomId).orElse(null);
-        if (room == null) return;
+        Optional<Room> roomOpt = roomRepository.findById(roomId);
+        if (roomOpt.isEmpty()) return;
+
+        Room room = roomOpt.get();
 
         boolean wasHost = participant.isHost();
 
@@ -399,9 +402,9 @@ public class WatchPartyWebSocketHandler {
         Room room = participant.getRoom();
         int currentPosition = playlistService.getCurrentPosition(room.getId(), room.getCurrentVideoUrl());
 
-        PlaylistItemResponse nextItem = playlistService.getNextItem(room.getId(), currentPosition);
-        if (nextItem != null) {
-            room.setCurrentVideoUrl(nextItem.videoUrl());
+        Optional<PlaylistItemResponse> nextItem = playlistService.getNextItem(room.getId(), currentPosition);
+        if (nextItem.isPresent()) {
+            room.setCurrentVideoUrl(nextItem.get().videoUrl());
             room.setCurrentTimeSeconds(0);
             room.setPlaying(true);
             room.setStateUpdatedAt(Instant.now());

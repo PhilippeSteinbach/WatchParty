@@ -118,21 +118,21 @@ class PlaylistServiceTest {
         when(playlistItemRepository.findFirstByRoomIdAndPositionGreaterThanOrderByPositionAsc(roomId, 2))
                 .thenReturn(Optional.of(nextItem));
 
-        PlaylistItemResponse response = playlistService.getNextItem(roomId, 2);
+        Optional<PlaylistItemResponse> response = playlistService.getNextItem(roomId, 2);
 
-        assertNotNull(response);
-        assertEquals("https://youtube.com/watch?v=next", response.videoUrl());
-        assertEquals(3, response.position());
+        assertTrue(response.isPresent());
+        assertEquals("https://youtube.com/watch?v=next", response.get().videoUrl());
+        assertEquals(3, response.get().position());
     }
 
     @Test
-    void whenGetNextItemAndNoneExistsThenReturnsNull() {
+    void whenGetNextItemAndNoneExistsThenReturnsEmpty() {
         when(playlistItemRepository.findFirstByRoomIdAndPositionGreaterThanOrderByPositionAsc(roomId, 5))
                 .thenReturn(Optional.empty());
 
-        PlaylistItemResponse response = playlistService.getNextItem(roomId, 5);
+        Optional<PlaylistItemResponse> response = playlistService.getNextItem(roomId, 5);
 
-        assertNull(response);
+        assertTrue(response.isEmpty());
     }
 
     private PlaylistItem createItem(UUID id, String videoUrl, String addedBy, int position) {

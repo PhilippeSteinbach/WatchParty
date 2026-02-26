@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/videos")
@@ -27,10 +28,10 @@ public class VideoController {
 
     @GetMapping("/playlist/{playlistId}")
     public ResponseEntity<?> getPlaylistInfo(@PathVariable String playlistId) {
-        var info = youTubeService.fetchPlaylistItems(playlistId);
-        if (info == null) {
+        Optional<YouTubeService.PlaylistInfo> info = youTubeService.fetchPlaylistItems(playlistId);
+        if (info.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Could not fetch playlist. YouTube API key may not be configured."));
         }
-        return ResponseEntity.ok(info);
+        return ResponseEntity.ok(info.get());
     }
 }
