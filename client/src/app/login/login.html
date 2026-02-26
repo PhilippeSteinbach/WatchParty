@@ -1,0 +1,31 @@
+<div class="auth-container">
+  <div class="card">
+    <h1>🎬 WatchParty</h1>
+    <h2>Sign In</h2>
+
+    <form (ngSubmit)="login()" class="form">
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" placeholder="you@example.com"
+          [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" required />
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" placeholder="••••••••"
+          [ngModel]="password()" (ngModelChange)="password.set($event)" name="password" required />
+      </div>
+
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
+      }
+
+      <button type="submit" [disabled]="loading()">
+        {{ loading() ? 'Signing in…' : 'Sign In' }}
+      </button>
+    </form>
+
+    <p class="footer-link">Don't have an account? <a routerLink="/register">Register</a></p>
+    <p class="footer-link"><a routerLink="/">Continue without account</a></p>
+  </div>
+</div>

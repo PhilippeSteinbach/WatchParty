@@ -2,12 +2,14 @@ package com.watchparty.controller;
 
 import com.watchparty.dto.CreateRoomRequest;
 import com.watchparty.dto.RoomResponse;
+import com.watchparty.security.AuthenticatedUser;
 import com.watchparty.service.RoomService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,8 +27,10 @@ public class RoomController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a new room")
     @ApiResponse(responseCode = "201", description = "Room created successfully")
-    public RoomResponse createRoom(@Valid @RequestBody CreateRoomRequest request) {
-        return roomService.createRoom(request);
+    public RoomResponse createRoom(
+            @Valid @RequestBody CreateRoomRequest request,
+            @AuthenticationPrincipal AuthenticatedUser user) {
+        return roomService.createRoom(request, user != null ? user.userId() : null);
     }
 
     @GetMapping("/{code}")

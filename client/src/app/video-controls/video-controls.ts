@@ -19,6 +19,7 @@ export class VideoControlsComponent {
   readonly currentTime = input(0);
   readonly duration = input(0);
   readonly canControl = input(false);
+  readonly hasVideo = input(false);
 
   readonly playPause = output<void>();
   readonly seek = output<number>();

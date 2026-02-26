@@ -22,6 +22,9 @@ public class Participant {
     @Column(name = "is_host", nullable = false)
     private boolean isHost;
 
+    @Column(name = "user_id")
+    private UUID userId;
+
     @Column(name = "joined_at", nullable = false, updatable = false)
     private Instant joinedAt;
 
@@ -81,4 +84,7 @@ public class Participant {
     public void setRoom(Room room) {
         this.room = room;
     }
+
+    public UUID getUserId() { return userId; }
+    public void setUserId(UUID userId) { this.userId = userId; }
 }

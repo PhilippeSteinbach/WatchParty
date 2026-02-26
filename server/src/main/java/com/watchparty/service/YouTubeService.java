@@ -95,17 +95,13 @@ public class YouTubeService {
 
         try {
             VideoMetadata metadata = fetchMetadata("https://www.youtube.com/watch?v=" + videoId);
-            String query = (metadata != null && metadata.title() != null) ? metadata.title() : videoId;
+            String rawQuery = (metadata != null && metadata.title() != null) ? metadata.title() : videoId;
+            String query = rawQuery.replaceAll("[^\\p{L}\\p{N}\\s]", " ").trim().replaceAll("\\s+", " ");
+            if (query.length() > 60) query = query.substring(0, 60).trim();
 
             JsonNode response = restClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/search")
-                            .queryParam("part", "snippet")
-                            .queryParam("type", "video")
-                            .queryParam("maxResults", maxResults + 1)
-                            .queryParam("q", query)
-                            .queryParam("key", apiKey)
-                            .build())
+                    .uri("/search?part=snippet&type=video&maxResults={max}&q={q}&key={key}",
+                            maxResults + 1, query, apiKey)
                     .retrieve()
                     .body(JsonNode.class);
 

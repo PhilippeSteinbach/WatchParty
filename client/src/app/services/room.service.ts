@@ -7,8 +7,8 @@ import { ControlMode, Room } from '../models/room.model';
 export class RoomService {
   private readonly http = inject(HttpClient);
 
-  createRoom(name: string, controlMode: ControlMode): Observable<Room> {
-    return this.http.post<Room>('/api/rooms', { name, controlMode });
+  createRoom(name: string, controlMode: ControlMode, isPermanent = false): Observable<Room> {
+    return this.http.post<Room>('/api/rooms', { name, controlMode, isPermanent });
   }
 
   getRoom(code: string): Observable<Room> {
@@ -17,5 +17,9 @@ export class RoomService {
 
   deleteRoom(code: string): Observable<void> {
     return this.http.delete<void>(`/api/rooms/${code}`);
+  }
+
+  getMyRooms(): Observable<Room[]> {
+    return this.http.get<Room[]>('/api/users/me/rooms');
   }
 }

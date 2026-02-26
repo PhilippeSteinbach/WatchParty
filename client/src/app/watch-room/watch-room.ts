@@ -9,6 +9,9 @@ import {
   viewChild,
   OnDestroy,
 } from '@angular/core';
+import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { switchMap, map, distinctUntilChanged } from 'rxjs/operators';
+import { of } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { WebSocketService } from '../services/websocket.service';
 import { VideoRecommendationService } from '../services/video-recommendation.service';
@@ -17,7 +20,7 @@ import { VideoControlsComponent } from '../video-controls/video-controls';
 import { ParticipantListComponent } from '../participant-list/participant-list';
 import { ChatPanelComponent } from '../chat-panel/chat-panel';
 import { PlaylistPanelComponent } from '../playlist-panel/playlist-panel';
-import { PlayerState, VideoRecommendation } from '../models/room.model';
+import { PlaylistItem, PlayerState, VideoRecommendation } from '../models/room.model';
 
 @Component({
   selector: 'app-watch-room',
@@ -37,7 +40,7 @@ export class WatchRoomComponent implements OnDestroy {
 
   readonly videoUrlInput = signal('');
   readonly linkCopied = signal(false);
-  readonly activeTab = signal<'chat' | 'playlist'>('chat');
+  readonly activeTab = signal<'playlist' | 'chat'>('playlist');
   readonly sidebarCollapsed = signal(false);
   private readonly lastSeenChatCount = signal(0);
   readonly unreadChatCount = computed(() =>
@@ -48,11 +51,13 @@ export class WatchRoomComponent implements OnDestroy {
   readonly polledDuration = signal(0);
   readonly recommendations = signal<VideoRecommendation[]>([]);
 
+  /** YouTube API recommendations for the currently playing video */
+  readonly displayRecommendations = computed<VideoRecommendation[]>(() => this.recommendations());
+
   readonly playerRef = viewChild(YoutubePlayerComponent);
 
   private positionReportInterval: ReturnType<typeof setInterval> | null = null;
   private timePollingInterval: ReturnType<typeof setInterval> | null = null;
-  private lastRecVideoId = '';
 
   constructor() {
     // Start periodic position reporting when connected and playing
@@ -90,15 +95,13 @@ export class WatchRoomComponent implements OnDestroy {
       }
     });
 
-    // Fetch recommendations when video changes
-    effect(() => {
-      const url = this.roomState()?.currentVideoUrl ?? '';
-      const videoId = this.playerRef()?.extractVideoId(url) ?? '';
-      if (videoId && videoId !== this.lastRecVideoId) {
-        this.lastRecVideoId = videoId;
-        this.recService.getRecommendations(videoId).subscribe(recs => this.recommendations.set(recs));
-      }
-    });
+    // Fetch recommendations whenever the current video changes
+    toObservable(this.ws.roomState).pipe(
+      map(state => this.extractYouTubeId(state?.currentVideoUrl ?? '')),
+      distinctUntilChanged(),
+      switchMap(videoId => videoId ? this.recService.getRecommendations(videoId) : of([])),
+      takeUntilDestroyed()
+    ).subscribe(recs => this.recommendations.set(recs));
 
     // Poll player time for custom controls (every 250ms)
     this.timePollingInterval = setInterval(() => {
@@ -232,5 +235,13 @@ export class WatchRoomComponent implements OnDestroy {
 
   onQueueRecommendation(rec: VideoRecommendation): void {
     this.ws.addToPlaylist(rec.videoUrl);
+  }
+
+  private extractYouTubeId(url: string): string {
+    if (!url) return '';
+    const short = url.match(/youtu\.be\/([^?&]+)/);
+    if (short) return short[1];
+    const long = url.match(/[?&]v=([^&]+)/);
+    return long ? long[1] : '';
   }
 }

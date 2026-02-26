@@ -1,0 +1,46 @@
+<div class="my-rooms-container">
+  <div class="header">
+    <h2>My Rooms</h2>
+    <a routerLink="/" [queryParams]="{view: 'create'}" class="create-btn">+ Create Room</a>
+  </div>
+
+  @if (loading()) {
+    <p class="status">Loading…</p>
+  } @else if (error()) {
+    <p class="status error">{{ error() }}</p>
+  } @else if (rooms().length === 0) {
+    <p class="status">You don't have any permanent rooms yet.</p>
+  } @else {
+    <ul class="room-list">
+      @for (room of rooms(); track room.id) {
+        <li class="room-card">
+          <div class="room-info">
+            <span class="room-name">{{ room.name }}</span>
+            <span class="room-code">#{{ room.code }}</span>
+          </div>
+          <div class="room-actions">
+            <a class="join-btn" [routerLink]="['/room', room.code]">Join</a>
+            <button class="delete-btn" (click)="confirmDelete(room.code)" aria-label="Delete room">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</div>
+
+@if (confirmDeleteCode()) {
+  <div class="modal-backdrop" (click)="cancelDelete()" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3 id="modal-title">Delete Room?</h3>
+      <p>Are you sure you want to delete room <strong>#{{ confirmDeleteCode() }}</strong>? This cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="modal-cancel" (click)="cancelDelete()">Cancel</button>
+        <button class="modal-confirm" (click)="deleteRoom()">Delete</button>
+      </div>
+    </div>
+  </div>
+}

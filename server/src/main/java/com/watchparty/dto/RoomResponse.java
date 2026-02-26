@@ -11,6 +11,8 @@ public record RoomResponse(
         String name,
         ControlMode controlMode,
         int participantCount,
-        Instant createdAt
+        Instant createdAt,
+        UUID ownerId,
+        boolean isPermanent
 ) {
 }

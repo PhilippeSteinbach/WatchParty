@@ -29,7 +29,7 @@ public class ChatMessage {
     private String content;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "reactions", columnDefinition = "jsonb")
+    @Column(name = "reactions")
     private Map<String, Integer> reactions = new HashMap<>();
 
     @Column(name = "sent_at", nullable = false, updatable = false)

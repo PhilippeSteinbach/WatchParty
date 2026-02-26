@@ -9,8 +9,8 @@ import com.watchparty.repository.RoomRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 public class RoomService {
@@ -24,12 +24,14 @@ public class RoomService {
     }
 
     @Transactional
-    public RoomResponse createRoom(CreateRoomRequest request) {
+    public RoomResponse createRoom(CreateRoomRequest request, UUID ownerId) {
         var room = new Room();
         room.setName(request.name());
         room.setControlMode(request.controlMode());
-        room.setExpiresAt(Instant.now().plus(24, ChronoUnit.HOURS));
-
+        if (ownerId != null && request.isPermanent()) {
+            room.setOwnerId(ownerId);
+            room.setPermanent(true);
+        }
         room = roomRepository.save(room);
         return toResponse(room, 0);
     }
@@ -40,6 +42,13 @@ public class RoomService {
                 .orElseThrow(() -> new RoomNotFoundException(code));
         int participantCount = participantRepository.findByRoomId(room.getId()).size();
         return toResponse(room, participantCount);
+    }
+
+    @Transactional(readOnly = true)
+    public List<RoomResponse> findByOwner(UUID ownerId) {
+        return roomRepository.findByOwnerId(ownerId).stream()
+                .map(room -> toResponse(room, participantRepository.findByRoomId(room.getId()).size()))
+                .toList();
     }
 
     @Transactional
@@ -56,7 +65,9 @@ public class RoomService {
                 room.getName(),
                 room.getControlMode(),
                 participantCount,
-                room.getCreatedAt()
+                room.getCreatedAt(),
+                room.getOwnerId(),
+                room.isPermanent()
         );
     }
 }

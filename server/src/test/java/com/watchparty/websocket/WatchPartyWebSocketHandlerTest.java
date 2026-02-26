@@ -6,7 +6,10 @@ import com.watchparty.entity.Participant;
 import com.watchparty.entity.Room;
 import com.watchparty.exception.RoomNotFoundException;
 import com.watchparty.repository.ParticipantRepository;
+import com.watchparty.repository.PlaylistItemRepository;
 import com.watchparty.repository.RoomRepository;
+import com.watchparty.service.ChatService;
+import com.watchparty.service.PlaylistService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,7 +43,16 @@ class WatchPartyWebSocketHandlerTest {
     private ParticipantRepository participantRepository;
 
     @Mock
+    private PlaylistItemRepository playlistItemRepository;
+
+    @Mock
     private SimpMessagingTemplate messagingTemplate;
+
+    @Mock
+    private ChatService chatService;
+
+    @Mock
+    private PlaylistService playlistService;
 
     @InjectMocks
     private WatchPartyWebSocketHandler handler;
@@ -85,6 +97,8 @@ class WatchPartyWebSocketHandlerTest {
                 .thenReturn(Collections.emptyList())
                 .thenReturn(List.of(hostParticipant));
         when(participantRepository.save(any(Participant.class))).thenReturn(hostParticipant);
+        when(playlistService.getPlaylist(sampleRoom.getId()))
+                .thenReturn(new PlaylistResponse(Collections.emptyList()));
 
         handler.joinRoom(joinMessage, headerAccessor);
 
@@ -155,6 +169,7 @@ class WatchPartyWebSocketHandlerTest {
         remainingParticipant.setJoinedAt(Instant.now());
 
         when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(hostParticipant));
+        when(roomRepository.findById(sampleRoom.getId())).thenReturn(Optional.of(sampleRoom));
         when(participantRepository.findByRoomId(sampleRoom.getId()))
                 .thenReturn(List.of(remainingParticipant));
 
@@ -173,14 +188,16 @@ class WatchPartyWebSocketHandlerTest {
     }
 
     @Test
-    void whenLeaveRoomAndLastParticipantThenDeletesRoom() {
+    void whenLeaveRoomAndLastParticipantThenClearsHostConnectionId() {
         when(participantRepository.findByConnectionId("session-1")).thenReturn(Optional.of(hostParticipant));
+        when(roomRepository.findById(sampleRoom.getId())).thenReturn(Optional.of(sampleRoom));
         when(participantRepository.findByRoomId(sampleRoom.getId())).thenReturn(Collections.emptyList());
 
         handler.leaveRoom(headerAccessor);
 
         verify(participantRepository).delete(hostParticipant);
-        verify(roomRepository).delete(sampleRoom);
+        assertNull(sampleRoom.getHostConnectionId());
+        verify(roomRepository).save(sampleRoom);
         verify(messagingTemplate, never()).convertAndSend(anyString(), any(RoomStateMessage.class));
     }
 

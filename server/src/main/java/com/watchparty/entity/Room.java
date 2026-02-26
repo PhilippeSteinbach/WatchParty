@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
 import java.security.SecureRandom;
+import java.time.temporal.ChronoUnit;
 
 @Entity
 @Table(name = "rooms")
@@ -48,11 +49,20 @@ public class Room {
     @Column(name = "expires_at")
     private Instant expiresAt;
 
+    @Column(name = "owner_id")
+    private UUID ownerId;
+
+    @Column(name = "is_permanent", nullable = false)
+    private boolean isPermanent;
+
     @PrePersist
     void prePersist() {
         this.createdAt = Instant.now();
         if (this.code == null) {
             this.code = generateCode(8);
+        }
+        if (!this.isPermanent && this.expiresAt == null) {
+            this.expiresAt = this.createdAt.plus(24, ChronoUnit.HOURS);
         }
     }
 
@@ -151,4 +161,10 @@ public class Room {
     public void setStateUpdatedAt(Instant stateUpdatedAt) {
         this.stateUpdatedAt = stateUpdatedAt;
     }
+
+    public UUID getOwnerId() { return ownerId; }
+    public void setOwnerId(UUID ownerId) { this.ownerId = ownerId; }
+
+    public boolean isPermanent() { return isPermanent; }
+    public void setPermanent(boolean permanent) { isPermanent = permanent; }
 }
