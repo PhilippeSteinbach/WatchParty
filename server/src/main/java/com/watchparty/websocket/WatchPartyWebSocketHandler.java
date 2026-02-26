@@ -10,12 +10,14 @@ import com.watchparty.repository.PlaylistItemRepository;
 import com.watchparty.repository.RoomRepository;
 import com.watchparty.service.ChatService;
 import com.watchparty.service.PlaylistService;
+import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -89,6 +91,17 @@ public class WatchPartyWebSocketHandler {
         PlaylistResponse playlist = playlistService.getPlaylist(room.getId());
         messagingTemplate.convertAndSendToUser(sessionId, "/queue/playlist.history", playlist,
                 createHeaders(sessionId));
+
+        List<ChatMessageResponse> chatHistory = chatService.getChatHistory(room.getId());
+        messagingTemplate.convertAndSendToUser(sessionId, "/queue/chat.history", chatHistory,
+                createHeaders(sessionId));
+    }
+
+    @EventListener
+    @Transactional
+    public void handleSessionDisconnect(SessionDisconnectEvent event) {
+        String sessionId = event.getSessionId();
+        handleParticipantLeave(sessionId);
     }
 
     @MessageMapping("/room.leave")
@@ -300,6 +313,23 @@ public class WatchPartyWebSocketHandler {
         messagingTemplate.convertAndSend("/topic/room." + room.getCode() + ".playlist", playlist);
     }
 
+    @MessageMapping("/room.playlist.add-bulk")
+    @Transactional
+    public void addBulkPlaylistItems(@Payload BulkAddPlaylistRequest request, SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = headerAccessor.getSessionId();
+
+        Participant participant = participantRepository.findByConnectionId(sessionId)
+                .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
+
+        Room room = participant.getRoom();
+        for (String videoUrl : request.videoUrls()) {
+            playlistService.addItem(room.getId(), videoUrl, participant.getNickname());
+        }
+
+        PlaylistResponse playlist = playlistService.getPlaylist(room.getId());
+        messagingTemplate.convertAndSend("/topic/room." + room.getCode() + ".playlist", playlist);
+    }
+
     @MessageMapping("/room.playlist.playNow")
     @Transactional
     public void playNow(@Payload AddPlaylistItemRequest request, SimpMessageHeaderAccessor headerAccessor) {
@@ -373,7 +403,7 @@ public class WatchPartyWebSocketHandler {
         if (nextItem != null) {
             room.setCurrentVideoUrl(nextItem.videoUrl());
             room.setCurrentTimeSeconds(0);
-            room.setPlaying(false);
+            room.setPlaying(true);
             room.setStateUpdatedAt(Instant.now());
             roomRepository.save(room);
 

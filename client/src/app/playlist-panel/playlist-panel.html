@@ -2,7 +2,7 @@
   <div class="add-form">
     <input
       type="text"
-      placeholder="Paste video URL…"
+      placeholder="Paste video or playlist URL…"
       [ngModel]="urlInput()"
       (ngModelChange)="urlInput.set($event)"
       name="videoUrl"
@@ -63,4 +63,14 @@
   </div>
 
   <button class="next-btn" (click)="skipToNext()">⏭ Skip to Next</button>
+
+  @if (showConfirmDialog()) {
+    <app-confirm-dialog
+      [message]="confirmMessage()"
+      confirmLabel="Add Videos"
+      cancelLabel="Cancel"
+      (confirmed)="onConfirmPlaylist()"
+      (cancelled)="onCancelPlaylist()"
+    />
+  }
 </div>

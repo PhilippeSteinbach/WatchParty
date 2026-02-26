@@ -1,0 +1,9 @@
+<div class="dialog-overlay" (click)="cancelled.emit()">
+  <div class="dialog-box" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+    <p class="dialog-message">{{ message() }}</p>
+    <div class="dialog-actions">
+      <button class="cancel-btn" (click)="cancelled.emit()">{{ cancelLabel() }}</button>
+      <button class="confirm-btn" (click)="confirmed.emit()">{{ confirmLabel() }}</button>
+    </div>
+  </div>
+</div>

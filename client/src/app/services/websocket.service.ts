@@ -122,11 +122,6 @@ export class WebSocketService {
           destination: '/app/room.join',
           body: JSON.stringify({ roomCode, nickname }),
         });
-
-        this.client!.publish({
-          destination: '/app/room.chat.history',
-          body: '',
-        });
       },
       onDisconnect: () => this.connected.set(false),
       onStompError: () => this.connected.set(false),
@@ -188,6 +183,15 @@ export class WebSocketService {
       this.client.publish({
         destination: '/app/room.playlist.add',
         body: JSON.stringify({ videoUrl }),
+      });
+    }
+  }
+
+  addBulkToPlaylist(videoUrls: string[]): void {
+    if (this.client?.active) {
+      this.client.publish({
+        destination: '/app/room.playlist.add-bulk',
+        body: JSON.stringify({ videoUrls }),
       });
     }
   }

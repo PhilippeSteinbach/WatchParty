@@ -15,8 +15,18 @@
       <button class="copy-btn" (click)="copyLink()">
         {{ linkCopied() ? '✓ Copied' : '📋 Copy Link' }}
       </button>
-      <button class="sync-btn" (click)="requestSync()">🔄 Sync</button>
     </div>
+
+    <form class="video-form" (ngSubmit)="addVideo()">
+      <input
+        type="text"
+        placeholder="Paste YouTube URL or playlist…"
+        [ngModel]="videoUrlInput()"
+        (ngModelChange)="videoUrlInput.set($event)"
+        name="videoUrl"
+      />
+      <button type="submit">Add</button>
+    </form>
 
     <div class="toolbar-right">
       @if (!webRtc.isActive()) {
@@ -27,17 +37,6 @@
           (startMedia)="onStartMedia()"
         />
       }
-
-      <form class="video-form" (ngSubmit)="changeVideo()">
-        <input
-          type="text"
-          placeholder="Paste YouTube URL…"
-          [ngModel]="videoUrlInput()"
-          (ngModelChange)="videoUrlInput.set($event)"
-          name="videoUrl"
-        />
-        <button type="submit">Load</button>
-      </form>
     </div>
   </header>
 
@@ -130,4 +129,14 @@
       }
     </aside>
   </div>
+
+  @if (showPlaylistConfirm()) {
+    <app-confirm-dialog
+      [message]="playlistConfirmMessage()"
+      confirmLabel="Add Videos"
+      cancelLabel="Cancel"
+      (confirmed)="onConfirmPlaylistImport()"
+      (cancelled)="onCancelPlaylistImport()"
+    />
+  }
 </div>

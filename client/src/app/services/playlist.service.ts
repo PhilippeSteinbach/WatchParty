@@ -12,6 +12,10 @@ export class PlaylistService {
     this.ws.addToPlaylist(videoUrl);
   }
 
+  addBulkToQueue(videoUrls: string[]): void {
+    this.ws.addBulkToPlaylist(videoUrls);
+  }
+
   playNow(videoUrl: string): void {
     this.ws.playNow(videoUrl);
   }

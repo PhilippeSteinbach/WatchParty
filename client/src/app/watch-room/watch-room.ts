@@ -10,6 +10,7 @@ import {
   OnDestroy,
   HostListener,
 } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap, map, distinctUntilChanged, pairwise } from 'rxjs/operators';
 import { of } from 'rxjs';
@@ -24,12 +25,14 @@ import { ChatPanelComponent } from '../chat-panel/chat-panel';
 import { PlaylistPanelComponent } from '../playlist-panel/playlist-panel';
 import { VideoGridComponent } from '../video-grid/video-grid';
 import { MediaControlsComponent } from '../media-controls/media-controls';
+import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog';
 import { PlaylistItem, PlayerState, VideoRecommendation } from '../models/room.model';
+import { extractPlaylistId } from '../utils/youtube.utils';
 
 @Component({
   selector: 'app-watch-room',
   standalone: true,
-  imports: [FormsModule, YoutubePlayerComponent, VideoControlsComponent, ParticipantListComponent, ChatPanelComponent, PlaylistPanelComponent, VideoGridComponent, MediaControlsComponent],
+  imports: [FormsModule, YoutubePlayerComponent, VideoControlsComponent, ParticipantListComponent, ChatPanelComponent, PlaylistPanelComponent, VideoGridComponent, MediaControlsComponent, ConfirmDialogComponent],
   templateUrl: './watch-room.html',
   styleUrl: './watch-room.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,6 +41,7 @@ export class WatchRoomComponent implements OnDestroy {
   private readonly ws = inject(WebSocketService);
   readonly webRtc = inject(WebRtcService);
   private readonly recService = inject(VideoRecommendationService);
+  private readonly http = inject(HttpClient);
 
   readonly roomCode = input.required<string>();
   readonly roomState = this.ws.roomState;
@@ -56,6 +60,9 @@ export class WatchRoomComponent implements OnDestroy {
   readonly polledDuration = signal(0);
   readonly recommendations = signal<VideoRecommendation[]>([]);
   readonly notifications = signal<string[]>([]);
+  readonly showPlaylistConfirm = signal(false);
+  readonly playlistConfirmMessage = signal('');
+  private pendingPlaylistUrls: string[] = [];
 
   /** YouTube API recommendations for the currently playing video */
   readonly displayRecommendations = computed<VideoRecommendation[]>(() => this.recommendations());
@@ -209,16 +216,44 @@ export class WatchRoomComponent implements OnDestroy {
     return this.localIsPlaying() ?? this.roomState()?.isPlaying ?? false;
   }
 
-  changeVideo(): void {
+  addVideo(): void {
     const url = this.videoUrlInput().trim();
     if (!url) return;
 
-    this.ws.sendPlayerAction({
-      action: 'CHANGE_VIDEO',
-      videoUrl: url,
-      currentTimeSeconds: 0,
-      isPlaying: false,
+    const playlistId = extractPlaylistId(url);
+    if (playlistId) {
+      this.handlePlaylistImport(playlistId);
+      return;
+    }
+
+    this.ws.addToPlaylist(url);
+    this.videoUrlInput.set('');
+  }
+
+  private handlePlaylistImport(playlistId: string): void {
+    this.http.get<any>(`/api/videos/playlist/${playlistId}`).subscribe({
+      next: (info) => {
+        this.pendingPlaylistUrls = info.items.map((item: any) => item.videoUrl);
+        this.playlistConfirmMessage.set(`Add ${info.videoCount} videos from "${info.title}" to the playlist?`);
+        this.showPlaylistConfirm.set(true);
+      },
+      error: () => {
+        this.ws.addToPlaylist(this.videoUrlInput().trim());
+        this.videoUrlInput.set('');
+      }
     });
+  }
+
+  onConfirmPlaylistImport(): void {
+    this.ws.addBulkToPlaylist(this.pendingPlaylistUrls);
+    this.pendingPlaylistUrls = [];
+    this.showPlaylistConfirm.set(false);
+    this.videoUrlInput.set('');
+  }
+
+  onCancelPlaylistImport(): void {
+    this.pendingPlaylistUrls = [];
+    this.showPlaylistConfirm.set(false);
   }
 
   onPlayerEvent(action: PlayerState): void {
