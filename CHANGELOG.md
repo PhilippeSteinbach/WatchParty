@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Automatic version bumping on PR merge via GitHub Actions (`version-bump.yml`)
+- PR labels (`patch`, `minor`, `major`) control version bump type; defaults to `patch`
+- Branch protection documentation in README
+- Release workflow for Docker image publishing and GitHub Releases (`release.yml`)
+
 ## [0.7.0] - 2026-02-26
 
 ### Added

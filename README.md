@@ -103,6 +103,25 @@ WatchParty/
 4. Run tests before submitting (`./mvnw test` / `ng test`)
 5. Open a pull request
 
+## Branch Protection
+
+To enforce code quality, configure branch protection rules for `main` in your GitHub repository settings:
+
+1. Go to **Settings → Rules → Rulesets** (or **Settings → Branches** for classic rules)
+2. Add a rule targeting the `main` branch:
+   - ✅ **Require a pull request before merging** — no direct pushes to main
+   - ✅ **Require status checks to pass** — select `Server (Java)` and `Client (Angular)` checks
+   - ✅ **Require branches to be up to date before merging**
+3. Optionally require approvals for team projects
+
+When a PR is merged, the [version-bump workflow](.github/workflows/version-bump.yml) automatically increments the version based on PR labels:
+
+| PR Label | Bump | Example |
+|----------|------|---------|
+| `major` | Major | 0.7.0 → 1.0.0 |
+| `minor` | Minor | 0.7.0 → 0.8.0 |
+| _(none)_ or `patch` | Patch | 0.7.0 → 0.7.1 |
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
