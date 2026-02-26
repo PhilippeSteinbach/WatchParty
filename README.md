@@ -2,7 +2,7 @@
 
 Watch YouTube videos together in real-time with synchronized playback, live chat, and webcam/mic support.
 
-![CI](https://github.com/<owner>/<repo>/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/PhilippeSteinbach/WatchParty/actions/workflows/ci.yml/badge.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 
 ---
