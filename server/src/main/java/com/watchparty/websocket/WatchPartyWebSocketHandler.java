@@ -91,6 +91,10 @@ public class WatchPartyWebSocketHandler {
         PlaylistResponse playlist = playlistService.getPlaylist(room.getId());
         messagingTemplate.convertAndSendToUser(sessionId, "/queue/playlist.history", playlist,
                 createHeaders(sessionId));
+
+        List<ChatMessageResponse> chatHistory = chatService.getChatHistory(room.getId());
+        messagingTemplate.convertAndSendToUser(sessionId, "/queue/chat.history", chatHistory,
+                createHeaders(sessionId));
     }
 
     @EventListener

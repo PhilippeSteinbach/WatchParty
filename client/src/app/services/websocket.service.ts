@@ -122,11 +122,6 @@ export class WebSocketService {
           destination: '/app/room.join',
           body: JSON.stringify({ roomCode, nickname }),
         });
-
-        this.client!.publish({
-          destination: '/app/room.chat.history',
-          body: '',
-        });
       },
       onDisconnect: () => this.connected.set(false),
       onStompError: () => this.connected.set(false),
