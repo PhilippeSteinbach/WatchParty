@@ -29,6 +29,7 @@ export class ChatPanelComponent implements AfterViewChecked {
   private shouldScroll = false;
 
   readonly MAX_LENGTH = 500;
+  readonly emojis = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
 
   ngAfterViewChecked(): void {
     if (this.shouldScroll) {
@@ -44,6 +45,10 @@ export class ChatPanelComponent implements AfterViewChecked {
     this.ws.sendChatMessage(content);
     this.messageInput.set('');
     this.shouldScroll = true;
+  }
+
+  insertEmoji(emoji: string): void {
+    this.messageInput.update(text => text + emoji);
   }
 
   onReaction(event: { messageId: string; emoji: string }): void {
