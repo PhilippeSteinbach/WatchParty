@@ -10,6 +10,7 @@ import com.watchparty.repository.PlaylistItemRepository;
 import com.watchparty.repository.RoomRepository;
 import com.watchparty.service.ChatService;
 import com.watchparty.service.PlaylistService;
+import org.springframework.lang.NonNull;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -87,7 +88,7 @@ public class WatchPartyWebSocketHandler {
 
         // Send the session ID back so the client knows its own connectionId for WebRTC
         messagingTemplate.convertAndSendToUser(sessionId, "/queue/session.info",
-                Map.of("connectionId", sessionId),
+                Objects.requireNonNull(Map.of("connectionId", sessionId)),
                 createHeaders(sessionId));
 
         PlaylistResponse playlist = playlistService.getPlaylist(room.getId());
@@ -226,7 +227,7 @@ public class WatchPartyWebSocketHandler {
         }
 
         Participant participant = participantOpt.get();
-        UUID roomId = participant.getRoom().getId();
+        UUID roomId = Objects.requireNonNull(participant.getRoom().getId());
         Optional<Room> roomOpt = roomRepository.findById(roomId);
         if (roomOpt.isEmpty()) return;
 
@@ -295,6 +296,7 @@ public class WatchPartyWebSocketHandler {
                 createHeaders(sessionId));
     }
 
+    @NonNull
     private static String requireSessionId(SimpMessageHeaderAccessor headerAccessor) {
         return Objects.requireNonNull(headerAccessor.getSessionId(), "WebSocket session ID must not be null");
     }
@@ -443,28 +445,31 @@ public class WatchPartyWebSocketHandler {
     @MessageMapping("/room.webrtc.offer")
     public void webRtcOffer(@Payload WebRtcOfferMessage message, SimpMessageHeaderAccessor headerAccessor) {
         String sessionId = requireSessionId(headerAccessor);
+        String targetId = Objects.requireNonNull(message.targetConnectionId());
         messagingTemplate.convertAndSendToUser(
-                message.targetConnectionId(), "/queue/webrtc.signal",
+                targetId, "/queue/webrtc.signal",
                 WebRtcSignalEnvelope.offer(sessionId, message.sdp()),
-                createHeaders(message.targetConnectionId()));
+                createHeaders(targetId));
     }
 
     @MessageMapping("/room.webrtc.answer")
     public void webRtcAnswer(@Payload WebRtcAnswerMessage message, SimpMessageHeaderAccessor headerAccessor) {
         String sessionId = requireSessionId(headerAccessor);
+        String targetId = Objects.requireNonNull(message.targetConnectionId());
         messagingTemplate.convertAndSendToUser(
-                message.targetConnectionId(), "/queue/webrtc.signal",
+                targetId, "/queue/webrtc.signal",
                 WebRtcSignalEnvelope.answer(sessionId, message.sdp()),
-                createHeaders(message.targetConnectionId()));
+                createHeaders(targetId));
     }
 
     @MessageMapping("/room.webrtc.ice")
     public void webRtcIceCandidate(@Payload WebRtcIceCandidateMessage message, SimpMessageHeaderAccessor headerAccessor) {
         String sessionId = requireSessionId(headerAccessor);
+        String targetId = Objects.requireNonNull(message.targetConnectionId());
         messagingTemplate.convertAndSendToUser(
-                message.targetConnectionId(), "/queue/webrtc.signal",
+                targetId, "/queue/webrtc.signal",
                 WebRtcSignalEnvelope.iceCandidate(sessionId, message.candidate(), message.sdpMid(), message.sdpMLineIndex()),
-                createHeaders(message.targetConnectionId()));
+                createHeaders(targetId));
     }
 
     @MessageMapping("/room.webrtc.camera-state")

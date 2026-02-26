@@ -7,6 +7,7 @@ import com.watchparty.entity.Room;
 import com.watchparty.repository.PlaylistItemRepository;
 import com.watchparty.repository.RoomRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -64,6 +65,7 @@ public class PlaylistService {
     }
 
     @Transactional(readOnly = true)
+    @NonNull
     public PlaylistResponse getPlaylist(UUID roomId) {
         List<PlaylistItemResponse> items = playlistItemRepository.findByRoomIdOrderByPositionAsc(roomId)
                 .stream()

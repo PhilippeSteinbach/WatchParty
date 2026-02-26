@@ -99,6 +99,7 @@ export class WebSocketService {
         this.client!.subscribe(`/topic/room.${roomCode}.camera-state`, (message: IMessage) => {
           this.zone.run(() => {
             const body = JSON.parse(message.body) as { connectionId: string; enabled: boolean };
+            if (body.connectionId === this.myConnectionId()) return;
             this.peerCameraStates.update(map => {
               const next = new Map(map);
               if (body.enabled) {
