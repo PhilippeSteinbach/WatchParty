@@ -1,8 +1,27 @@
-<div class="video-grid" [class]="'grid-' + gridSize()">
+<div class="video-grid">
   @if (localStream()) {
     <div class="video-tile local">
       <video #localVideo autoplay muted playsinline aria-label="Your camera"></video>
       <span class="video-label">You</span>
+      <div class="tile-controls">
+        <button
+          class="tile-btn"
+          [class.off]="!isCameraOn()"
+          (click)="toggleCamera.emit()"
+          [attr.aria-label]="isCameraOn() ? 'Turn off camera' : 'Turn on camera'"
+        >{{ isCameraOn() ? '📹' : '🚫' }}</button>
+        <button
+          class="tile-btn"
+          [class.off]="!isMicOn()"
+          (click)="toggleMic.emit()"
+          [attr.aria-label]="isMicOn() ? 'Mute microphone' : 'Unmute microphone'"
+        >{{ isMicOn() ? '🎤' : '🔇' }}</button>
+        <button
+          class="tile-btn stop"
+          (click)="stopMedia.emit()"
+          aria-label="Leave video call"
+        >✖</button>
+      </div>
     </div>
   }
 
@@ -10,6 +29,14 @@
     <div class="video-tile">
       <video #remoteVideo autoplay playsinline [attr.aria-label]="peer.nickname + '\'s camera'"></video>
       <span class="video-label">{{ peer.nickname }}</span>
+      <div class="tile-controls">
+        <button
+          class="tile-btn"
+          [class.off]="isPeerMuted(peer.connectionId)"
+          (click)="toggleMutePeer(peer.connectionId)"
+          [attr.aria-label]="isPeerMuted(peer.connectionId) ? 'Unmute ' + peer.nickname : 'Mute ' + peer.nickname"
+        >{{ isPeerMuted(peer.connectionId) ? '🔇' : '🔊' }}</button>
+      </div>
       @if (!peer.stream) {
         <div class="no-video">
           <span class="avatar">{{ peer.nickname.charAt(0).toUpperCase() }}</span>

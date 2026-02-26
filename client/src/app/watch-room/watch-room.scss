@@ -132,17 +132,21 @@
   overflow: hidden;
 }
 
+.video-grid-area {
+  flex-shrink: 0;
+  height: 120px;
+  background: #181825;
+  border-bottom: 1px solid #313244;
+  padding: 6px 1rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 .player-area {
   flex: 7;
   background: #11111b;
   display: flex;
   flex-direction: column;
-
-  .video-grid-area {
-    height: 160px;
-    flex-shrink: 0;
-    border-bottom: 1px solid #313244;
-  }
 
   .youtube-area {
     flex: 1;

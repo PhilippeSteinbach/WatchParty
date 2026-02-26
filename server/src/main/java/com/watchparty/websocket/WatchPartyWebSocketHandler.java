@@ -431,6 +431,21 @@ public class WatchPartyWebSocketHandler {
                 createHeaders(message.targetConnectionId()));
     }
 
+    @MessageMapping("/room.webrtc.camera-state")
+    @Transactional(readOnly = true)
+    public void webRtcCameraState(@Payload Map<String, Object> payload, SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = headerAccessor.getSessionId();
+        boolean enabled = Boolean.TRUE.equals(payload.get("enabled"));
+
+        Participant participant = participantRepository.findByConnectionId(sessionId)
+                .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
+
+        Room room = participant.getRoom();
+        messagingTemplate.convertAndSend(
+                "/topic/room." + room.getCode() + ".camera-state",
+                new CameraStateMessage(sessionId, enabled));
+    }
+
     private void broadcastRoomState(Room room) {
         List<Participant> participants = participantRepository.findByRoomId(room.getId());
 

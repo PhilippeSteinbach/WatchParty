@@ -1,34 +1,13 @@
 :host {
   display: block;
+  height: 100%;
 }
 
 .video-grid {
-  display: grid;
-  gap: 4px;
-  width: 100%;
+  display: flex;
+  gap: 6px;
   height: 100%;
-  padding: 4px;
   background: #181825;
-
-  &.grid-1 {
-    grid-template-columns: 1fr;
-  }
-
-  &.grid-2 {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  &.grid-3,
-  &.grid-4 {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-  }
-
-  &.grid-5,
-  &.grid-6 {
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-  }
 }
 
 .video-tile {
@@ -39,6 +18,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 140px;
+  flex-shrink: 0;
+  aspect-ratio: auto;
 
   &.local video {
     transform: scaleX(-1);
@@ -48,6 +30,54 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+}
+
+.tile-controls {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+
+  .video-tile:hover & {
+    opacity: 1;
+  }
+}
+
+.tile-btn {
+  background: rgba(0, 0, 0, 0.6);
+  color: #cdd6f4;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0;
+
+  &:hover {
+    background: rgba(69, 71, 90, 0.8);
+  }
+
+  &.off {
+    background: rgba(243, 139, 168, 0.85);
+    color: #1e1e2e;
+  }
+
+  &.stop {
+    background: rgba(243, 139, 168, 0.85);
+    color: #1e1e2e;
+    font-size: 0.65rem;
+
+    &:hover {
+      background: rgba(235, 160, 172, 0.9);
+    }
   }
 }
 
@@ -72,12 +102,12 @@
   background: #1e1e2e;
 
   .avatar {
-    width: 48px;
-    height: 48px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     background: #45475a;
     color: #cdd6f4;
-    font-size: 1.25rem;
+    font-size: 1rem;
     font-weight: 600;
     display: flex;
     align-items: center;

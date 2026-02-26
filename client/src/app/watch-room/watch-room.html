@@ -19,15 +19,14 @@
     </div>
 
     <div class="toolbar-right">
-      <app-media-controls
-        [isActive]="webRtc.isActive()"
-        [isCameraOn]="webRtc.isCameraOn()"
-        [isMicOn]="webRtc.isMicOn()"
-        (startMedia)="onStartMedia()"
-        (stopMedia)="onStopMedia()"
-        (toggleCamera)="onToggleCamera()"
-        (toggleMic)="onToggleMic()"
-      />
+      @if (!webRtc.isActive()) {
+        <app-media-controls
+          [isActive]="false"
+          [isCameraOn]="false"
+          [isMicOn]="false"
+          (startMedia)="onStartMedia()"
+        />
+      }
 
       <form class="video-form" (ngSubmit)="changeVideo()">
         <input
@@ -42,17 +41,23 @@
     </div>
   </header>
 
+  @if (webRtc.isActive() || webRtc.remoteStreams().length > 0) {
+    <div class="video-grid-area">
+      <app-video-grid
+        [localStream]="webRtc.localStream()"
+        [remoteStreams]="webRtc.remoteStreams()"
+        [isCameraOn]="webRtc.isCameraOn()"
+        [isMicOn]="webRtc.isMicOn()"
+        (toggleCamera)="onToggleCamera()"
+        (toggleMic)="onToggleMic()"
+        (stopMedia)="onStopMedia()"
+      />
+    </div>
+  }
+
   <div class="main-content">
     <div class="player-area">
-      @if (webRtc.isActive()) {
-        <div class="video-grid-area">
-          <app-video-grid
-            [localStream]="webRtc.localStream()"
-            [remoteStreams]="webRtc.remoteStreams()"
-          />
-        </div>
-      }
-      <div class="youtube-area" [class.with-grid]="webRtc.isActive()">
+      <div class="youtube-area">
         <app-youtube-player
           [videoUrl]="currentVideoUrl"
           [isPlaying]="isPlaying"

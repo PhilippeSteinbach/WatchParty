@@ -1,4 +1,4 @@
-import { Injectable, signal, computed, inject, effect, NgZone, DestroyRef } from '@angular/core';
+import { Injectable, signal, computed, inject, effect, NgZone, DestroyRef, untracked } from '@angular/core';
 import { WebSocketService } from './websocket.service';
 import { Participant, RemotePeer, WebRtcSignalEnvelope } from '../models/room.model';
 
@@ -17,6 +17,7 @@ export class WebRtcService {
 
   private readonly peerConnections = new Map<string, RTCPeerConnection>();
   private readonly peerNicknames = new Map<string, string>();
+  private readonly pendingIceCandidates = new Map<string, RTCIceCandidateInit[]>();
   private localStreamInternal: MediaStream | null = null;
 
   readonly localStream = signal<MediaStream | null>(null);
@@ -27,24 +28,44 @@ export class WebRtcService {
 
   readonly isActive = computed(() => this.localStream() !== null);
 
-  constructor() {
-    // Handle incoming WebRTC signals
-    effect(() => {
-      const signal = this.ws.webRtcSignal();
-      if (!signal) return;
-      this.handleSignal(signal);
-    });
+  private _myConnectionId: string | null = null;
 
-    // Handle participant list changes for peer discovery & cleanup
+  constructor() {
+    // Process queued WebRTC signals
+    effect(() => {
+      const signals = this.ws.webRtcSignal();
+      if (signals.length === 0) return;
+      const toProcess = [...signals];
+      untracked(() => this.ws.webRtcSignal.set([]));
+      for (const sig of toProcess) {
+        this.handleSignal(sig);
+      }
+    }, { allowSignalWrites: true });
+
+    // Reconcile peers when participants change AND we have something to do
+    // (either our camera is on, or someone else has camera on)
+    let previousParticipantCount = 0;
     effect(() => {
       const participants = this.ws.participants();
-      if (!this.isActive()) return;
-      // Ensure we know our own connectionId before reconciling
+      const cameraStates = this.ws.peerCameraStates();
       const myId = this.ws.myConnectionId();
       if (myId) {
         this._myConnectionId = myId;
       }
-      this.reconcilePeers(participants);
+      if (!this._myConnectionId) return;
+
+      // Re-broadcast our camera state when a new participant joins
+      if (participants.length > previousParticipantCount && this.isCameraOn()) {
+        this.ws.sendCameraState(true);
+      }
+      previousParticipantCount = participants.length;
+
+      const hasLocalStream = this.localStreamInternal !== null;
+      const hasRemoteCameras = cameraStates.size > 0;
+
+      if (hasLocalStream || hasRemoteCameras) {
+        this.reconcilePeers(participants);
+      }
     });
 
     this.destroyRef.onDestroy(() => this.stop());
@@ -53,7 +74,6 @@ export class WebRtcService {
   async start(): Promise<void> {
     try {
       this.mediaError.set(null);
-      // Set our connectionId from the WebSocket service
       const myId = this.ws.myConnectionId();
       if (myId) {
         this._myConnectionId = myId;
@@ -66,6 +86,9 @@ export class WebRtcService {
       this.localStream.set(stream);
       this.isCameraOn.set(true);
       this.isMicOn.set(true);
+
+      // Broadcast camera state via WebSocket
+      this.ws.sendCameraState(true);
 
       // Initiate connections to all existing participants
       const participants = this.ws.participants();
@@ -80,15 +103,16 @@ export class WebRtcService {
   }
 
   stop(): void {
-    // Close all peer connections
+    this.ws.sendCameraState(false);
+
     for (const [id, pc] of this.peerConnections) {
       pc.close();
     }
     this.peerConnections.clear();
     this.peerNicknames.clear();
+    this.pendingIceCandidates.clear();
     this.remoteStreams.set([]);
 
-    // Stop local media tracks
     if (this.localStreamInternal) {
       this.localStreamInternal.getTracks().forEach(t => t.stop());
       this.localStreamInternal = null;
@@ -105,6 +129,7 @@ export class WebRtcService {
     if (videoTrack) {
       videoTrack.enabled = !videoTrack.enabled;
       this.isCameraOn.set(videoTrack.enabled);
+      this.ws.sendCameraState(videoTrack.enabled);
     }
   }
 
@@ -118,18 +143,15 @@ export class WebRtcService {
   }
 
   private reconcilePeers(participants: Participant[]): void {
-    if (!this.localStreamInternal) return;
-
-    // Find our own connectionId from the participants list
-    const myConnectionId = this.findMyConnectionId(participants);
+    const myConnectionId = this._myConnectionId;
     if (!myConnectionId) return;
 
-    // Only consider up to MAX participants (excluding ourselves)
     const otherParticipants = participants
       .filter(p => p.connectionId !== myConnectionId)
       .slice(0, MAX_WEBRTC_PARTICIPANTS - 1);
 
     const activeIds = new Set(otherParticipants.map(p => p.connectionId));
+    const weHaveCamera = this.localStreamInternal !== null;
 
     // Remove stale connections
     for (const [id, pc] of this.peerConnections) {
@@ -140,35 +162,41 @@ export class WebRtcService {
       }
     }
 
-    // Create connections to new peers (we initiate if our connectionId < theirs to avoid duplicates)
+    // Only create new connections when we have a camera.
+    // Peers with cameras will initiate to us when they see us in the participants list.
     for (const participant of otherParticipants) {
       this.peerNicknames.set(participant.connectionId, participant.nickname);
-      if (!this.peerConnections.has(participant.connectionId) && myConnectionId < participant.connectionId) {
-        this.createPeerConnection(participant.connectionId, true);
+
+      if (!this.peerConnections.has(participant.connectionId)) {
+        if (weHaveCamera) {
+          this.createPeerConnection(participant.connectionId, true);
+        }
+      } else if (weHaveCamera) {
+        // Add local tracks to existing connections that don't have them yet
+        const pc = this.peerConnections.get(participant.connectionId)!;
+        const hasLocalTracks = pc.getSenders().some(s => s.track !== null);
+        if (!hasLocalTracks && this.localStreamInternal) {
+          for (const track of this.localStreamInternal.getTracks()) {
+            pc.addTrack(track, this.localStreamInternal);
+          }
+          this.createAndSendOffer(pc, participant.connectionId);
+        }
       }
     }
 
     this.updateRemoteStreams();
   }
 
-  private findMyConnectionId(participants: Participant[]): string | null {
-    return this._myConnectionId;
-  }
-
-  private _myConnectionId: string | null = null;
-
   private createPeerConnection(remoteConnectionId: string, initiator: boolean): void {
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     this.peerConnections.set(remoteConnectionId, pc);
 
-    // Add local tracks
     if (this.localStreamInternal) {
       for (const track of this.localStreamInternal.getTracks()) {
         pc.addTrack(track, this.localStreamInternal);
       }
     }
 
-    // Handle ICE candidates
     pc.onicecandidate = (event) => {
       if (event.candidate) {
         this.ws.sendWebRtcIceCandidate(
@@ -180,14 +208,8 @@ export class WebRtcService {
       }
     };
 
-    // Handle remote tracks
-    pc.ontrack = (event) => {
-      this.zone.run(() => {
-        const existingPeer = this.remoteStreams().find(p => p.connectionId === remoteConnectionId);
-        if (!existingPeer || existingPeer.stream !== event.streams[0]) {
-          this.updateRemoteStreams();
-        }
-      });
+    pc.ontrack = () => {
+      this.zone.run(() => this.updateRemoteStreams());
     };
 
     pc.onconnectionstatechange = () => {
@@ -218,15 +240,30 @@ export class WebRtcService {
 
     switch (signal.type) {
       case 'offer': {
-        // Create a peer connection if we don't have one for this peer
-        if (!this.peerConnections.has(fromId)) {
-          this.createPeerConnection(fromId, false);
+        let pc = this.peerConnections.get(fromId);
+        // Handle glare: both sides sent offers simultaneously
+        if (pc && pc.signalingState === 'have-local-offer') {
+          if (this._myConnectionId! < fromId) return;
+          pc.close();
+          this.peerConnections.delete(fromId);
+          pc = undefined;
         }
-        const pc = this.peerConnections.get(fromId);
+        // Resolve nickname from participants list
+        const participants = this.ws.participants();
+        const sender = participants.find(p => p.connectionId === fromId);
+        if (sender) {
+          this.peerNicknames.set(fromId, sender.nickname);
+        }
+        if (!pc) {
+          this.createPeerConnection(fromId, false);
+          pc = this.peerConnections.get(fromId);
+        }
         if (!pc || !signal.sdp) return;
 
         try {
           await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: signal.sdp }));
+          // Flush any ICE candidates that arrived before the offer
+          await this.flushIceCandidates(fromId, pc);
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
           this.ws.sendWebRtcAnswer(fromId, answer.sdp!);
@@ -240,6 +277,8 @@ export class WebRtcService {
         if (!pc || !signal.sdp) return;
         try {
           await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: signal.sdp }));
+          // Flush any ICE candidates that arrived before the answer
+          await this.flushIceCandidates(fromId, pc);
         } catch (err) {
           console.error('Failed to handle WebRTC answer:', err);
         }
@@ -247,13 +286,21 @@ export class WebRtcService {
       }
       case 'ice-candidate': {
         const pc = this.peerConnections.get(fromId);
-        if (!pc || !signal.candidate) return;
+        if (!signal.candidate) return;
+        const candidateInit: RTCIceCandidateInit = {
+          candidate: signal.candidate,
+          sdpMid: signal.sdpMid ?? undefined,
+          sdpMLineIndex: signal.sdpMLineIndex ?? undefined,
+        };
+        // Buffer if PC doesn't exist yet or has no remote description
+        if (!pc || !pc.remoteDescription) {
+          const pending = this.pendingIceCandidates.get(fromId) ?? [];
+          pending.push(candidateInit);
+          this.pendingIceCandidates.set(fromId, pending);
+          return;
+        }
         try {
-          await pc.addIceCandidate(new RTCIceCandidate({
-            candidate: signal.candidate,
-            sdpMid: signal.sdpMid ?? undefined,
-            sdpMLineIndex: signal.sdpMLineIndex ?? undefined,
-          }));
+          await pc.addIceCandidate(new RTCIceCandidate(candidateInit));
         } catch (err) {
           console.error('Failed to add ICE candidate:', err);
         }
@@ -262,9 +309,24 @@ export class WebRtcService {
     }
   }
 
+  private async flushIceCandidates(peerId: string, pc: RTCPeerConnection): Promise<void> {
+    const pending = this.pendingIceCandidates.get(peerId);
+    if (!pending || pending.length === 0) return;
+    this.pendingIceCandidates.delete(peerId);
+    for (const candidate of pending) {
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (err) {
+        console.error('Failed to add buffered ICE candidate:', err);
+      }
+    }
+  }
+
   private updateRemoteStreams(): void {
+    const cameraStates = this.ws.peerCameraStates();
     const peers: RemotePeer[] = [];
     for (const [connectionId, pc] of this.peerConnections) {
+      if (!cameraStates.has(connectionId)) continue;
       const receivers = pc.getReceivers();
       let stream: MediaStream | null = null;
       if (receivers.length > 0) {
