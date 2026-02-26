@@ -57,29 +57,36 @@
 
   <div class="main-content">
     <div class="player-area">
-      <div class="youtube-area">
-        <app-youtube-player
-          [videoUrl]="currentVideoUrl"
+      @if (currentVideoUrl) {
+        <div class="youtube-area">
+          <app-youtube-player
+            [videoUrl]="currentVideoUrl"
+            [isPlaying]="isPlaying"
+            [currentTime]="currentTime"
+            [playbackRate]="playbackRate()"
+            [recommendations]="displayRecommendations()"
+            (playerEvent)="onPlayerEvent($event)"
+            (overlayClick)="onPlayPause()"
+            (playRecommendation)="onPlayRecommendation($event)"
+            (queueRecommendation)="onQueueRecommendation($event)"
+          />
+        </div>
+        <app-video-controls
           [isPlaying]="isPlaying"
-          [currentTime]="currentTime"
-          [playbackRate]="playbackRate()"
-          [recommendations]="displayRecommendations()"
-          (playerEvent)="onPlayerEvent($event)"
-          (overlayClick)="onPlayPause()"
-          (playRecommendation)="onPlayRecommendation($event)"
-          (queueRecommendation)="onQueueRecommendation($event)"
+          [currentTime]="polledTime()"
+          [duration]="polledDuration()"
+          [canControl]="true"
+          [hasVideo]="!!currentVideoUrl"
+          (playPause)="onPlayPause()"
+          (seek)="onSeek($event)"
+          (volumeChange)="onVolumeChange($event)"
         />
-      </div>
-      <app-video-controls
-        [isPlaying]="isPlaying"
-        [currentTime]="polledTime()"
-        [duration]="polledDuration()"
-        [canControl]="true"
-        [hasVideo]="!!currentVideoUrl"
-        (playPause)="onPlayPause()"
-        (seek)="onSeek($event)"
-        (volumeChange)="onVolumeChange($event)"
-      />
+      } @else {
+        <div class="empty-player-placeholder">
+          <span class="placeholder-icon" aria-hidden="true">🎬</span>
+          <p class="placeholder-text">Füge ein Video über die URL-Leiste oben oder die Playlist hinzu, um loszulegen.</p>
+        </div>
+      }
     </div>
 
     <aside class="sidebar" [class.collapsed]="sidebarCollapsed()">
