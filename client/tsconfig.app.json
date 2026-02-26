@@ -4,7 +4,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/app",
-    "types": ["youtube", "sockjs-client"]
+    "types": ["youtube", "sockjs-client"],
+    "resolveJsonModule": true
   },
   "include": [
     "src/**/*.ts"
