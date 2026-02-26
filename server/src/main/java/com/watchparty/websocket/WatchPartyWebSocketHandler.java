@@ -390,7 +390,7 @@ public class WatchPartyWebSocketHandler {
         if (nextItem != null) {
             room.setCurrentVideoUrl(nextItem.videoUrl());
             room.setCurrentTimeSeconds(0);
-            room.setPlaying(false);
+            room.setPlaying(true);
             room.setStateUpdatedAt(Instant.now());
             roomRepository.save(room);
 
