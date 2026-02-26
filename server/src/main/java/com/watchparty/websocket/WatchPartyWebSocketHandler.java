@@ -300,6 +300,23 @@ public class WatchPartyWebSocketHandler {
         messagingTemplate.convertAndSend("/topic/room." + room.getCode() + ".playlist", playlist);
     }
 
+    @MessageMapping("/room.playlist.add-bulk")
+    @Transactional
+    public void addBulkPlaylistItems(@Payload BulkAddPlaylistRequest request, SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = headerAccessor.getSessionId();
+
+        Participant participant = participantRepository.findByConnectionId(sessionId)
+                .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
+
+        Room room = participant.getRoom();
+        for (String videoUrl : request.videoUrls()) {
+            playlistService.addItem(room.getId(), videoUrl, participant.getNickname());
+        }
+
+        PlaylistResponse playlist = playlistService.getPlaylist(room.getId());
+        messagingTemplate.convertAndSend("/topic/room." + room.getCode() + ".playlist", playlist);
+    }
+
     @MessageMapping("/room.playlist.playNow")
     @Transactional
     public void playNow(@Payload AddPlaylistItemRequest request, SimpMessageHeaderAccessor headerAccessor) {

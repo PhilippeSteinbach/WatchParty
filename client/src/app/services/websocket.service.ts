@@ -192,6 +192,15 @@ export class WebSocketService {
     }
   }
 
+  addBulkToPlaylist(videoUrls: string[]): void {
+    if (this.client?.active) {
+      this.client.publish({
+        destination: '/app/room.playlist.add-bulk',
+        body: JSON.stringify({ videoUrls }),
+      });
+    }
+  }
+
   playNow(videoUrl: string): void {
     if (this.client?.active) {
       this.client.publish({

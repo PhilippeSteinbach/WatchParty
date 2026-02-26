@@ -4,16 +4,19 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { CdkDropList, CdkDrag, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { PlaylistService } from '../services/playlist.service';
 import { WebSocketService } from '../services/websocket.service';
 import { PlaylistItem } from '../models/room.model';
+import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog';
+import { extractPlaylistId } from '../utils/youtube.utils';
 
 @Component({
   selector: 'app-playlist-panel',
   standalone: true,
-  imports: [FormsModule, CdkDropList, CdkDrag],
+  imports: [FormsModule, CdkDropList, CdkDrag, ConfirmDialogComponent],
   templateUrl: './playlist-panel.html',
   styleUrl: './playlist-panel.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -21,16 +24,53 @@ import { PlaylistItem } from '../models/room.model';
 export class PlaylistPanelComponent {
   private readonly playlist = inject(PlaylistService);
   private readonly ws = inject(WebSocketService);
+  private readonly http = inject(HttpClient);
 
   readonly items = this.playlist.items;
   readonly roomState = this.ws.roomState;
   readonly urlInput = signal('');
+  readonly showConfirmDialog = signal(false);
+  readonly confirmMessage = signal('');
+  private pendingPlaylistUrls: string[] = [];
 
   addToQueue(): void {
     const url = this.urlInput().trim();
     if (!url) return;
+
+    const playlistId = extractPlaylistId(url);
+    if (playlistId) {
+      this.handlePlaylistUrl(playlistId);
+      return;
+    }
+
     this.playlist.addToQueue(url);
     this.urlInput.set('');
+  }
+
+  private handlePlaylistUrl(playlistId: string): void {
+    this.http.get<any>(`/api/videos/playlist/${playlistId}`).subscribe({
+      next: (info) => {
+        this.pendingPlaylistUrls = info.items.map((item: any) => item.videoUrl);
+        this.confirmMessage.set(`Add ${info.videoCount} videos from "${info.title}" to the playlist?`);
+        this.showConfirmDialog.set(true);
+      },
+      error: () => {
+        this.playlist.addToQueue(this.urlInput().trim());
+        this.urlInput.set('');
+      }
+    });
+  }
+
+  onConfirmPlaylist(): void {
+    this.playlist.addBulkToQueue(this.pendingPlaylistUrls);
+    this.pendingPlaylistUrls = [];
+    this.showConfirmDialog.set(false);
+    this.urlInput.set('');
+  }
+
+  onCancelPlaylist(): void {
+    this.pendingPlaylistUrls = [];
+    this.showConfirmDialog.set(false);
   }
 
   playNow(): void {

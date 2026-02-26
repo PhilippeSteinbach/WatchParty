@@ -20,6 +20,8 @@ public class YouTubeService {
     private static final Pattern SHORT_URL = Pattern.compile("youtu\\.be/([^?&]+)");
     private static final Pattern LONG_URL = Pattern.compile("[?&]v=([^&]+)");
     private static final Pattern ISO_DURATION = Pattern.compile("PT(?:(\\d+)H)?(?:(\\d+)M)?(?:(\\d+)S)?");
+    private static final Pattern PLAYLIST_ID = Pattern.compile("[?&]list=([^&]+)");
+    private static final int MAX_PLAYLIST_ITEMS = 200;
 
     private final RestClient restClient;
     private final String apiKey;
@@ -30,6 +32,8 @@ public class YouTubeService {
     }
 
     public record VideoMetadata(String title, String thumbnailUrl, int durationSeconds) {}
+    public record PlaylistInfo(String title, int videoCount, List<PlaylistVideoItem> items) {}
+    public record PlaylistVideoItem(String videoId, String videoUrl, String title, String thumbnailUrl, int durationSeconds) {}
 
     public VideoMetadata fetchMetadata(String videoUrl) {
         String videoId = extractVideoId(videoUrl);
@@ -86,6 +90,74 @@ public class YouTubeService {
         int min = m.group(2) != null ? Integer.parseInt(m.group(2)) : 0;
         int s = m.group(3) != null ? Integer.parseInt(m.group(3)) : 0;
         return h * 3600 + min * 60 + s;
+    }
+
+    public PlaylistInfo fetchPlaylistItems(String playlistId) {
+        if (apiKey == null || apiKey.isBlank()) {
+            return null;
+        }
+
+        try {
+            // Fetch playlist title
+            JsonNode playlistResponse = restClient.get()
+                    .uri("/playlists?part=snippet&id={id}&key={key}", playlistId, apiKey)
+                    .retrieve()
+                    .body(JsonNode.class);
+
+            String playlistTitle = null;
+            JsonNode plItems = playlistResponse != null ? playlistResponse.get("items") : null;
+            if (plItems != null && !plItems.isEmpty()) {
+                playlistTitle = plItems.get(0).path("snippet").path("title").asText("Untitled Playlist");
+            }
+
+            // Fetch all playlist items with pagination
+            List<PlaylistVideoItem> items = new ArrayList<>();
+            String pageToken = null;
+
+            do {
+                String uri = "/playlistItems?part=snippet,contentDetails&playlistId={plId}&maxResults=50&key={key}"
+                        + (pageToken != null ? "&pageToken=" + pageToken : "");
+
+                JsonNode response = restClient.get()
+                        .uri(uri, playlistId, apiKey)
+                        .retrieve()
+                        .body(JsonNode.class);
+
+                if (response == null) break;
+
+                JsonNode responseItems = response.get("items");
+                if (responseItems != null) {
+                    for (JsonNode item : responseItems) {
+                        String videoId = item.path("snippet").path("resourceId").path("videoId").asText(null);
+                        if (videoId == null) continue;
+
+                        String videoUrl = "https://www.youtube.com/watch?v=" + videoId;
+                        String title = item.path("snippet").path("title").asText("Untitled");
+                        String thumbnailUrl = "https://img.youtube.com/vi/" + videoId + "/mqdefault.jpg";
+
+                        items.add(new PlaylistVideoItem(videoId, videoUrl, title, thumbnailUrl, 0));
+
+                        if (items.size() >= MAX_PLAYLIST_ITEMS) break;
+                    }
+                }
+
+                if (items.size() >= MAX_PLAYLIST_ITEMS) break;
+                pageToken = response.has("nextPageToken") ? response.get("nextPageToken").asText() : null;
+            } while (pageToken != null);
+
+            return new PlaylistInfo(playlistTitle, items.size(), items);
+        } catch (Exception e) {
+            log.warn("Failed to fetch playlist items for {}: {}", playlistId, e.getMessage());
+            return null;
+        }
+    }
+
+    public String extractPlaylistId(String url) {
+        if (url == null || url.isBlank()) {
+            return null;
+        }
+        Matcher matcher = PLAYLIST_ID.matcher(url);
+        return matcher.find() ? matcher.group(1) : null;
     }
 
     public List<com.watchparty.dto.VideoRecommendation> searchRelated(String videoId, int maxResults) {
