@@ -94,9 +94,10 @@ export class PlaylistPanelComponent {
 
   onDrop(event: CdkDragDrop<PlaylistItem[]>): void {
     if (event.previousIndex === event.currentIndex) return;
-    const items = this.items();
+    const items = [...this.items()];
     const item = items[event.previousIndex];
     moveItemInArray(items, event.previousIndex, event.currentIndex);
+    this.ws.playlistItems.set(items);
     this.playlist.reorder(item.id, event.currentIndex + 1);
   }
 

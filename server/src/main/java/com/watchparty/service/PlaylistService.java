@@ -85,12 +85,27 @@ public class PlaylistService {
     }
 
     @Transactional
-    public PlaylistItemResponse reorderItem(UUID itemId, int newPosition) {
+    public void reorderItem(UUID itemId, int newPosition) {
         PlaylistItem item = playlistItemRepository.findById(itemId)
                 .orElseThrow(() -> new EntityNotFoundException("Playlist item not found: " + itemId));
-        item.setPosition(newPosition);
-        item = playlistItemRepository.save(item);
-        return toResponse(item);
+
+        List<PlaylistItem> items = playlistItemRepository.findByRoomIdOrderByPositionAsc(item.getRoom().getId());
+
+        // Remove the dragged item from the list
+        items.removeIf(i -> i.getId().equals(itemId));
+
+        // Clamp newPosition to valid range (1-based)
+        int insertIndex = Math.max(0, Math.min(newPosition - 1, items.size()));
+
+        // Insert at the new position
+        items.add(insertIndex, item);
+
+        // Reassign sequential positions starting at 1
+        for (int i = 0; i < items.size(); i++) {
+            items.get(i).setPosition(i + 1);
+        }
+
+        playlistItemRepository.saveAll(items);
     }
 
     private PlaylistItemResponse toResponse(PlaylistItem item) {
