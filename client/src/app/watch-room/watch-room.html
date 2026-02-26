@@ -17,7 +17,7 @@
       </button>
     </div>
 
-    <form class="video-form" (ngSubmit)="changeVideo()">
+    <form class="video-form" (ngSubmit)="addVideo()">
       <input
         type="text"
         placeholder="Paste YouTube URL or playlist…"
@@ -25,7 +25,7 @@
         (ngModelChange)="videoUrlInput.set($event)"
         name="videoUrl"
       />
-      <button type="submit">Load</button>
+      <button type="submit">Add</button>
     </form>
 
     <div class="toolbar-right">

@@ -216,7 +216,7 @@ export class WatchRoomComponent implements OnDestroy {
     return this.localIsPlaying() ?? this.roomState()?.isPlaying ?? false;
   }
 
-  changeVideo(): void {
+  addVideo(): void {
     const url = this.videoUrlInput().trim();
     if (!url) return;
 
@@ -226,12 +226,8 @@ export class WatchRoomComponent implements OnDestroy {
       return;
     }
 
-    this.ws.sendPlayerAction({
-      action: 'CHANGE_VIDEO',
-      videoUrl: url,
-      currentTimeSeconds: 0,
-      isPlaying: false,
-    });
+    this.ws.addToPlaylist(url);
+    this.videoUrlInput.set('');
   }
 
   private handlePlaylistImport(playlistId: string): void {
@@ -242,12 +238,8 @@ export class WatchRoomComponent implements OnDestroy {
         this.showPlaylistConfirm.set(true);
       },
       error: () => {
-        this.ws.sendPlayerAction({
-          action: 'CHANGE_VIDEO',
-          videoUrl: this.videoUrlInput().trim(),
-          currentTimeSeconds: 0,
-          isPlaying: false,
-        });
+        this.ws.addToPlaylist(this.videoUrlInput().trim());
+        this.videoUrlInput.set('');
       }
     });
   }
