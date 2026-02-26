@@ -81,6 +81,11 @@ public class WatchPartyWebSocketHandler {
 
         broadcastRoomState(room);
 
+        // Send the session ID back so the client knows its own connectionId for WebRTC
+        messagingTemplate.convertAndSendToUser(sessionId, "/queue/session.info",
+                Map.of("connectionId", sessionId),
+                createHeaders(sessionId));
+
         PlaylistResponse playlist = playlistService.getPlaylist(room.getId());
         messagingTemplate.convertAndSendToUser(sessionId, "/queue/playlist.history", playlist,
                 createHeaders(sessionId));
@@ -397,11 +402,40 @@ public class WatchPartyWebSocketHandler {
         messagingTemplate.convertAndSend("/topic/room." + room.getCode() + ".playlist", playlist);
     }
 
+    private static final int MAX_WEBRTC_PARTICIPANTS = 6;
+
+    @MessageMapping("/room.webrtc.offer")
+    public void webRtcOffer(@Payload WebRtcOfferMessage message, SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = headerAccessor.getSessionId();
+        messagingTemplate.convertAndSendToUser(
+                message.targetConnectionId(), "/queue/webrtc.signal",
+                WebRtcSignalEnvelope.offer(sessionId, message.sdp()),
+                createHeaders(message.targetConnectionId()));
+    }
+
+    @MessageMapping("/room.webrtc.answer")
+    public void webRtcAnswer(@Payload WebRtcAnswerMessage message, SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = headerAccessor.getSessionId();
+        messagingTemplate.convertAndSendToUser(
+                message.targetConnectionId(), "/queue/webrtc.signal",
+                WebRtcSignalEnvelope.answer(sessionId, message.sdp()),
+                createHeaders(message.targetConnectionId()));
+    }
+
+    @MessageMapping("/room.webrtc.ice")
+    public void webRtcIceCandidate(@Payload WebRtcIceCandidateMessage message, SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = headerAccessor.getSessionId();
+        messagingTemplate.convertAndSendToUser(
+                message.targetConnectionId(), "/queue/webrtc.signal",
+                WebRtcSignalEnvelope.iceCandidate(sessionId, message.candidate(), message.sdpMid(), message.sdpMLineIndex()),
+                createHeaders(message.targetConnectionId()));
+    }
+
     private void broadcastRoomState(Room room) {
         List<Participant> participants = participantRepository.findByRoomId(room.getId());
 
         List<ParticipantMessage> participantMessages = participants.stream()
-                .map(p -> new ParticipantMessage(p.getId(), p.getNickname(), p.isHost()))
+                .map(p -> new ParticipantMessage(p.getId(), p.getNickname(), p.isHost(), p.getConnectionId()))
                 .toList();
 
         var roomState = new RoomStateMessage(

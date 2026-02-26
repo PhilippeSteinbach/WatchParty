@@ -1,7 +1,7 @@
 import { Injectable, signal, computed, inject, NgZone } from '@angular/core';
 import { Client, IMessage } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { ChatMessage, Participant, PlayerState, PlaylistItem, RoomState, SyncCorrection } from '../models/room.model';
+import { ChatMessage, Participant, PlayerState, PlaylistItem, RoomState, SyncCorrection, WebRtcSignalEnvelope } from '../models/room.model';
 
 @Injectable({ providedIn: 'root' })
 export class WebSocketService {
@@ -15,6 +15,8 @@ export class WebSocketService {
   readonly chatMessages = signal<ChatMessage[]>([]);
   readonly playlistItems = signal<PlaylistItem[]>([]);
   readonly syncCorrection = signal<SyncCorrection | null>(null);
+  readonly webRtcSignal = signal<WebRtcSignalEnvelope | null>(null);
+  readonly myConnectionId = signal<string | null>(null);
 
   connect(roomCode: string, nickname: string): void {
     this.roomCode = roomCode;
@@ -86,6 +88,19 @@ export class WebSocketService {
           });
         });
 
+        this.client!.subscribe('/user/queue/webrtc.signal', (message: IMessage) => {
+          this.zone.run(() => {
+            this.webRtcSignal.set(JSON.parse(message.body) as WebRtcSignalEnvelope);
+          });
+        });
+
+        this.client!.subscribe('/user/queue/session.info', (message: IMessage) => {
+          this.zone.run(() => {
+            const body = JSON.parse(message.body) as { connectionId: string };
+            this.myConnectionId.set(body.connectionId);
+          });
+        });
+
         this.client!.publish({
           destination: '/app/room.join',
           body: JSON.stringify({ roomCode, nickname }),
@@ -113,6 +128,8 @@ export class WebSocketService {
     this.chatMessages.set([]);
     this.playlistItems.set([]);
     this.syncCorrection.set(null);
+    this.webRtcSignal.set(null);
+    this.myConnectionId.set(null);
   }
 
   sendPlayerAction(action: PlayerState): void {
@@ -195,6 +212,33 @@ export class WebSocketService {
       this.client.publish({
         destination: '/app/room.position.report',
         body: JSON.stringify({ currentTimeSeconds }),
+      });
+    }
+  }
+
+  sendWebRtcOffer(targetConnectionId: string, sdp: string): void {
+    if (this.client?.active) {
+      this.client.publish({
+        destination: '/app/room.webrtc.offer',
+        body: JSON.stringify({ targetConnectionId, sdp }),
+      });
+    }
+  }
+
+  sendWebRtcAnswer(targetConnectionId: string, sdp: string): void {
+    if (this.client?.active) {
+      this.client.publish({
+        destination: '/app/room.webrtc.answer',
+        body: JSON.stringify({ targetConnectionId, sdp }),
+      });
+    }
+  }
+
+  sendWebRtcIceCandidate(targetConnectionId: string, candidate: string, sdpMid: string | null, sdpMLineIndex: number | null): void {
+    if (this.client?.active) {
+      this.client.publish({
+        destination: '/app/room.webrtc.ice',
+        body: JSON.stringify({ targetConnectionId, candidate, sdpMid, sdpMLineIndex }),
       });
     }
   }

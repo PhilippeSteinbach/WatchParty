@@ -285,40 +285,40 @@ Phasenweise Umsetzung: MVP zuerst lauffähig, dann iterativ erweitern.
 
 ---
 
-## Phase 4: WebRTC Audio/Video & Polish
+## Phase 4: WebRTC Audio/Video & Polish ✅
 
 **Goal:** Webcam/microphone sharing, UI polish, production readiness.
 
 ### Server – WebRTC Signaling
-- [ ] WebSocket message handlers: `sendOffer(targetConnectionId, sdp)`, `sendAnswer(targetConnectionId, sdp)`, `sendIceCandidate(targetConnectionId, candidate)`
-- [ ] Use public STUN servers initially (Google)
-- [ ] Connection limit: max 6 participants per room for WebRTC (mesh topology)
+- [x] WebSocket message handlers: `sendOffer(targetConnectionId, sdp)`, `sendAnswer(targetConnectionId, sdp)`, `sendIceCandidate(targetConnectionId, candidate)`
+- [x] Use public STUN servers initially (Google)
+- [x] Connection limit: max 6 participants per room for WebRTC (mesh topology)
 
 ### Client – WebRTC
-- [ ] `WebRtcService` – `RTCPeerConnection` management, media stream handling
-- [ ] `getUserMedia()` for camera/microphone access
-- [ ] Mesh network: each peer connects to every other peer
-- [ ] Signaling via WebSocket (offer/answer/ICE)
-- [ ] `VideoGridComponent` – Webcam feeds in responsive grid layout (max 6)
-- [ ] `MediaControlsComponent` – Camera on/off, microphone mute/unmute
-- [ ] Media state as signals: `localStream`, `remoteStreams`, `isCameraOn`, `isMicOn`
+- [x] `WebRtcService` – `RTCPeerConnection` management, media stream handling
+- [x] `getUserMedia()` for camera/microphone access
+- [x] Mesh network: each peer connects to every other peer
+- [x] Signaling via WebSocket (offer/answer/ICE)
+- [x] `VideoGridComponent` – Webcam feeds in responsive grid layout (max 6)
+- [x] `MediaControlsComponent` – Camera on/off, microphone mute/unmute
+- [x] Media state as signals: `localStream`, `remoteStreams`, `isCameraOn`, `isMicOn`
 
 ### UI/UX Polish
-- [ ] Responsive layout: sidebar (chat/playlist) + main area (player + video grid)
-- [ ] Dark theme as default (SCSS variables)
-- [ ] Participant notifications: join/leave toasts
-- [ ] Room link copy button (Clipboard API)
-- [ ] Keyboard shortcuts: Space (play/pause), M (mute), F (fullscreen)
-- [ ] Loading states and error handling for all async operations
-- [ ] Accessibility: keyboard navigation, ARIA labels, focus management
+- [x] Responsive layout: sidebar (chat/playlist) + main area (player + video grid)
+- [x] Dark theme as default (SCSS variables)
+- [x] Participant notifications: join/leave toasts
+- [x] Room link copy button (Clipboard API)
+- [x] Keyboard shortcuts: Space (play/pause), M (mute), F (fullscreen)
+- [x] Loading states and error handling for all async operations
+- [x] Accessibility: keyboard navigation, ARIA labels, focus management
 
 ### Production Readiness
-- [ ] Rate-limiting filter (Spring Boot `Bucket4j` or custom filter)
-- [ ] CORS policy for production origin
-- [ ] Health checks: DB, WebSocket (`spring-boot-starter-actuator`)
-- [ ] SLF4J + Logback: structured logging to stdout (Docker-friendly)
-- [ ] Docker Compose production override: Nginx with SSL termination, environment variables
-- [ ] Flyway migration on startup (automatic via Spring Boot)
+- [x] Rate-limiting filter (custom sliding-window filter for API endpoints)
+- [x] CORS policy for production origin (configurable via `CORS_ALLOWED_ORIGINS` env var)
+- [x] Health checks: DB, WebSocket (`spring-boot-starter-actuator`)
+- [x] SLF4J + Logback: structured logging to stdout (Docker-friendly)
+- [x] Docker Compose production override: environment variables for JWT, CORS, DB password
+- [x] Flyway migration on startup (automatic via Spring Boot)
 
 ### Verification
 - Webcam/mic sharing works between 2+ participants

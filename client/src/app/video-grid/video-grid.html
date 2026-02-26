@@ -1,0 +1,20 @@
+<div class="video-grid" [class]="'grid-' + gridSize()">
+  @if (localStream()) {
+    <div class="video-tile local">
+      <video #localVideo autoplay muted playsinline aria-label="Your camera"></video>
+      <span class="video-label">You</span>
+    </div>
+  }
+
+  @for (peer of remoteStreams(); track peer.connectionId) {
+    <div class="video-tile">
+      <video #remoteVideo autoplay playsinline [attr.aria-label]="peer.nickname + '\'s camera'"></video>
+      <span class="video-label">{{ peer.nickname }}</span>
+      @if (!peer.stream) {
+        <div class="no-video">
+          <span class="avatar">{{ peer.nickname.charAt(0).toUpperCase() }}</span>
+        </div>
+      }
+    </div>
+  }
+</div>

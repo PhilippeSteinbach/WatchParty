@@ -1,4 +1,13 @@
 <div class="watch-room">
+  <!-- Toast notifications -->
+  @if (notifications().length > 0) {
+    <div class="toast-container" aria-live="polite">
+      @for (note of notifications(); track $index) {
+        <div class="toast">{{ note }}</div>
+      }
+    </div>
+  }
+
   <header class="toolbar">
     <div class="room-info">
       <span class="room-label">Room:</span>
@@ -9,31 +18,53 @@
       <button class="sync-btn" (click)="requestSync()">🔄 Sync</button>
     </div>
 
-    <form class="video-form" (ngSubmit)="changeVideo()">
-      <input
-        type="text"
-        placeholder="Paste YouTube URL…"
-        [ngModel]="videoUrlInput()"
-        (ngModelChange)="videoUrlInput.set($event)"
-        name="videoUrl"
+    <div class="toolbar-right">
+      <app-media-controls
+        [isActive]="webRtc.isActive()"
+        [isCameraOn]="webRtc.isCameraOn()"
+        [isMicOn]="webRtc.isMicOn()"
+        (startMedia)="onStartMedia()"
+        (stopMedia)="onStopMedia()"
+        (toggleCamera)="onToggleCamera()"
+        (toggleMic)="onToggleMic()"
       />
-      <button type="submit">Load</button>
-    </form>
+
+      <form class="video-form" (ngSubmit)="changeVideo()">
+        <input
+          type="text"
+          placeholder="Paste YouTube URL…"
+          [ngModel]="videoUrlInput()"
+          (ngModelChange)="videoUrlInput.set($event)"
+          name="videoUrl"
+        />
+        <button type="submit">Load</button>
+      </form>
+    </div>
   </header>
 
   <div class="main-content">
     <div class="player-area">
-      <app-youtube-player
-        [videoUrl]="currentVideoUrl"
-        [isPlaying]="isPlaying"
-        [currentTime]="currentTime"
-        [playbackRate]="playbackRate()"
-        [recommendations]="displayRecommendations()"
-        (playerEvent)="onPlayerEvent($event)"
-        (overlayClick)="onPlayPause()"
-        (playRecommendation)="onPlayRecommendation($event)"
-        (queueRecommendation)="onQueueRecommendation($event)"
-      />
+      @if (webRtc.isActive()) {
+        <div class="video-grid-area">
+          <app-video-grid
+            [localStream]="webRtc.localStream()"
+            [remoteStreams]="webRtc.remoteStreams()"
+          />
+        </div>
+      }
+      <div class="youtube-area" [class.with-grid]="webRtc.isActive()">
+        <app-youtube-player
+          [videoUrl]="currentVideoUrl"
+          [isPlaying]="isPlaying"
+          [currentTime]="currentTime"
+          [playbackRate]="playbackRate()"
+          [recommendations]="displayRecommendations()"
+          (playerEvent)="onPlayerEvent($event)"
+          (overlayClick)="onPlayPause()"
+          (playRecommendation)="onPlayRecommendation($event)"
+          (queueRecommendation)="onQueueRecommendation($event)"
+        />
+      </div>
       <app-video-controls
         [isPlaying]="isPlaying"
         [currentTime]="polledTime()"
