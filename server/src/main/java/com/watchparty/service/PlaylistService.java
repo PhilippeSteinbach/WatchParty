@@ -15,6 +15,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+@SuppressWarnings("null")
 @Service
 public class PlaylistService {
 

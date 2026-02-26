@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+@SuppressWarnings("null")
 @Service
 public class ChatService {
 
