@@ -10,12 +10,14 @@ import com.watchparty.repository.PlaylistItemRepository;
 import com.watchparty.repository.RoomRepository;
 import com.watchparty.service.ChatService;
 import com.watchparty.service.PlaylistService;
+import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -89,6 +91,13 @@ public class WatchPartyWebSocketHandler {
         PlaylistResponse playlist = playlistService.getPlaylist(room.getId());
         messagingTemplate.convertAndSendToUser(sessionId, "/queue/playlist.history", playlist,
                 createHeaders(sessionId));
+    }
+
+    @EventListener
+    @Transactional
+    public void handleSessionDisconnect(SessionDisconnectEvent event) {
+        String sessionId = event.getSessionId();
+        handleParticipantLeave(sessionId);
     }
 
     @MessageMapping("/room.leave")
