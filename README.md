@@ -105,15 +105,6 @@ WatchParty/
 
 ## Branch Protection
 
-To enforce code quality, configure branch protection rules for `main` in your GitHub repository settings:
-
-1. Go to **Settings → Rules → Rulesets** (or **Settings → Branches** for classic rules)
-2. Add a rule targeting the `main` branch:
-   - ✅ **Require a pull request before merging** — no direct pushes to main
-   - ✅ **Require status checks to pass** — select `Server (Java)` and `Client (Angular)` checks
-   - ✅ **Require branches to be up to date before merging**
-3. Optionally require approvals for team projects
-
 When a PR is merged, the [version-bump workflow](.github/workflows/version-bump.yml) automatically increments the version based on PR labels:
 
 | PR Label | Bump | Example |
