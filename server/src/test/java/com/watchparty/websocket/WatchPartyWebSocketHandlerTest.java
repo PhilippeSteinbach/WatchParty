@@ -35,6 +35,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null") // Mockito matchers (any/eq/capture) return null by design
 class WatchPartyWebSocketHandlerTest {
 
     @Mock

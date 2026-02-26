@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null") // Mockito matchers (any/eq/capture) return null by design
 class PlaylistServiceTest {
 
     @Mock

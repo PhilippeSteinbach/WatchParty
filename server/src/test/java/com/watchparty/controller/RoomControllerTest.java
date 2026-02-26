@@ -28,6 +28,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(RoomController.class)
+@SuppressWarnings("null") // Mockito matchers (any/eq/capture) return null by design
 class RoomControllerTest {
 
     @TestConfiguration
