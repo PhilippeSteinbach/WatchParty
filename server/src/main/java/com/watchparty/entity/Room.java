@@ -57,6 +57,10 @@ public class Room {
     @Column(name = "is_permanent", nullable = false)
     private boolean isPermanent;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "playback_mode", nullable = false)
+    private PlaybackMode playbackMode = PlaybackMode.ORDERED;
+
     @PrePersist
     void prePersist() {
         this.createdAt = Instant.now();
@@ -169,4 +173,7 @@ public class Room {
 
     public boolean isPermanent() { return isPermanent; }
     public void setPermanent(boolean permanent) { isPermanent = permanent; }
+
+    public PlaybackMode getPlaybackMode() { return playbackMode; }
+    public void setPlaybackMode(PlaybackMode playbackMode) { this.playbackMode = playbackMode; }
 }

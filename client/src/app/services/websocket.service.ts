@@ -221,6 +221,15 @@ export class WebSocketService {
     }
   }
 
+  setPlaybackMode(mode: 'ORDERED' | 'SHUFFLE'): void {
+    if (this.client?.active) {
+      this.client.publish({
+        destination: '/app/room.playlist.mode',
+        body: JSON.stringify({ mode }),
+      });
+    }
+  }
+
   reorderPlaylist(itemId: string, newPosition: number): void {
     if (this.client?.active) {
       this.client.publish({

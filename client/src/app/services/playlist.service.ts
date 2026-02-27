@@ -1,12 +1,13 @@
-import { Injectable, inject, Signal } from '@angular/core';
+import { Injectable, inject, Signal, computed } from '@angular/core';
 import { WebSocketService } from './websocket.service';
-import { PlaylistItem } from '../models/room.model';
+import { PlaybackMode, PlaylistItem } from '../models/room.model';
 
 @Injectable({ providedIn: 'root' })
 export class PlaylistService {
   private readonly ws = inject(WebSocketService);
 
   readonly items: Signal<PlaylistItem[]> = this.ws.playlistItems;
+  readonly playbackMode: Signal<PlaybackMode> = computed(() => this.ws.roomState()?.playbackMode ?? 'ORDERED');
 
   addToQueue(videoUrl: string): void {
     this.ws.addToPlaylist(videoUrl);
@@ -30,5 +31,9 @@ export class PlaylistService {
 
   reorder(itemId: string, newPosition: number): void {
     this.ws.reorderPlaylist(itemId, newPosition);
+  }
+
+  setPlaybackMode(mode: PlaybackMode): void {
+    this.ws.setPlaybackMode(mode);
   }
 }

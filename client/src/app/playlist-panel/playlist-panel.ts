@@ -1,90 +1,59 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   signal,
 } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { CdkDropList, CdkDrag, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { LucideAngularModule, ListPlus, Play, GripVertical, X, SkipForward } from 'lucide-angular';
+import { LucideAngularModule, Play, GripVertical, X, SkipForward, ListOrdered, Shuffle, Search } from 'lucide-angular';
 import { PlaylistService } from '../services/playlist.service';
 import { WebSocketService } from '../services/websocket.service';
 import { PlaylistItem } from '../models/room.model';
-import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog';
-import { extractPlaylistId } from '../utils/youtube.utils';
 
 @Component({
   selector: 'app-playlist-panel',
   standalone: true,
-  imports: [FormsModule, CdkDropList, CdkDrag, LucideAngularModule, ConfirmDialogComponent],
+  imports: [FormsModule, CdkDropList, CdkDrag, LucideAngularModule],
   templateUrl: './playlist-panel.html',
   styleUrl: './playlist-panel.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlaylistPanelComponent {
-  readonly ListPlus = ListPlus;
   readonly Play = Play;
   readonly GripVertical = GripVertical;
   readonly X = X;
   readonly SkipForward = SkipForward;
+  readonly ListOrdered = ListOrdered;
+  readonly Shuffle = Shuffle;
+  readonly Search = Search;
 
   private readonly playlist = inject(PlaylistService);
   private readonly ws = inject(WebSocketService);
-  private readonly http = inject(HttpClient);
 
   readonly items = this.playlist.items;
   readonly roomState = this.ws.roomState;
-  readonly urlInput = signal('');
-  readonly showConfirmDialog = signal(false);
-  readonly confirmMessage = signal('');
-  private pendingPlaylistUrls: string[] = [];
+  readonly playbackMode = this.playlist.playbackMode;
+  readonly searchOpen = signal(false);
+  readonly searchQuery = signal('');
 
-  addToQueue(): void {
-    const url = this.urlInput().trim();
-    if (!url) return;
+  readonly filteredItems = computed(() => {
+    const query = this.searchQuery().toLowerCase().trim();
+    if (!query) return this.items();
+    return this.items().filter(item =>
+      this.displayTitle(item).toLowerCase().includes(query)
+    );
+  });
 
-    const playlistId = extractPlaylistId(url);
-    if (playlistId) {
-      this.handlePlaylistUrl(playlistId);
-      return;
-    }
-
-    this.playlist.addToQueue(url);
-    this.urlInput.set('');
+  toggleSearch(): void {
+    const open = !this.searchOpen();
+    this.searchOpen.set(open);
+    if (!open) this.searchQuery.set('');
   }
 
-  private handlePlaylistUrl(playlistId: string): void {
-    this.http.get<any>(`/api/videos/playlist/${playlistId}`).subscribe({
-      next: (info) => {
-        this.pendingPlaylistUrls = info.items.map((item: any) => item.videoUrl);
-        this.confirmMessage.set(`Add ${info.videoCount} videos from "${info.title}" to the playlist?`);
-        this.showConfirmDialog.set(true);
-      },
-      error: () => {
-        this.playlist.addToQueue(this.urlInput().trim());
-        this.urlInput.set('');
-      }
-    });
-  }
-
-  onConfirmPlaylist(): void {
-    this.playlist.addBulkToQueue(this.pendingPlaylistUrls);
-    this.pendingPlaylistUrls = [];
-    this.showConfirmDialog.set(false);
-    this.urlInput.set('');
-  }
-
-  onCancelPlaylist(): void {
-    this.pendingPlaylistUrls = [];
-    this.showConfirmDialog.set(false);
-  }
-
-  playNow(): void {
-    const url = this.urlInput().trim();
-    if (!url) return;
-    this.playlist.playNow(url);
-    this.urlInput.set('');
+  setMode(mode: 'ORDERED' | 'SHUFFLE'): void {
+    this.playlist.setPlaybackMode(mode);
   }
 
   playItem(item: PlaylistItem): void {
