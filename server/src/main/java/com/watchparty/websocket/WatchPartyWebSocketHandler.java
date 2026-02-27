@@ -9,17 +9,20 @@ import com.watchparty.exception.RoomNotFoundException;
 import com.watchparty.repository.ParticipantRepository;
 import com.watchparty.repository.PlaylistItemRepository;
 import com.watchparty.repository.RoomRepository;
+import com.watchparty.repository.UserRepository;
 import com.watchparty.service.ChatService;
 import com.watchparty.service.PlaylistService;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
 import org.springframework.lang.NonNull;
-import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -27,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Controller
@@ -35,28 +39,35 @@ public class WatchPartyWebSocketHandler {
     private final RoomRepository roomRepository;
     private final ParticipantRepository participantRepository;
     private final PlaylistItemRepository playlistItemRepository;
+    private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatService chatService;
     private final PlaylistService playlistService;
+    private final Validator validator;
 
     public WatchPartyWebSocketHandler(RoomRepository roomRepository,
                                        ParticipantRepository participantRepository,
                                        PlaylistItemRepository playlistItemRepository,
+                                       UserRepository userRepository,
                                        SimpMessagingTemplate messagingTemplate,
                                        ChatService chatService,
-                                       PlaylistService playlistService) {
+                                       PlaylistService playlistService,
+                                       Validator validator) {
         this.roomRepository = roomRepository;
         this.participantRepository = participantRepository;
         this.playlistItemRepository = playlistItemRepository;
+        this.userRepository = userRepository;
         this.messagingTemplate = messagingTemplate;
         this.chatService = chatService;
         this.playlistService = playlistService;
+        this.validator = validator;
     }
 
     @MessageMapping("/room.join")
     @Transactional
     public void joinRoom(@Payload JoinRoomMessage message, SimpMessageHeaderAccessor headerAccessor) {
         String sessionId = requireSessionId(headerAccessor);
+        validatePayload(message, sessionId);
 
         Room room = roomRepository.findByCode(message.roomCode())
                 .orElseThrow(() -> new RoomNotFoundException(message.roomCode()));
@@ -64,18 +75,25 @@ public class WatchPartyWebSocketHandler {
         List<Participant> existingParticipants = participantRepository.findByRoomId(room.getId());
         boolean isFirstParticipant = existingParticipants.isEmpty();
 
+        UUID userId = getUserId(headerAccessor);
+        // Authenticated users: use display name from DB; guests: sanitize client-provided nickname
+        String nickname;
+        if (userId != null) {
+            nickname = userRepository.findById(userId)
+                    .map(user -> user.getDisplayName())
+                    .orElse(sanitizeText(message.nickname()));
+        } else {
+            nickname = sanitizeText(message.nickname());
+        }
+
         var participant = new Participant();
-        participant.setNickname(message.nickname());
+        participant.setNickname(nickname);
         participant.setConnectionId(sessionId);
         participant.setHost(isFirstParticipant);
         participant.setRoom(room);
 
-        Map<String, Object> sessionAttrs = headerAccessor.getSessionAttributes();
-        if (sessionAttrs != null) {
-            UUID userId = (UUID) sessionAttrs.get(WebSocketAuthChannelInterceptor.USER_ID_ATTR);
-            if (userId != null) {
-                participant.setUserId(userId);
-            }
+        if (userId != null) {
+            participant.setUserId(userId);
         }
 
         participantRepository.save(participant);
@@ -101,13 +119,6 @@ public class WatchPartyWebSocketHandler {
                 createHeaders(sessionId));
     }
 
-    @EventListener
-    @Transactional
-    public void handleSessionDisconnect(SessionDisconnectEvent event) {
-        String sessionId = event.getSessionId();
-        handleParticipantLeave(sessionId);
-    }
-
     @MessageMapping("/room.leave")
     @Transactional
     public void leaveRoom(SimpMessageHeaderAccessor headerAccessor) {
@@ -119,6 +130,7 @@ public class WatchPartyWebSocketHandler {
     @Transactional
     public void playerAction(@Payload PlayerStateMessage message, SimpMessageHeaderAccessor headerAccessor) {
         String sessionId = requireSessionId(headerAccessor);
+        validatePayload(message, sessionId);
 
         Participant participant = participantRepository.findByConnectionId(sessionId)
                 .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
@@ -274,6 +286,7 @@ public class WatchPartyWebSocketHandler {
     @Transactional
     public void chatReaction(@Payload ChatReactionRequest request, SimpMessageHeaderAccessor headerAccessor) {
         String sessionId = requireSessionId(headerAccessor);
+        validatePayload(request, sessionId);
 
         Participant participant = participantRepository.findByConnectionId(sessionId)
                 .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
@@ -524,5 +537,43 @@ public class WatchPartyWebSocketHandler {
                 participantMessages);
 
         messagingTemplate.convertAndSend("/topic/room." + room.getCode(), roomState);
+    }
+
+    /**
+     * Validates a payload using Bean Validation. Sends an error message to the client if invalid.
+     */
+    private <T> void validatePayload(T payload, String sessionId) {
+        Set<ConstraintViolation<T>> violations = validator.validate(payload);
+        if (!violations.isEmpty()) {
+            String errors = violations.stream()
+                    .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                    .reduce((a, b) -> a + "; " + b)
+                    .orElse("Validation failed");
+            throw new IllegalArgumentException("Invalid message: " + errors);
+        }
+    }
+
+    /**
+     * Extracts the authenticated user ID from the WebSocket session, or null for guests.
+     */
+    private static UUID getUserId(SimpMessageHeaderAccessor headerAccessor) {
+        Map<String, Object> sessionAttrs = headerAccessor.getSessionAttributes();
+        if (sessionAttrs != null) {
+            return (UUID) sessionAttrs.get(WebSocketAuthChannelInterceptor.USER_ID_ATTR);
+        }
+        return null;
+    }
+
+    /**
+     * Strips all HTML tags to prevent stored XSS.
+     */
+    @NonNull
+    private static String sanitizeText(String input) {
+        if (input == null) {
+            return "";
+        }
+        String cleaned = input.replace("\0", "");
+        cleaned = Jsoup.clean(cleaned, Safelist.none());
+        return cleaned.strip();
     }
 }

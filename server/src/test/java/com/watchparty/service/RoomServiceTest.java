@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -37,14 +38,17 @@ class RoomServiceTest {
     private RoomService roomService;
 
     private Room sampleRoom;
+    private UUID ownerId;
 
     @BeforeEach
     void setUp() {
+        ownerId = UUID.randomUUID();
         sampleRoom = new Room();
         sampleRoom.setId(UUID.randomUUID());
         sampleRoom.setCode("ABCD1234");
         sampleRoom.setName("Movie Night");
         sampleRoom.setControlMode(ControlMode.COLLABORATIVE);
+        sampleRoom.setOwnerId(ownerId);
         sampleRoom.setCreatedAt(Instant.now());
     }
 
@@ -86,7 +90,7 @@ class RoomServiceTest {
     void whenDeleteByCodeThenDeletes() {
         when(roomRepository.findByCode("ABCD1234")).thenReturn(Optional.of(Objects.requireNonNull(sampleRoom)));
 
-        roomService.deleteByCode("ABCD1234");
+        roomService.deleteByCode("ABCD1234", ownerId);
 
         verify(roomRepository).deleteByCode("ABCD1234");
     }
@@ -95,6 +99,25 @@ class RoomServiceTest {
     void whenDeleteByCodeNotFoundThenThrows() {
         when(roomRepository.findByCode("NOTFOUND")).thenReturn(Optional.empty());
 
-        assertThrows(RoomNotFoundException.class, () -> roomService.deleteByCode("NOTFOUND"));
+        assertThrows(RoomNotFoundException.class, () -> roomService.deleteByCode("NOTFOUND", ownerId));
+    }
+
+    @Test
+    void whenDeleteByCodeWithWrongOwnerThenThrows403() {
+        when(roomRepository.findByCode("ABCD1234")).thenReturn(Optional.of(Objects.requireNonNull(sampleRoom)));
+
+        UUID otherUserId = UUID.randomUUID();
+        assertThrows(ResponseStatusException.class, () -> roomService.deleteByCode("ABCD1234", otherUserId));
+        verify(roomRepository, never()).deleteByCode(any());
+    }
+
+    @Test
+    void whenRenameRoomWithWrongOwnerThenThrows403() {
+        when(roomRepository.findByCode("ABCD1234")).thenReturn(Optional.of(Objects.requireNonNull(sampleRoom)));
+
+        UUID otherUserId = UUID.randomUUID();
+        assertThrows(ResponseStatusException.class,
+                () -> roomService.renameRoom("ABCD1234", "New Name", otherUserId));
+        verify(roomRepository, never()).save(any());
     }
 }

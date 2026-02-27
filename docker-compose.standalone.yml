@@ -5,11 +5,11 @@ services:
       dockerfile: Dockerfile.standalone
     image: watchparty:standalone
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
       - watchparty-data:/data
     environment:
-      JWT_SECRET: ${JWT_SECRET:-change-me-in-production-this-is-a-placeholder-key-at-least-256-bits}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
       YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]

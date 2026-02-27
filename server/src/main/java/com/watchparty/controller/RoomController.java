@@ -47,16 +47,21 @@ public class RoomController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete a room by code")
     @ApiResponse(responseCode = "204", description = "Room deleted")
+    @ApiResponse(responseCode = "403", description = "Not the room owner")
     @ApiResponse(responseCode = "404", description = "Room not found")
-    public void deleteRoom(@PathVariable String code) {
-        roomService.deleteByCode(code);
+    public void deleteRoom(@PathVariable String code,
+                           @AuthenticationPrincipal AuthenticatedUser user) {
+        roomService.deleteByCode(code, user.userId());
     }
 
     @PatchMapping("/{code}")
     @Operation(summary = "Update a room")
     @ApiResponse(responseCode = "200", description = "Room updated")
+    @ApiResponse(responseCode = "403", description = "Not the room owner")
     @ApiResponse(responseCode = "404", description = "Room not found")
-    public RoomResponse updateRoom(@PathVariable String code, @Valid @RequestBody UpdateRoomRequest request) {
-        return roomService.renameRoom(code, request.name());
+    public RoomResponse updateRoom(@PathVariable String code,
+                                   @Valid @RequestBody UpdateRoomRequest request,
+                                   @AuthenticationPrincipal AuthenticatedUser user) {
+        return roomService.renameRoom(code, request.name(), user.userId());
     }
 }

@@ -6,6 +6,8 @@ import com.watchparty.entity.Room;
 import com.watchparty.repository.ChatMessageRepository;
 import com.watchparty.repository.RoomRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,8 +47,8 @@ public class ChatService {
 
         ChatMessage message = new ChatMessage();
         message.setRoom(room);
-        message.setNickname(nickname);
-        message.setContent(content);
+        message.setNickname(sanitizeText(nickname));
+        message.setContent(sanitizeText(content));
 
         message = chatMessageRepository.save(message);
         return toResponse(message);
@@ -55,10 +57,14 @@ public class ChatService {
     @Transactional
     @NonNull
     public ChatMessageResponse addReaction(UUID messageId, String emoji) {
+        if (emoji == null || emoji.isBlank() || emoji.length() > 20) {
+            throw new IllegalArgumentException("Invalid emoji");
+        }
+        String sanitizedEmoji = sanitizeText(emoji);
         ChatMessage message = chatMessageRepository.findById(Objects.requireNonNull(messageId))
                 .orElseThrow(() -> new EntityNotFoundException("Message not found: " + messageId));
 
-        message.getReactions().merge(emoji, 1, (a, b) -> a + b);
+        message.getReactions().merge(sanitizedEmoji, 1, (a, b) -> a + b);
         message = chatMessageRepository.save(message);
         return toResponse(message);
     }
@@ -81,5 +87,21 @@ public class ChatService {
                 message.getReactions(),
                 message.getSentAt()
         );
+    }
+
+    /**
+     * Strips all HTML tags and normalizes whitespace to prevent stored XSS.
+     */
+    @NonNull
+    private static String sanitizeText(String input) {
+        if (input == null) {
+            return "";
+        }
+        // Remove null bytes
+        String cleaned = input.replace("\0", "");
+        // Strip all HTML tags
+        cleaned = Jsoup.clean(cleaned, Safelist.none());
+        // Normalize whitespace
+        return cleaned.strip();
     }
 }

@@ -4,6 +4,7 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -15,6 +16,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Simple sliding-window rate limiter for API requests.
  * Limits each IP to {@value MAX_REQUESTS_PER_WINDOW} requests per {@value WINDOW_SECONDS}s window.
+ * <p>
+ * Uses {@code request.getRemoteAddr()} which is correctly resolved by Tomcat's
+ * {@code ForwardedHeaderFilter} when {@code server.forward-headers-strategy=native} is set.
  */
 @Component
 public class RateLimitingFilter implements Filter {
@@ -37,7 +41,7 @@ public class RateLimitingFilter implements Filter {
             return;
         }
 
-        String clientIp = getClientIp(httpRequest);
+        String clientIp = httpRequest.getRemoteAddr();
         RateWindow window = clients.computeIfAbsent(clientIp, k -> new RateWindow());
 
         if (window.isAllowed()) {
@@ -51,12 +55,13 @@ public class RateLimitingFilter implements Filter {
         }
     }
 
-    private String getClientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
+    /**
+     * Evicts expired rate-limiting entries every 5 minutes to prevent unbounded memory growth.
+     */
+    @Scheduled(fixedRate = 300_000)
+    void evictExpiredEntries() {
+        long now = Instant.now().getEpochSecond();
+        clients.entrySet().removeIf(entry -> now - entry.getValue().windowStart >= WINDOW_SECONDS * 2L);
     }
 
     private static class RateWindow {
