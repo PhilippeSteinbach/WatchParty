@@ -103,3 +103,8 @@ jobs:
           git add -A
           git commit -m "chore(version): bump to ${{ steps.new.outputs.version }} [skip ci]"
           git push origin main
+
+      - name: Create version tag
+        run: |
+          git tag "v${{ steps.new.outputs.version }}"
+          git push origin "v${{ steps.new.outputs.version }}"
