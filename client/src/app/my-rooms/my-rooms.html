@@ -38,22 +38,22 @@
                 </button>
               </form>
             } @else {
-              <span class="text-purple-100 font-semibold">{{ room.name }}</span>
+              <span class="text-purple-100 font-semibold flex items-center gap-1.5">
+                {{ room.name }}
+                <button
+                  class="p-0.5 rounded text-purple-400/30 hover:text-neon-purple transition-colors cursor-pointer"
+                  (click)="startEditing(room)"
+                  aria-label="Rename room">
+                  <lucide-icon [img]="PencilIcon" [size]="14"></lucide-icon>
+                </button>
+              </span>
             }
             <span class="text-purple-400/50 font-mono text-xs">#{{ room.code }}</span>
           </div>
           <div class="flex items-center gap-2">
-            @if (editingCode() !== room.code) {
-              <button
-                class="p-1.5 rounded-md border border-border text-purple-400/50 hover:text-neon-purple hover:border-neon-purple hover:bg-neon-purple/10 transition-colors cursor-pointer"
-                (click)="startEditing(room)"
-                aria-label="Rename room">
-                <lucide-icon [img]="PencilIcon" [size]="16"></lucide-icon>
-              </button>
-            }
             <a class="btn-gradient text-sm px-3 py-1.5" [routerLink]="['/room', room.code]">Join</a>
             <button
-              class="p-1.5 rounded-md border border-border text-purple-400/50 hover:text-neon-red hover:border-neon-red hover:bg-neon-red/10 transition-colors cursor-pointer"
+              class="text-sm px-3 py-1.5 rounded-lg border border-border text-purple-400/50 hover:text-neon-red hover:border-neon-red hover:bg-neon-red/10 transition-colors cursor-pointer"
               (click)="confirmDelete(room.code)"
               aria-label="Delete room">
               <lucide-icon [img]="Trash2Icon" [size]="16"></lucide-icon>
