@@ -33,6 +33,8 @@ export class MediaControlsComponent {
   readonly isCameraOn = input(false);
   readonly isMicOn = input(false);
   readonly isActive = input(false);
+  readonly disabled = input(false);
+  readonly disabledReason = input('');
 
   readonly toggleCamera = output<void>();
   readonly toggleMic = output<void>();

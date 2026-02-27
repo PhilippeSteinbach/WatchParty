@@ -1,15 +1,19 @@
 package com.watchparty.service;
 
 import com.watchparty.dto.AuthResponse;
+import com.watchparty.dto.ChangePasswordRequest;
 import com.watchparty.dto.LoginRequest;
 import com.watchparty.dto.RegisterRequest;
+import com.watchparty.dto.UpdateProfileRequest;
 import com.watchparty.entity.User;
+import com.watchparty.repository.RoomRepository;
 import com.watchparty.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -18,11 +22,13 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final RoomRepository roomRepository;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, RoomRepository roomRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.roomRepository = roomRepository;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -58,6 +64,43 @@ public class AuthService {
         } catch (JwtException e) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired refresh token");
         }
+    }
+
+    public AuthResponse updateProfile(java.util.UUID userId, UpdateProfileRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        if (request.displayName() != null && !request.displayName().isBlank()) {
+            user.setDisplayName(request.displayName());
+        }
+        if (request.email() != null && !request.email().isBlank()) {
+            if (userRepository.existsByEmailAndIdNot(request.email(), userId)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
+            }
+            user.setEmail(request.email());
+        }
+        userRepository.save(user);
+        return buildAuthResponse(user);
+    }
+
+    public void changePassword(java.util.UUID userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Current password is incorrect");
+        }
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void deleteAccount(java.util.UUID userId, String password) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Password is incorrect");
+        }
+        roomRepository.deleteByOwnerId(userId);
+        userRepository.delete(user);
     }
 
     private AuthResponse buildAuthResponse(User user) {

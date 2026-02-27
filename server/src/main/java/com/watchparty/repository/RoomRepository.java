@@ -17,4 +17,6 @@ public interface RoomRepository extends JpaRepository<Room, UUID> {
     List<Room> findByOwnerId(UUID ownerId);
 
     List<Room> findByExpiresAtBeforeAndIsPermanentFalse(Instant cutoff);
+
+    void deleteByOwnerId(UUID ownerId);
 }

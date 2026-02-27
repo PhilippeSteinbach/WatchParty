@@ -137,6 +137,43 @@ class PlaylistServiceTest {
         assertTrue(response.isEmpty());
     }
 
+    @Test
+    void whenGetRandomItemThenReturnsItemExcludingCurrent() {
+        PlaylistItem item1 = createItem(UUID.randomUUID(), "https://youtube.com/watch?v=1", "Alice", 1);
+        PlaylistItem item2 = createItem(UUID.randomUUID(), "https://youtube.com/watch?v=2", "Bob", 2);
+        PlaylistItem item3 = createItem(UUID.randomUUID(), "https://youtube.com/watch?v=3", "Alice", 3);
+
+        when(playlistItemRepository.findByRoomIdOrderByPositionAsc(roomId))
+                .thenReturn(List.of(item1, item2, item3));
+
+        Optional<PlaylistItemResponse> response = playlistService.getRandomItem(roomId, "https://youtube.com/watch?v=1");
+
+        assertTrue(response.isPresent());
+        assertNotEquals("https://youtube.com/watch?v=1", response.get().videoUrl());
+    }
+
+    @Test
+    void whenGetRandomItemAndOnlyCurrentExistsThenReturnsEmpty() {
+        PlaylistItem item1 = createItem(UUID.randomUUID(), "https://youtube.com/watch?v=1", "Alice", 1);
+
+        when(playlistItemRepository.findByRoomIdOrderByPositionAsc(roomId))
+                .thenReturn(List.of(item1));
+
+        Optional<PlaylistItemResponse> response = playlistService.getRandomItem(roomId, "https://youtube.com/watch?v=1");
+
+        assertTrue(response.isEmpty());
+    }
+
+    @Test
+    void whenGetRandomItemAndPlaylistEmptyThenReturnsEmpty() {
+        when(playlistItemRepository.findByRoomIdOrderByPositionAsc(roomId))
+                .thenReturn(List.of());
+
+        Optional<PlaylistItemResponse> response = playlistService.getRandomItem(roomId, "https://youtube.com/watch?v=1");
+
+        assertTrue(response.isEmpty());
+    }
+
     private PlaylistItem createItem(UUID id, String videoUrl, String addedBy, int position) {
         var item = new PlaylistItem();
         item.setId(id);

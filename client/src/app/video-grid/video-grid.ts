@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  computed,
   effect,
   input,
   output,
@@ -10,6 +11,12 @@ import {
 } from '@angular/core';
 import { LucideAngularModule, Video, VideoOff, Mic, MicOff, Volume2, VolumeX, X } from 'lucide-angular';
 import { RemotePeer } from '../models/room.model';
+
+export interface TileEntry {
+  id: string;
+  type: 'local' | 'remote';
+  peer?: RemotePeer;
+}
 
 @Component({
   selector: 'app-video-grid',
@@ -39,6 +46,41 @@ export class VideoGridComponent {
 
   /** Locally muted remote peers (by connectionId) */
   readonly mutedPeers = signal<Set<string>>(new Set());
+
+  /** User-defined tile order (array of tile IDs). Empty = default order. */
+  private readonly tileOrder = signal<string[]>([]);
+
+  /** Drag state */
+  readonly dragIndex = signal<number | null>(null);
+  readonly dropTargetIndex = signal<number | null>(null);
+
+  /** Ordered tiles combining local + remote, respecting user reorder */
+  readonly orderedTiles = computed<TileEntry[]>(() => {
+    const tiles: TileEntry[] = [];
+    if (this.localStream()) {
+      tiles.push({ id: '__local__', type: 'local' });
+    }
+    for (const peer of this.remoteStreams()) {
+      tiles.push({ id: peer.connectionId, type: 'remote', peer });
+    }
+    const order = this.tileOrder();
+    if (order.length === 0) return tiles;
+
+    const byId = new Map(tiles.map(t => [t.id, t]));
+    const ordered: TileEntry[] = [];
+    for (const id of order) {
+      const tile = byId.get(id);
+      if (tile) {
+        ordered.push(tile);
+        byId.delete(id);
+      }
+    }
+    // Append any new tiles not in the saved order
+    for (const tile of byId.values()) {
+      ordered.push(tile);
+    }
+    return ordered;
+  });
 
   private readonly localVideoRef = viewChildren<ElementRef<HTMLVideoElement>>('localVideo');
   private readonly remoteVideoRefs = viewChildren<ElementRef<HTMLVideoElement>>('remoteVideo');
@@ -84,5 +126,48 @@ export class VideoGridComponent {
 
   isPeerMuted(connectionId: string): boolean {
     return this.mutedPeers().has(connectionId);
+  }
+
+  onDragStart(index: number, event: DragEvent): void {
+    this.dragIndex.set(index);
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', String(index));
+    }
+  }
+
+  onDragOver(index: number, event: DragEvent): void {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+    this.dropTargetIndex.set(index);
+  }
+
+  onDragLeave(): void {
+    this.dropTargetIndex.set(null);
+  }
+
+  onDrop(index: number, event: DragEvent): void {
+    event.preventDefault();
+    const from = this.dragIndex();
+    if (from === null || from === index) {
+      this.resetDrag();
+      return;
+    }
+    const tiles = [...this.orderedTiles()];
+    const [moved] = tiles.splice(from, 1);
+    tiles.splice(index, 0, moved);
+    this.tileOrder.set(tiles.map(t => t.id));
+    this.resetDrag();
+  }
+
+  onDragEnd(): void {
+    this.resetDrag();
+  }
+
+  private resetDrag(): void {
+    this.dragIndex.set(null);
+    this.dropTargetIndex.set(null);
   }
 }

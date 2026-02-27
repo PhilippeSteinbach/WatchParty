@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class PlaylistService {
@@ -87,6 +88,17 @@ public class PlaylistService {
     public Optional<PlaylistItemResponse> getNextItem(UUID roomId, int currentPosition) {
         return playlistItemRepository.findFirstByRoomIdAndPositionGreaterThanOrderByPositionAsc(roomId, currentPosition)
                 .map(this::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<PlaylistItemResponse> getRandomItem(UUID roomId, String excludeVideoUrl) {
+        List<PlaylistItem> items = playlistItemRepository.findByRoomIdOrderByPositionAsc(roomId);
+        List<PlaylistItem> candidates = items.stream()
+                .filter(item -> !item.getVideoUrl().equals(excludeVideoUrl))
+                .toList();
+        if (candidates.isEmpty()) return Optional.empty();
+        PlaylistItem picked = candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
+        return Optional.of(toResponse(picked));
     }
 
     @Transactional

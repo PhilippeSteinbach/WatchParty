@@ -1,0 +1,43 @@
+<div class="search-results">
+  @if (isLoading()) {
+    <div class="loading-indicator">
+      <div class="spinner"></div>
+      <span class="text-purple-300/50 text-sm">Searching…</span>
+    </div>
+  } @else {
+    @for (result of results(); track result.videoId) {
+      <div class="result-card">
+        <div class="thumbnail-wrapper" (click)="playNow.emit(result)" role="button" tabindex="0" [attr.aria-label]="'Play ' + result.title">
+          <img
+            class="thumbnail"
+            [src]="result.thumbnailUrl"
+            [alt]="result.title"
+            loading="lazy"
+          />
+          <div class="play-overlay" aria-hidden="true">
+            <lucide-icon [img]="PlayIcon" [size]="32"></lucide-icon>
+          </div>
+          @if (result.durationSeconds) {
+            <span class="duration-badge">{{ formatDuration(result.durationSeconds) }}</span>
+          }
+        </div>
+        <div class="result-info">
+          <span class="result-title" [title]="result.title">{{ result.title }}</span>
+          @if (result.channelName) {
+            <span class="result-channel">{{ result.channelName }}</span>
+          }
+        </div>
+        <button
+          class="add-btn"
+          (click)="addToPlaylist.emit(result)"
+          aria-label="Add to playlist"
+          title="Add to playlist"
+        >
+          <lucide-icon [img]="ListPlusIcon" [size]="18"></lucide-icon>
+        </button>
+      </div>
+    } @empty {
+      <p class="empty-text">No results found</p>
+    }
+  }
+</div>

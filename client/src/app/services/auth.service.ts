@@ -2,7 +2,7 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs/operators';
 import { Observable } from 'rxjs';
-import { AuthResponse, AuthUser, LoginRequest, RegisterRequest } from '../models/auth.model';
+import { AuthResponse, AuthUser, LoginRequest, RegisterRequest, UpdateProfileRequest, ChangePasswordRequest, DeleteAccountRequest } from '../models/auth.model';
 
 const ACCESS_TOKEN_KEY = 'wp_access_token';
 const REFRESH_TOKEN_KEY = 'wp_refresh_token';
@@ -41,6 +41,20 @@ export class AuthService {
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     this._currentUser.set(null);
+  }
+
+  updateProfile(request: UpdateProfileRequest): Observable<AuthResponse> {
+    return this.http.patch<AuthResponse>('/api/users/me', request).pipe(
+      tap(res => this.storeSession(res))
+    );
+  }
+
+  changePassword(request: ChangePasswordRequest): Observable<void> {
+    return this.http.put<void>('/api/users/me/password', request);
+  }
+
+  deleteAccount(request: DeleteAccountRequest): Observable<void> {
+    return this.http.delete<void>('/api/users/me', { body: request });
   }
 
   getAccessToken(): string | null {

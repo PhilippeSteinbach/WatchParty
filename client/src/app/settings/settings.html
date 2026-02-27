@@ -1,0 +1,26 @@
+<div class="settings-layout max-w-4xl mx-auto py-8 px-4">
+  <h2 class="text-2xl font-bold gradient-text mb-6">Settings</h2>
+  <div class="flex gap-6">
+    <nav class="settings-nav flex flex-col gap-1 min-w-[180px]">
+      <a routerLink="account" routerLinkActive="active" class="settings-nav-item">
+        <lucide-icon [img]="UserIcon" [size]="16"></lucide-icon>
+        Account
+      </a>
+      <a routerLink="security" routerLinkActive="active" class="settings-nav-item">
+        <lucide-icon [img]="ShieldIcon" [size]="16"></lucide-icon>
+        Security
+      </a>
+      <a routerLink="rooms" routerLinkActive="active" class="settings-nav-item">
+        <lucide-icon [img]="RoomIcon" [size]="16"></lucide-icon>
+        My Rooms
+      </a>
+      <a routerLink="danger-zone" routerLinkActive="active" class="settings-nav-item danger">
+        <lucide-icon [img]="DangerIcon" [size]="16"></lucide-icon>
+        Danger Zone
+      </a>
+    </nav>
+    <div class="flex-1 min-w-0">
+      <router-outlet />
+    </div>
+  </div>
+</div>

@@ -1,4 +1,4 @@
-<div class="flex items-center gap-2 bg-surface-1 border-t border-border px-4 py-2">
+<div class="flex items-center gap-2 bg-surface-1 border-t border-border px-4 py-2 w-full">
   @if (hasVideo()) {
     <button
       class="w-8 h-8 rounded-full flex items-center justify-center bg-neon-purple/20 text-neon-purple hover:bg-neon-purple/30 transition disabled:opacity-40 disabled:cursor-default"
@@ -24,44 +24,55 @@
 
   <span class="text-xs text-purple-300/60 font-mono tabular-nums min-w-[3.5em] text-center select-none">{{ formatTime(displayTime()) }}</span>
 
-  <input
-    type="range"
-    class="seek-bar flex-1"
-    min="0"
-    [max]="duration()"
-    step="0.1"
-    [value]="displayTime()"
-    (mousedown)="onSeekStart()"
-    (touchstart)="onSeekStart()"
-    (input)="onSeeking($event)"
-    (change)="onSeekEnd($event)"
-    [disabled]="!canControl()"
-    aria-label="Seek"
-  />
-
-  <span class="text-xs text-purple-300/60 font-mono tabular-nums min-w-[3.5em] text-center select-none">{{ formatTime(duration()) }}</span>
-
-  <button
-    class="text-purple-300/60 hover:text-purple-300 transition p-1"
-    (click)="toggleMute()"
-    [attr.aria-label]="isMuted() ? 'Unmute' : 'Mute'"
-  >
-    @if (isMuted()) {
-      <lucide-icon [img]="VolumeXIcon" [size]="16"></lucide-icon>
-    } @else if (volume() < 50) {
-      <lucide-icon [img]="Volume1Icon" [size]="16"></lucide-icon>
-    } @else {
-      <lucide-icon [img]="Volume2Icon" [size]="16"></lucide-icon>
+  <div class="seek-wrapper flex-1">
+    <input
+      type="range"
+      class="seek-bar"
+      min="0"
+      [max]="duration()"
+      step="0.1"
+      [value]="displayTime()"
+      [style]="'--progress:' + progressPercent() + '%'"
+      (mousedown)="onSeekStart()"
+      (touchstart)="onSeekStart()"
+      (input)="onSeeking($event)"
+      (change)="onSeekEnd($event)"
+      [disabled]="!canControl()"
+      aria-label="Seek"
+    />
+    @if (isSeeking()) {
+      <span
+        class="seek-tooltip"
+        [style.left.%]="progressPercent()"
+      >{{ formatTime(seekTime()) }}</span>
     }
-  </button>
+  </div>
 
-  <input
-    type="range"
-    class="volume-slider"
-    min="0"
-    max="100"
-    [value]="volume()"
-    (input)="onVolumeChange($event)"
-    aria-label="Volume"
-  />
+  <div class="flex items-center gap-2 ml-auto flex-shrink-0">
+    <span class="text-xs text-purple-300/60 font-mono tabular-nums min-w-[3.5em] text-center select-none">{{ formatTime(duration()) }}</span>
+
+    <button
+      class="text-purple-300/60 hover:text-purple-300 transition p-1"
+      (click)="toggleMute()"
+      [attr.aria-label]="isMuted() ? 'Unmute' : 'Mute'"
+    >
+      @if (isMuted()) {
+        <lucide-icon [img]="VolumeXIcon" [size]="16"></lucide-icon>
+      } @else if (volume() < 50) {
+        <lucide-icon [img]="Volume1Icon" [size]="16"></lucide-icon>
+      } @else {
+        <lucide-icon [img]="Volume2Icon" [size]="16"></lucide-icon>
+      }
+    </button>
+
+    <input
+      type="range"
+      class="volume-slider"
+      min="0"
+      max="100"
+      [value]="volume()"
+      (input)="onVolumeChange($event)"
+      aria-label="Volume"
+    />
+  </div>
 </div>

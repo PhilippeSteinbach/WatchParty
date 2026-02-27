@@ -3,6 +3,7 @@ package com.watchparty.websocket;
 import com.watchparty.dto.*;
 import com.watchparty.entity.ControlMode;
 import com.watchparty.entity.Participant;
+import com.watchparty.entity.PlaybackMode;
 import com.watchparty.entity.Room;
 import com.watchparty.exception.RoomNotFoundException;
 import com.watchparty.repository.ParticipantRepository;
@@ -407,9 +408,13 @@ public class WatchPartyWebSocketHandler {
                 .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
 
         Room room = participant.getRoom();
-        int currentPosition = playlistService.getCurrentPosition(room.getId(), room.getCurrentVideoUrl());
-
-        Optional<PlaylistItemResponse> nextItem = playlistService.getNextItem(room.getId(), currentPosition);
+        Optional<PlaylistItemResponse> nextItem;
+        if (room.getPlaybackMode() == PlaybackMode.SHUFFLE) {
+            nextItem = playlistService.getRandomItem(room.getId(), room.getCurrentVideoUrl());
+        } else {
+            int currentPosition = playlistService.getCurrentPosition(room.getId(), room.getCurrentVideoUrl());
+            nextItem = playlistService.getNextItem(room.getId(), currentPosition);
+        }
         if (nextItem.isPresent()) {
             room.setCurrentVideoUrl(nextItem.get().videoUrl());
             room.setCurrentTimeSeconds(0);
@@ -422,6 +427,22 @@ public class WatchPartyWebSocketHandler {
             PlaylistResponse playlist = playlistService.getPlaylist(room.getId());
             messagingTemplate.convertAndSend("/topic/room." + room.getCode() + ".playlist", playlist);
         }
+    }
+
+    @MessageMapping("/room.playlist.mode")
+    @Transactional
+    public void setPlaybackMode(@Payload Map<String, Object> payload, SimpMessageHeaderAccessor headerAccessor) {
+        String sessionId = requireSessionId(headerAccessor);
+        String mode = (String) payload.get("mode");
+
+        Participant participant = participantRepository.findByConnectionId(sessionId)
+                .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
+
+        Room room = participant.getRoom();
+        room.setPlaybackMode(PlaybackMode.valueOf(mode));
+        roomRepository.save(room);
+
+        broadcastRoomState(room);
     }
 
     @MessageMapping("/room.playlist.reorder")
@@ -499,6 +520,7 @@ public class WatchPartyWebSocketHandler {
                 room.getCurrentVideoUrl(),
                 calculateExpectedPosition(room),
                 room.isPlaying(),
+                room.getPlaybackMode().name(),
                 participantMessages);
 
         messagingTemplate.convertAndSend("/topic/room." + room.getCode(), roomState);

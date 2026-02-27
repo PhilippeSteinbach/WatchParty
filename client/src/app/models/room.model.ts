@@ -1,4 +1,5 @@
 export type ControlMode = 'COLLABORATIVE' | 'HOST_ONLY';
+export type PlaybackMode = 'ORDERED' | 'SHUFFLE';
 
 export interface Room {
   id: string;
@@ -32,6 +33,7 @@ export interface RoomState {
   currentVideoUrl: string;
   currentTimeSeconds: number;
   isPlaying: boolean;
+  playbackMode: PlaybackMode;
   participants: Participant[];
 }
 

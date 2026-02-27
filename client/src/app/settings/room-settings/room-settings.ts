@@ -2,16 +2,16 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Plus, Trash2, AlertTriangle, Pencil, Check, X } from 'lucide-angular';
-import { Room } from '../models/room.model';
-import { RoomService } from '../services/room.service';
+import { Room } from '../../models/room.model';
+import { RoomService } from '../../services/room.service';
 
 @Component({
-  selector: 'app-my-rooms',
+  selector: 'app-room-settings',
+  standalone: true,
   imports: [RouterLink, FormsModule, LucideAngularModule],
-  templateUrl: './my-rooms.html',
-  styleUrl: './my-rooms.scss'
+  templateUrl: './room-settings.html',
 })
-export class MyRoomsComponent implements OnInit {
+export class RoomSettingsComponent implements OnInit {
   private readonly roomService = inject(RoomService);
 
   readonly PlusIcon = Plus;

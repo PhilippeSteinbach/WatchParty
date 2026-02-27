@@ -9,5 +9,6 @@ public record RoomStateMessage(
         @Nullable String currentVideoUrl,
         double currentTimeSeconds,
         boolean isPlaying,
+        String playbackMode,
         List<ParticipantMessage> participants) {
 }

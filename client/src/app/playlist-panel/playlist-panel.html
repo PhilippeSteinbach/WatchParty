@@ -1,24 +1,60 @@
 <div class="flex flex-col h-full bg-surface-2 text-purple-100">
-  <div class="p-3 border-b border-border flex flex-col gap-2">
-    <input
-      type="text"
-      class="input-dark text-sm"
-      placeholder="Paste video or playlist URL…"
-      [ngModel]="urlInput()"
-      (ngModelChange)="urlInput.set($event)"
-      name="videoUrl"
-      aria-label="Video URL"
-      (keydown.enter)="addToQueue()"
-    />
-    <div class="flex gap-2">
-      <button class="btn-ghost flex-1 text-sm py-2 inline-flex items-center justify-center gap-1" (click)="addToQueue()">
-        <lucide-icon [img]="ListPlus" [size]="14"></lucide-icon> Queue
+  <!-- Toolbar -->
+  <div class="flex items-center justify-between px-3 py-2 border-b border-border">
+    <div class="flex items-center gap-1">
+      <button
+        class="p-1.5 rounded transition-colors"
+        [class]="playbackMode() === 'ORDERED' ? 'text-neon-purple bg-neon-purple/10' : 'text-purple-400/50 hover:text-purple-300'"
+        (click)="setMode('ORDERED')"
+        aria-label="Ordered playback"
+        title="Ordered"
+      >
+        <lucide-icon [img]="ListOrdered" [size]="16"></lucide-icon>
       </button>
-      <button class="btn-gradient flex-1 text-sm py-2 inline-flex items-center justify-center gap-1" (click)="playNow()">
-        <lucide-icon [img]="Play" [size]="14"></lucide-icon> Play Now
+      <button
+        class="p-1.5 rounded transition-colors"
+        [class]="playbackMode() === 'SHUFFLE' ? 'text-neon-purple bg-neon-purple/10' : 'text-purple-400/50 hover:text-purple-300'"
+        (click)="setMode('SHUFFLE')"
+        aria-label="Shuffle playback"
+        title="Shuffle"
+      >
+        <lucide-icon [img]="Shuffle" [size]="16"></lucide-icon>
+      </button>
+    </div>
+    <div class="flex items-center gap-1">
+      <button
+        class="p-1.5 rounded transition-colors"
+        [class]="searchOpen() ? 'text-neon-blue bg-neon-blue/10' : 'text-purple-400/50 hover:text-purple-300'"
+        (click)="toggleSearch()"
+        aria-label="Search playlist"
+        title="Search"
+      >
+        <lucide-icon [img]="Search" [size]="16"></lucide-icon>
+      </button>
+      <button
+        class="p-1.5 rounded text-purple-400/50 hover:text-neon-green transition-colors"
+        (click)="skipToNext()"
+        aria-label="Play next"
+        title="Play next"
+      >
+        <lucide-icon [img]="SkipForward" [size]="16"></lucide-icon>
       </button>
     </div>
   </div>
+
+  @if (searchOpen()) {
+    <div class="px-3 py-2 border-b border-border">
+      <input
+        type="text"
+        class="input-dark text-sm w-full"
+        placeholder="Search by title…"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+        name="searchQuery"
+        aria-label="Search playlist"
+      />
+    </div>
+  }
 
   <div
     class="flex-1 overflow-y-auto p-2"
@@ -26,7 +62,7 @@
     cdkDropList
     (cdkDropListDropped)="onDrop($event)"
   >
-    @for (item of items(); track item.id) {
+    @for (item of filteredItems(); track item.id) {
       <div
         class="playlist-item flex items-center gap-2 p-2 rounded-lg hover:bg-surface-4 transition-colors"
         [class.now-playing]="isCurrentlyPlaying(item)"
@@ -68,18 +104,4 @@
       <p class="text-center text-purple-400/30 py-8 text-sm">No items in playlist</p>
     }
   </div>
-
-  <button class="btn-ghost mx-3 my-3 text-sm py-2 inline-flex items-center justify-center gap-1" (click)="skipToNext()">
-    <lucide-icon [img]="SkipForward" [size]="14"></lucide-icon> Skip to Next
-  </button>
-
-  @if (showConfirmDialog()) {
-    <app-confirm-dialog
-      [message]="confirmMessage()"
-      confirmLabel="Add Videos"
-      cancelLabel="Cancel"
-      (confirmed)="onConfirmPlaylist()"
-      (cancelled)="onCancelPlaylist()"
-    />
-  }
 </div>
