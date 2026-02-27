@@ -70,18 +70,24 @@ describe('JoinRoomComponent', () => {
     expect(fixture.nativeElement.querySelector('form')).toBeTruthy();
   });
 
-  it('should auto-join with displayName when user is logged in', () => {
+  it('should pre-fill nickname and join when user is logged in', () => {
     createComponent('ROOM1234', '', { displayName: 'Alice' });
+    expect(component.nickname()).toBe('Alice');
+    component.join();
     expect(connectSpy).toHaveBeenCalledWith('ROOM1234', 'Alice');
   });
 
-  it('should auto-join with query nickname when not logged in', () => {
+  it('should pre-fill nickname from query param and join when not logged in', () => {
     createComponent('ROOM1234', 'GuestBob', null);
+    expect(component.nickname()).toBe('GuestBob');
+    component.join();
     expect(connectSpy).toHaveBeenCalledWith('ROOM1234', 'GuestBob');
   });
 
   it('should prefer displayName over query nickname when logged in', () => {
     createComponent('ROOM1234', 'GuestBob', { displayName: 'Alice' });
+    expect(component.nickname()).toBe('Alice');
+    component.join();
     expect(connectSpy).toHaveBeenCalledWith('ROOM1234', 'Alice');
   });
 
