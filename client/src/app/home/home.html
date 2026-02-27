@@ -8,11 +8,11 @@
       <h1 class="gradient-text text-5xl font-bold tracking-tight">WatchParty</h1>
       <p class="text-purple-300/60 text-lg">Watch your funniest videos and laugh together.</p>
       <div class="flex flex-wrap justify-center gap-3 mt-2">
-        <button class="btn-gradient flex items-center gap-2 px-5 py-2.5 whitespace-nowrap" (click)="showView('create')">
+        <button class="btn-gradient flex items-center gap-2 px-5 py-2.5" (click)="showView('create')">
           <lucide-icon [img]="PlusIcon" [size]="18"></lucide-icon>
           Create Room
         </button>
-        <button class="btn-ghost flex items-center gap-2 px-5 py-2.5 whitespace-nowrap" (click)="showView('join')">
+        <button class="btn-ghost flex items-center gap-2 px-5 py-2.5" (click)="showView('join')">
           <lucide-icon [img]="DoorOpenIcon" [size]="18"></lucide-icon>
           Join Room
         </button>
