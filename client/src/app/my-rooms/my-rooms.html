@@ -51,9 +51,9 @@
             <span class="text-purple-400/50 font-mono text-xs">#{{ room.code }}</span>
           </div>
           <div class="flex items-center gap-2">
-            <a class="btn-gradient text-sm" [routerLink]="['/room', room.code]">Join</a>
+            <a class="btn-gradient text-sm h-8" [routerLink]="['/room', room.code]">Join</a>
             <button
-              class="btn-ghost text-sm text-purple-400/50 hover:text-neon-red hover:border-neon-red/50 hover:bg-neon-red/10 transition-colors"
+              class="btn-ghost text-sm h-8 text-purple-400/50 hover:text-neon-red hover:border-neon-red/50 hover:bg-neon-red/10 transition-colors"
               (click)="confirmDelete(room.code)"
               aria-label="Delete room">
               <lucide-icon [img]="Trash2Icon" [size]="16"></lucide-icon>
