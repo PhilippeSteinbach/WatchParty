@@ -2,6 +2,7 @@ name: Docker Publish
 
 on:
   workflow_dispatch:
+  workflow_call:
   push:
     branches: [main]
     paths:
@@ -18,7 +19,7 @@ jobs:
   publish:
     name: Build & Push Standalone Image
     runs-on: ubuntu-latest
-    if: "!startsWith(github.event.head_commit.message, 'chore(version):') && !startsWith(github.event.head_commit.message, 'chore: release')"
+    if: "!startsWith(github.event.head_commit.message, 'chore(version):') || github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'"
 
     steps:
       - name: Checkout
