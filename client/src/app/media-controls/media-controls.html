@@ -2,9 +2,12 @@
   @if (!isActive()) {
     <button
       class="btn-ghost flex items-center gap-2"
-      (click)="startMedia.emit()"
+      [class.opacity-50]="disabled()"
+      [class.cursor-not-allowed]="disabled()"
+      (click)="!disabled() && startMedia.emit()"
+      [disabled]="disabled()"
       aria-label="Start camera and microphone"
-      title="Start camera & mic"
+      [title]="disabled() ? disabledReason() : 'Start camera & mic'"
     >
       <lucide-icon [img]="VideoIcon" [size]="16"></lucide-icon>
       Join Video

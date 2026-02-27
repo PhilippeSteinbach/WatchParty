@@ -44,6 +44,8 @@
           [isActive]="false"
           [isCameraOn]="false"
           [isMicOn]="false"
+          [disabled]="webRtc.isVideoFull()"
+          [disabledReason]="'Video limit reached (max 6)'"
           (startMedia)="onStartMedia()"
         />
       }

@@ -27,6 +27,11 @@ export class WebRtcService {
   readonly mediaError = signal<string | null>(null);
 
   readonly isActive = computed(() => this.localStream() !== null);
+  readonly isVideoFull = computed(() => {
+    const activeRemoteCameras = this.ws.peerCameraStates().size;
+    const selfActive = this.localStream() !== null ? 1 : 0;
+    return activeRemoteCameras + selfActive >= MAX_WEBRTC_PARTICIPANTS;
+  });
 
   private _myConnectionId: string | null = null;
 
