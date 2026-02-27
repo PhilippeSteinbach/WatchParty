@@ -59,14 +59,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Compute image owner
+        id: owner
+        run: echo "name=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
       - name: Build & push API image
         uses: docker/build-push-action@v6
         with:
           context: ./server
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/watchparty-api:${{ github.event.inputs.version }}
-            ghcr.io/${{ github.repository_owner }}/watchparty-api:latest
+            ghcr.io/${{ steps.owner.outputs.name }}/watchparty-api:${{ github.event.inputs.version }}
+            ghcr.io/${{ steps.owner.outputs.name }}/watchparty-api:latest
 
       - name: Build & push Client image
         uses: docker/build-push-action@v6
@@ -74,8 +78,8 @@ jobs:
           context: ./client
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/watchparty-client:${{ github.event.inputs.version }}
-            ghcr.io/${{ github.repository_owner }}/watchparty-client:latest
+            ghcr.io/${{ steps.owner.outputs.name }}/watchparty-client:${{ github.event.inputs.version }}
+            ghcr.io/${{ steps.owner.outputs.name }}/watchparty-client:latest
 
       - name: Build & push Standalone image
         uses: docker/build-push-action@v6
@@ -84,8 +88,8 @@ jobs:
           file: Dockerfile.standalone
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/watchparty:${{ github.event.inputs.version }}
-            ghcr.io/${{ github.repository_owner }}/watchparty:latest
+            ghcr.io/${{ steps.owner.outputs.name }}/watchparty:${{ github.event.inputs.version }}
+            ghcr.io/${{ steps.owner.outputs.name }}/watchparty:latest
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
