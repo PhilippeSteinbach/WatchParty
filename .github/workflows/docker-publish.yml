@@ -1,6 +1,7 @@
 name: Docker Publish
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
@@ -8,6 +9,7 @@ on:
       - 'client/**'
       - 'Dockerfile.standalone'
       - 'docker-compose.standalone.yml'
+      - '.github/workflows/docker-publish.yml'
 
 permissions:
   packages: write
