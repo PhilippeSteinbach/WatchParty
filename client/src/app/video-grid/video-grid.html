@@ -1,44 +1,64 @@
-<div class="flex gap-1.5 h-full bg-surface-1">
-  @if (localStream()) {
-    <div class="group local relative bg-surface-0 rounded-lg overflow-hidden w-[140px] shrink-0 flex items-center justify-center">
-      <video #localVideo class="w-full h-full object-cover" autoplay muted playsinline aria-label="Your camera"></video>
-      <span class="absolute bottom-1.5 left-2 bg-black/60 text-purple-100 px-2 py-0.5 rounded text-xs pointer-events-none">You</span>
-      <div class="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          [class]="'w-7 h-7 rounded-full flex items-center justify-center transition ' + (isCameraOn() ? 'bg-black/60 text-purple-100 hover:bg-surface-4/80' : 'bg-neon-red/80 text-white')"
-          (click)="toggleCamera.emit()"
-          [attr.aria-label]="isCameraOn() ? 'Turn off camera' : 'Turn on camera'"
-        ><lucide-icon [img]="isCameraOn() ? VideoIcon : VideoOffIcon" [size]="12"></lucide-icon></button>
-        <button
-          [class]="'w-7 h-7 rounded-full flex items-center justify-center transition ' + (isMicOn() ? 'bg-black/60 text-purple-100 hover:bg-surface-4/80' : 'bg-neon-red/80 text-white')"
-          (click)="toggleMic.emit()"
-          [attr.aria-label]="isMicOn() ? 'Mute microphone' : 'Unmute microphone'"
-        ><lucide-icon [img]="isMicOn() ? MicIcon : MicOffIcon" [size]="12"></lucide-icon></button>
-        <button
-          class="w-7 h-7 rounded-full flex items-center justify-center bg-neon-red text-white transition"
-          (click)="stopMedia.emit()"
-          aria-label="Leave video call"
-        ><lucide-icon [img]="XIcon" [size]="12"></lucide-icon></button>
-      </div>
-    </div>
-  }
-
-  @for (peer of remoteStreams(); track peer.connectionId) {
-    <div class="group relative bg-surface-0 rounded-lg overflow-hidden w-[140px] shrink-0 flex items-center justify-center">
-      <video #remoteVideo class="w-full h-full object-cover" autoplay playsinline [attr.aria-label]="peer.nickname + '\'s camera'"></video>
-      <span class="absolute bottom-1.5 left-2 bg-black/60 text-purple-100 px-2 py-0.5 rounded text-xs pointer-events-none">{{ peer.nickname }}</span>
-      <div class="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          [class]="'w-7 h-7 rounded-full flex items-center justify-center transition ' + (isPeerMuted(peer.connectionId) ? 'bg-neon-red/80 text-white' : 'bg-black/60 text-purple-100 hover:bg-surface-4/80')"
-          (click)="toggleMutePeer(peer.connectionId)"
-          [attr.aria-label]="isPeerMuted(peer.connectionId) ? 'Unmute ' + peer.nickname : 'Mute ' + peer.nickname"
-        ><lucide-icon [img]="isPeerMuted(peer.connectionId) ? VolumeXIcon : Volume2Icon" [size]="12"></lucide-icon></button>
-      </div>
-      @if (!peer.stream) {
-        <div class="absolute inset-0 flex items-center justify-center bg-surface-2">
-          <span class="w-9 h-9 rounded-full bg-gradient-to-br from-neon-purple to-neon-blue text-white text-sm font-semibold flex items-center justify-center">{{ peer.nickname.charAt(0).toUpperCase() }}</span>
+<div class="tile-container">
+  @for (tile of orderedTiles(); track tile.id; let i = $index) {
+    @if (tile.type === 'local') {
+      <div
+        class="group tile local"
+        draggable="true"
+        [class.dragging]="dragIndex() === i"
+        [class.drop-target]="dropTargetIndex() === i && dragIndex() !== i"
+        (dragstart)="onDragStart(i, $event)"
+        (dragover)="onDragOver(i, $event)"
+        (dragleave)="onDragLeave()"
+        (drop)="onDrop(i, $event)"
+        (dragend)="onDragEnd()"
+      >
+        <video #localVideo class="w-full h-full object-cover" autoplay muted playsinline aria-label="Your camera"></video>
+        <span class="label">You</span>
+        <div class="controls">
+          <button
+            [class]="'w-7 h-7 rounded-full flex items-center justify-center transition ' + (isCameraOn() ? 'bg-black/60 text-purple-100 hover:bg-surface-4/80' : 'bg-neon-red/80 text-white')"
+            (click)="toggleCamera.emit()"
+            [attr.aria-label]="isCameraOn() ? 'Turn off camera' : 'Turn on camera'"
+          ><lucide-icon [img]="isCameraOn() ? VideoIcon : VideoOffIcon" [size]="12"></lucide-icon></button>
+          <button
+            [class]="'w-7 h-7 rounded-full flex items-center justify-center transition ' + (isMicOn() ? 'bg-black/60 text-purple-100 hover:bg-surface-4/80' : 'bg-neon-red/80 text-white')"
+            (click)="toggleMic.emit()"
+            [attr.aria-label]="isMicOn() ? 'Mute microphone' : 'Unmute microphone'"
+          ><lucide-icon [img]="isMicOn() ? MicIcon : MicOffIcon" [size]="12"></lucide-icon></button>
+          <button
+            class="w-7 h-7 rounded-full flex items-center justify-center bg-neon-red text-white transition"
+            (click)="stopMedia.emit()"
+            aria-label="Leave video call"
+          ><lucide-icon [img]="XIcon" [size]="12"></lucide-icon></button>
         </div>
-      }
-    </div>
+      </div>
+    } @else {
+      <div
+        class="group tile"
+        draggable="true"
+        [class.dragging]="dragIndex() === i"
+        [class.drop-target]="dropTargetIndex() === i && dragIndex() !== i"
+        (dragstart)="onDragStart(i, $event)"
+        (dragover)="onDragOver(i, $event)"
+        (dragleave)="onDragLeave()"
+        (drop)="onDrop(i, $event)"
+        (dragend)="onDragEnd()"
+      >
+        <video #remoteVideo class="w-full h-full object-cover" autoplay playsinline [attr.aria-label]="tile.peer!.nickname + '\'s camera'"></video>
+        <span class="label">{{ tile.peer!.nickname }}</span>
+        <div class="controls">
+          <button
+            [class]="'w-7 h-7 rounded-full flex items-center justify-center transition ' + (isPeerMuted(tile.peer!.connectionId) ? 'bg-neon-red/80 text-white' : 'bg-black/60 text-purple-100 hover:bg-surface-4/80')"
+            (click)="toggleMutePeer(tile.peer!.connectionId)"
+            [attr.aria-label]="isPeerMuted(tile.peer!.connectionId) ? 'Unmute ' + tile.peer!.nickname : 'Mute ' + tile.peer!.nickname"
+          ><lucide-icon [img]="isPeerMuted(tile.peer!.connectionId) ? VolumeXIcon : Volume2Icon" [size]="12"></lucide-icon></button>
+        </div>
+        @if (!tile.peer!.stream) {
+          <div class="absolute inset-0 flex items-center justify-center bg-surface-2">
+            <span class="w-9 h-9 rounded-full bg-gradient-to-br from-neon-purple to-neon-blue text-white text-sm font-semibold flex items-center justify-center">{{ tile.peer!.nickname.charAt(0).toUpperCase() }}</span>
+          </div>
+        }
+      </div>
+    }
   }
 </div>

@@ -1,6 +1,7 @@
 package com.watchparty.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,11 +27,15 @@ public class YouTubeService {
     private static final int MAX_PLAYLIST_ITEMS = 200;
 
     private final RestClient restClient;
+    private final RestClient suggestClient;
+    private final ObjectMapper objectMapper;
     private final String apiKey;
 
     public YouTubeService(@Value("${youtube.api-key:}") String apiKey) {
         this.apiKey = apiKey;
         this.restClient = RestClient.create("https://www.googleapis.com/youtube/v3");
+        this.suggestClient = RestClient.create("https://suggestqueries.google.com");
+        this.objectMapper = new ObjectMapper();
     }
 
     public record VideoMetadata(@Nullable String title, String thumbnailUrl, int durationSeconds) {}
@@ -162,6 +167,134 @@ public class YouTubeService {
         }
         Matcher matcher = PLAYLIST_ID.matcher(url);
         return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
+    }
+
+    public List<String> suggest(String query) {
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
+        try {
+            String raw = suggestClient.get()
+                    .uri("/complete/search?client=firefox&ds=yt&q={q}", query)
+                    .retrieve()
+                    .body(String.class);
+
+            if (raw == null || raw.isBlank()) {
+                return List.of();
+            }
+
+            JsonNode response = objectMapper.readTree(raw);
+            if (!response.isArray() || response.size() < 2) {
+                return List.of();
+            }
+
+            JsonNode suggestions = response.get(1);
+            List<String> result = new ArrayList<>();
+            for (JsonNode s : suggestions) {
+                result.add(s.asText());
+                if (result.size() >= 8) break;
+            }
+            return result;
+        } catch (Exception e) {
+            log.warn("Failed to fetch YouTube suggestions for '{}': {}", query, e.getMessage());
+            return List.of();
+        }
+    }
+
+    public List<com.watchparty.dto.VideoRecommendation> search(String query, int maxResults) {
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
+
+        // Check if query is a YouTube video URL
+        Optional<String> videoIdOpt = extractVideoId(query);
+        if (videoIdOpt.isPresent()) {
+            return searchByVideoUrl(query, videoIdOpt.get());
+        }
+
+        // Check if query is a YouTube playlist URL
+        Optional<String> playlistIdOpt = extractPlaylistId(query);
+        if (playlistIdOpt.isPresent()) {
+            return searchByPlaylistUrl(playlistIdOpt.get());
+        }
+
+        // Otherwise perform a YouTube text search
+        return searchByText(query, maxResults);
+    }
+
+    private List<com.watchparty.dto.VideoRecommendation> searchByVideoUrl(String url, String videoId) {
+        Optional<VideoMetadata> meta = fetchMetadata(url);
+        if (meta.isEmpty()) {
+            return List.of();
+        }
+        VideoMetadata m = meta.get();
+        return List.of(new com.watchparty.dto.VideoRecommendation(
+                videoId,
+                "https://www.youtube.com/watch?v=" + videoId,
+                m.title() != null ? m.title() : "Untitled",
+                m.thumbnailUrl(),
+                "",
+                m.durationSeconds()
+        ));
+    }
+
+    private List<com.watchparty.dto.VideoRecommendation> searchByPlaylistUrl(String playlistId) {
+        Optional<PlaylistInfo> infoOpt = fetchPlaylistItems(playlistId);
+        if (infoOpt.isEmpty()) {
+            return List.of();
+        }
+        return infoOpt.get().items().stream()
+                .map(item -> new com.watchparty.dto.VideoRecommendation(
+                        item.videoId(),
+                        item.videoUrl(),
+                        item.title(),
+                        item.thumbnailUrl(),
+                        "",
+                        item.durationSeconds()
+                ))
+                .toList();
+    }
+
+    private List<com.watchparty.dto.VideoRecommendation> searchByText(String query, int maxResults) {
+        if (apiKey == null || apiKey.isBlank()) {
+            return List.of();
+        }
+
+        try {
+            String sanitized = query.replaceAll("[^\\p{L}\\p{N}\\s]", " ").trim().replaceAll("\\s+", " ");
+            if (sanitized.length() > 100) sanitized = sanitized.substring(0, 100).trim();
+
+            JsonNode response = restClient.get()
+                    .uri("/search?part=snippet&type=video&maxResults={max}&q={q}&key={key}",
+                            maxResults, sanitized, apiKey)
+                    .retrieve()
+                    .body(JsonNode.class);
+
+            JsonNode items = response != null ? response.get("items") : null;
+            if (items == null || items.isEmpty()) {
+                return List.of();
+            }
+
+            List<com.watchparty.dto.VideoRecommendation> results = new ArrayList<>();
+            for (JsonNode item : items) {
+                String id = item.path("id").path("videoId").asText(null);
+                if (id == null) continue;
+
+                JsonNode snippet = item.path("snippet");
+                String title = snippet.path("title").asText("Untitled");
+                String channel = snippet.path("channelTitle").asText("");
+                String thumbnail = "https://img.youtube.com/vi/" + id + "/mqdefault.jpg";
+
+                results.add(new com.watchparty.dto.VideoRecommendation(
+                        id, "https://www.youtube.com/watch?v=" + id, title, thumbnail, channel, 0));
+
+                if (results.size() >= maxResults) break;
+            }
+            return results;
+        } catch (Exception e) {
+            log.warn("Failed to search YouTube for '{}': {}", query, e.getMessage());
+            return List.of();
+        }
     }
 
     public List<com.watchparty.dto.VideoRecommendation> searchRelated(String videoId, int maxResults) {

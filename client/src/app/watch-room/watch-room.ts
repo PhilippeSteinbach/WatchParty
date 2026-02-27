@@ -7,18 +7,20 @@ import {
   signal,
   effect,
   viewChild,
+  ElementRef,
   OnDestroy,
   HostListener,
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { switchMap, map, distinctUntilChanged, pairwise } from 'rxjs/operators';
+import { switchMap, map, distinctUntilChanged, pairwise, debounceTime, filter } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Copy, Check, Link, PanelLeftClose, PanelLeftOpen, Film } from 'lucide-angular';
+import { LucideAngularModule, Copy, Check, Link, PanelLeftClose, PanelLeftOpen, Film, Search } from 'lucide-angular';
 import { WebSocketService } from '../services/websocket.service';
 import { WebRtcService } from '../services/webrtc.service';
 import { VideoRecommendationService } from '../services/video-recommendation.service';
+import { YoutubeSearchService } from '../services/youtube-search.service';
 import { YoutubePlayerComponent } from '../youtube-player/youtube-player';
 import { VideoControlsComponent } from '../video-controls/video-controls';
 import { ParticipantListComponent } from '../participant-list/participant-list';
@@ -27,13 +29,14 @@ import { PlaylistPanelComponent } from '../playlist-panel/playlist-panel';
 import { VideoGridComponent } from '../video-grid/video-grid';
 import { MediaControlsComponent } from '../media-controls/media-controls';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog';
+import { SearchResultsComponent } from '../search-results/search-results';
 import { PlaylistItem, PlayerState, VideoRecommendation } from '../models/room.model';
 import { extractPlaylistId } from '../utils/youtube.utils';
 
 @Component({
   selector: 'app-watch-room',
   standalone: true,
-  imports: [FormsModule, LucideAngularModule, YoutubePlayerComponent, VideoControlsComponent, ParticipantListComponent, ChatPanelComponent, PlaylistPanelComponent, VideoGridComponent, MediaControlsComponent, ConfirmDialogComponent],
+  imports: [FormsModule, LucideAngularModule, YoutubePlayerComponent, VideoControlsComponent, ParticipantListComponent, ChatPanelComponent, PlaylistPanelComponent, VideoGridComponent, MediaControlsComponent, ConfirmDialogComponent, SearchResultsComponent],
   templateUrl: './watch-room.html',
   styleUrl: './watch-room.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -45,10 +48,12 @@ export class WatchRoomComponent implements OnDestroy {
   readonly PanelLeftCloseIcon = PanelLeftClose;
   readonly PanelLeftOpenIcon = PanelLeftOpen;
   readonly FilmIcon = Film;
+  readonly SearchIcon = Search;
 
   private readonly ws = inject(WebSocketService);
   readonly webRtc = inject(WebRtcService);
   private readonly recService = inject(VideoRecommendationService);
+  private readonly searchService = inject(YoutubeSearchService);
   private readonly http = inject(HttpClient);
 
   readonly roomCode = input.required<string>();
@@ -70,12 +75,20 @@ export class WatchRoomComponent implements OnDestroy {
   readonly notifications = signal<string[]>([]);
   readonly showPlaylistConfirm = signal(false);
   readonly playlistConfirmMessage = signal('');
+  readonly searchResults = signal<VideoRecommendation[]>([]);
+  readonly isSearching = signal(false);
+  readonly suggestions = signal<string[]>([]);
+  readonly showSuggestions = signal(false);
+  readonly activeSuggestionIndex = signal(-1);
   private pendingPlaylistUrls: string[] = [];
 
   /** YouTube API recommendations for the currently playing video */
   readonly displayRecommendations = computed<VideoRecommendation[]>(() => this.recommendations());
 
   readonly playerRef = viewChild(YoutubePlayerComponent);
+  private readonly searchResultsArea = viewChild<ElementRef>('searchResultsArea');
+  private readonly playerArea = viewChild<ElementRef>('playerArea');
+  private readonly playerTop = viewChild<ElementRef>('playerTop');
 
   private positionReportInterval: ReturnType<typeof setInterval> | null = null;
   private timePollingInterval: ReturnType<typeof setInterval> | null = null;
@@ -150,6 +163,18 @@ export class WatchRoomComponent implements OnDestroy {
           this.addNotification(`${p.nickname} left the room`);
         }
       }
+    });
+
+    // Fetch autocomplete suggestions while typing (debounced)
+    toObservable(this.videoUrlInput).pipe(
+      debounceTime(250),
+      distinctUntilChanged(),
+      switchMap(q => q.trim().length >= 2 ? this.searchService.suggest(q.trim()) : of([])),
+      takeUntilDestroyed()
+    ).subscribe(s => {
+      this.suggestions.set(s);
+      this.showSuggestions.set(s.length > 0);
+      this.activeSuggestionIndex.set(-1);
     });
   }
 
@@ -236,6 +261,116 @@ export class WatchRoomComponent implements OnDestroy {
 
     this.ws.addToPlaylist(url);
     this.videoUrlInput.set('');
+  }
+
+  searchVideos(): void {
+    this.showSuggestions.set(false);
+    const query = this.videoUrlInput().trim();
+    if (!query) return;
+
+    // Playlist URLs still use the bulk-import confirm dialog flow
+    const playlistId = extractPlaylistId(query);
+    if (playlistId) {
+      this.handlePlaylistImport(playlistId);
+      return;
+    }
+
+    this.isSearching.set(true);
+    this.searchResults.set([]);
+    this.scrollToResults();
+
+    this.searchService.search(query).subscribe({
+      next: (results) => {
+        this.searchResults.set(results);
+        this.isSearching.set(false);
+        this.scrollToResults();
+      },
+      error: () => {
+        this.isSearching.set(false);
+      }
+    });
+  }
+
+  selectSuggestion(suggestion: string): void {
+    this.videoUrlInput.set(suggestion);
+    this.showSuggestions.set(false);
+    this.activeSuggestionIndex.set(-1);
+    this.searchVideos();
+  }
+
+  onSearchInputKeydown(event: KeyboardEvent): void {
+    const visible = this.showSuggestions() && this.suggestions().length > 0;
+    if (!visible) return;
+
+    const count = this.suggestions().length;
+    const idx = this.activeSuggestionIndex();
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.activeSuggestionIndex.set((idx + 1) % count);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.activeSuggestionIndex.set(idx <= 0 ? count - 1 : idx - 1);
+        break;
+      case 'Enter':
+        if (idx >= 0 && idx < count) {
+          event.preventDefault();
+          this.selectSuggestion(this.suggestions()[idx]);
+        }
+        // else: let the form submit normally
+        break;
+      case 'Escape':
+        this.showSuggestions.set(false);
+        this.activeSuggestionIndex.set(-1);
+        break;
+    }
+  }
+
+  dismissSuggestions(): void {
+    // Small delay so click on suggestion registers before hiding
+    setTimeout(() => this.showSuggestions.set(false), 200);
+  }
+
+  clearSearch(): void {
+    this.searchResults.set([]);
+    this.isSearching.set(false);
+  }
+
+  onSearchPlayNow(rec: VideoRecommendation): void {
+    this.localIsPlaying.set(true);
+    this.ws.sendPlayerAction({
+      action: 'CHANGE_VIDEO',
+      videoUrl: rec.videoUrl,
+      currentTimeSeconds: 0,
+      isPlaying: false,
+    });
+    setTimeout(() => {
+      this.ws.sendPlayerAction({
+        action: 'PLAY',
+        currentTimeSeconds: 0,
+        isPlaying: true,
+      });
+    }, 300);
+    this.scrollToPlayer();
+  }
+
+  onSearchAddToPlaylist(rec: VideoRecommendation): void {
+    this.ws.addToPlaylist(rec.videoUrl);
+    this.addNotification(`Added "${rec.title}" to playlist`);
+  }
+
+  private scrollToResults(): void {
+    setTimeout(() => {
+      this.searchResultsArea()?.nativeElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
+  private scrollToPlayer(): void {
+    setTimeout(() => {
+      this.playerTop()?.nativeElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   private handlePlaylistImport(playlistId: string): void {

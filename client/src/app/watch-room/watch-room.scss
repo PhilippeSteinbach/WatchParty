@@ -8,7 +8,6 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
   position: relative;
 }
 
@@ -46,12 +45,11 @@
   justify-content: space-between;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--color-border);
-  background-image: linear-gradient(to right, var(--color-border), transparent, var(--color-border));
-  background-size: 100% 1px;
-  background-position: bottom;
-  background-repeat: no-repeat;
   gap: 1rem;
   flex-wrap: wrap;
+  overflow: visible;
+  z-index: 20;
+  position: relative;
 }
 
 .toolbar-right {
@@ -70,7 +68,69 @@
   display: flex;
   gap: 0.5rem;
   flex: 1;
+  min-width: 0;
+}
+
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.search-inline-btn {
+  display: flex;
+  align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+  padding: 4px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(196, 181, 253, 0.5);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+
+  &:hover {
+    color: rgba(196, 181, 253, 0.9);
+    background: rgba(139, 92, 246, 0.15);
+  }
+}
+
+.suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin-top: 4px;
+  padding: 0.25rem 0;
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  list-style: none;
+  max-height: 280px;
+  overflow-y: auto;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    color: rgba(237, 233, 254, 0.85);
+    cursor: pointer;
+    transition: background 0.1s ease;
+
+    &:hover,
+    &.active {
+      background: rgba(139, 92, 246, 0.12);
+    }
+
+    &.active {
+      color: rgba(237, 233, 254, 1);
+    }
+  }
 }
 
 .main-content {
@@ -91,10 +151,24 @@
   flex: 7;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  container-type: size;
+  container-name: player;
+  scrollbar-width: none;          // Firefox: hide scrollbar
+
+  &::-webkit-scrollbar {          // Chromium/Safari: hide scrollbar
+    display: none;
+  }
 
   .youtube-area {
-    flex: 1;
-    min-height: 0;
+    flex-shrink: 0;
+    width: 100%;
+    // Fill the visible scroll viewport minus the video-controls bar (~49px),
+    // so video + controls are both fully visible together when scrolled to top.
+    // Controls = py-2 (16px) + h-8 button (32px) + 1px border-top = 49px.
+    height: calc(100cqh - 49px);
     position: relative;
 
     app-youtube-player {
@@ -105,16 +179,34 @@
 
   app-video-controls {
     flex-shrink: 0;
+    width: 100%;
   }
 
   .empty-player-placeholder {
-    flex: 1;
+    flex-shrink: 0;
+    min-height: 300px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 1rem;
   }
+}
+
+.search-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.scroll-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  border-top: 1px solid var(--color-border);
 }
 
 .sidebar {

@@ -3,6 +3,68 @@
   height: 100%;
 }
 
+.tile-container {
+  display: flex;
+  gap: 6px;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+  background: var(--color-surface-1);
+}
+
+.tile {
+  position: relative;
+  width: 140px;
+  flex-shrink: 0;
+  height: 100%;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--color-surface-0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  transition: opacity 0.15s ease, box-shadow 0.15s ease;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &.dragging {
+    opacity: 0.4;
+  }
+
+  &.drop-target {
+    box-shadow: inset 0 0 0 2px var(--color-neon-purple);
+  }
+}
+
 .local video {
   transform: scaleX(-1);
+}
+
+.label {
+  position: absolute;
+  bottom: 6px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: rgba(237, 233, 254, 1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  pointer-events: none;
+}
+
+.controls {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+
+  .group:hover & {
+    opacity: 1;
+  }
 }

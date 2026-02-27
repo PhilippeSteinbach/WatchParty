@@ -1,20 +1,20 @@
 <div class="flex items-center gap-2">
   @if (!isActive()) {
     <button
-      class="btn-ghost flex items-center gap-2"
+      class="btn-ghost flex items-center gap-1.5 px-3 h-[42px] text-xs"
       [class.opacity-50]="disabled()"
       [class.cursor-not-allowed]="disabled()"
       (click)="!disabled() && startMedia.emit()"
       [disabled]="disabled()"
       aria-label="Start camera and microphone"
-      [title]="disabled() ? disabledReason() : 'Start camera & mic'"
+      [title]="disabled() ? disabledReason() : 'Join Video'"
     >
-      <lucide-icon [img]="VideoIcon" [size]="16"></lucide-icon>
+      <lucide-icon [img]="VideoIcon" [size]="14"></lucide-icon>
       Join Video
     </button>
   } @else {
     <button
-      class="w-9 h-9 rounded-full flex items-center justify-center transition"
+      class="btn-icon transition"
       [class]="isCameraOn() ? 'bg-neon-purple/20 text-neon-purple hover:bg-neon-purple/30' : 'bg-neon-red/20 text-neon-red hover:bg-neon-red/30'"
       (click)="toggleCamera.emit()"
       [attr.aria-label]="isCameraOn() ? 'Turn off camera' : 'Turn on camera'"
@@ -27,7 +27,7 @@
       }
     </button>
     <button
-      class="w-9 h-9 rounded-full flex items-center justify-center transition"
+      class="btn-icon transition"
       [class]="isMicOn() ? 'bg-neon-purple/20 text-neon-purple hover:bg-neon-purple/30' : 'bg-neon-red/20 text-neon-red hover:bg-neon-red/30'"
       (click)="toggleMic.emit()"
       [attr.aria-label]="isMicOn() ? 'Mute microphone' : 'Unmute microphone'"
@@ -40,12 +40,12 @@
       }
     </button>
     <button
-      class="w-9 h-9 rounded-full flex items-center justify-center bg-neon-red text-white hover:bg-neon-red/80 transition"
+      class="btn-icon bg-neon-red text-white hover:bg-neon-red/80 transition"
       (click)="stopMedia.emit()"
       aria-label="Leave video call"
       title="Leave video"
     >
-      <lucide-icon [img]="XIcon" [size]="16"></lucide-icon>
+      <lucide-icon [img]="XIcon" [size]="14"></lucide-icon>
     </button>
   }
 </div>

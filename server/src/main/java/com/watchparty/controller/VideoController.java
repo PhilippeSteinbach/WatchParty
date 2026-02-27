@@ -19,6 +19,18 @@ public class VideoController {
         this.youTubeService = youTubeService;
     }
 
+    @GetMapping("/suggest")
+    public List<String> suggest(@RequestParam("q") String query) {
+        return youTubeService.suggest(query);
+    }
+
+    @GetMapping("/search")
+    public List<VideoRecommendation> search(
+            @RequestParam("q") String query,
+            @RequestParam(defaultValue = "10") int limit) {
+        return youTubeService.search(query, Math.min(limit, 20));
+    }
+
     @GetMapping("/{videoId}/recommendations")
     public List<VideoRecommendation> getRecommendations(
             @PathVariable String videoId,
