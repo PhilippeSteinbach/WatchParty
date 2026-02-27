@@ -1,0 +1,63 @@
+<div class="card-glow p-6">
+  <h3 class="text-lg font-semibold text-purple-100 mb-4">Change Password</h3>
+
+  @if (success()) {
+    <div class="flex items-center gap-2 text-neon-green text-sm mb-4">
+      <lucide-icon [img]="CheckIcon" [size]="14"></lucide-icon>
+      {{ success() }}
+    </div>
+  }
+  @if (error()) {
+    <div class="flex items-center gap-2 text-neon-red text-sm mb-4">
+      <lucide-icon [img]="AlertIcon" [size]="14"></lucide-icon>
+      {{ error() }}
+    </div>
+  }
+
+  <form (ngSubmit)="save()" class="flex flex-col gap-4">
+    <label class="flex flex-col gap-1">
+      <span class="text-sm text-purple-300/60">Current Password</span>
+      <input
+        type="password"
+        class="input-dark text-sm"
+        [ngModel]="currentPassword()"
+        (ngModelChange)="currentPassword.set($event)"
+        name="currentPassword"
+        required
+      />
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-sm text-purple-300/60">New Password</span>
+      <input
+        type="password"
+        class="input-dark text-sm"
+        [ngModel]="newPassword()"
+        (ngModelChange)="newPassword.set($event)"
+        name="newPassword"
+        required
+        minlength="8"
+      />
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-sm text-purple-300/60">Confirm New Password</span>
+      <input
+        type="password"
+        class="input-dark text-sm"
+        [ngModel]="confirmPassword()"
+        (ngModelChange)="confirmPassword.set($event)"
+        name="confirmPassword"
+        required
+        minlength="8"
+      />
+    </label>
+    <div>
+      <button
+        type="submit"
+        class="btn-gradient px-4 py-2 text-sm"
+        [disabled]="saving()"
+      >
+        {{ saving() ? 'Saving…' : 'Change Password' }}
+      </button>
+    </div>
+  </form>
+</div>

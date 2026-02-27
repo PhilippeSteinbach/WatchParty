@@ -1,0 +1,52 @@
+<div class="card-glow p-6">
+  <h3 class="text-lg font-semibold text-purple-100 mb-4">Account</h3>
+
+  @if (success()) {
+    <div class="flex items-center gap-2 text-neon-green text-sm mb-4">
+      <lucide-icon [img]="CheckIcon" [size]="14"></lucide-icon>
+      {{ success() }}
+    </div>
+  }
+  @if (error()) {
+    <div class="flex items-center gap-2 text-neon-red text-sm mb-4">
+      <lucide-icon [img]="AlertIcon" [size]="14"></lucide-icon>
+      {{ error() }}
+    </div>
+  }
+
+  <form (ngSubmit)="save()" class="flex flex-col gap-4">
+    <label class="flex flex-col gap-1">
+      <span class="text-sm text-purple-300/60">Display Name</span>
+      <input
+        type="text"
+        class="input-dark text-sm"
+        [ngModel]="displayName()"
+        (ngModelChange)="displayName.set($event)"
+        name="displayName"
+        required
+        minlength="2"
+        maxlength="100"
+      />
+    </label>
+    <label class="flex flex-col gap-1">
+      <span class="text-sm text-purple-300/60">Email</span>
+      <input
+        type="email"
+        class="input-dark text-sm"
+        [ngModel]="email()"
+        (ngModelChange)="email.set($event)"
+        name="email"
+        required
+      />
+    </label>
+    <div>
+      <button
+        type="submit"
+        class="btn-gradient px-4 py-2 text-sm"
+        [disabled]="saving()"
+      >
+        {{ saving() ? 'Saving…' : 'Save Changes' }}
+      </button>
+    </div>
+  </form>
+</div>

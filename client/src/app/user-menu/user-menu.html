@@ -6,18 +6,50 @@
   <span class="text-xs text-purple-400/40 select-none">v{{ version }}</span>
 
   @if (authService.isLoggedIn()) {
-    <span class="ml-auto flex items-center gap-1.5 text-purple-300/70 text-sm">
-      <lucide-icon [img]="UserIcon" [size]="14" class="text-purple-400/50"></lucide-icon>
-      {{ authService.currentUser()?.displayName }}
-    </span>
-    <a routerLink="/my-rooms" class="nav-link flex items-center gap-1.5 text-purple-300 text-sm no-underline hover:text-neon-blue transition-colors">
-      <lucide-icon [img]="DashboardIcon" [size]="14"></lucide-icon>
-      My Rooms
-    </a>
-    <button class="btn-ghost flex items-center gap-1.5 text-sm hover:text-neon-red hover:border-neon-red/50 hover:shadow-glow-pink transition-all" (click)="logout()">
-      <lucide-icon [img]="LogOutIcon" [size]="14"></lucide-icon>
-      Sign Out
-    </button>
+    <div class="ml-auto relative">
+      <button
+        class="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-surface-3 transition-colors cursor-pointer"
+        (click)="toggleDropdown()"
+        aria-haspopup="true"
+        [attr.aria-expanded]="dropdownOpen()"
+      >
+        <span class="w-8 h-8 rounded-full bg-neon-purple/20 text-neon-purple flex items-center justify-center text-sm font-semibold select-none">
+          {{ authService.currentUser()?.displayName?.charAt(0)?.toUpperCase() }}
+        </span>
+        <lucide-icon
+          [img]="ChevronDownIcon"
+          [size]="14"
+          class="text-purple-400/50 transition-transform"
+          [class.rotate-180]="dropdownOpen()"
+        ></lucide-icon>
+      </button>
+
+      @if (dropdownOpen()) {
+        <div class="dropdown" role="menu">
+          <div class="px-3 py-2 border-b border-border">
+            <p class="text-sm text-purple-100 font-semibold m-0">{{ authService.currentUser()?.displayName }}</p>
+            <p class="text-xs text-purple-400/50 m-0">{{ authService.currentUser()?.email }}</p>
+          </div>
+          <a
+            routerLink="/settings"
+            class="dropdown-item"
+            role="menuitem"
+            (click)="dropdownOpen.set(false)"
+          >
+            <lucide-icon [img]="SettingsIcon" [size]="14"></lucide-icon>
+            Settings
+          </a>
+          <button
+            class="dropdown-item text-neon-red/80 hover:text-neon-red"
+            role="menuitem"
+            (click)="logout()"
+          >
+            <lucide-icon [img]="LogOutIcon" [size]="14"></lucide-icon>
+            Sign Out
+          </button>
+        </div>
+      }
+    </div>
   } @else {
     <a routerLink="/login" class="ml-auto nav-link text-purple-300 text-sm no-underline hover:text-neon-blue transition-colors px-3 py-1.5">Sign In</a>
     <a routerLink="/register" class="btn-gradient text-sm no-underline">Register</a>

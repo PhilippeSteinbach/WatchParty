@@ -1,0 +1,55 @@
+<div class="card-glow p-6 border-neon-red/30">
+  <div class="flex items-center gap-2 mb-4">
+    <lucide-icon [img]="AlertIcon" [size]="20" class="text-neon-red"></lucide-icon>
+    <h3 class="text-lg font-semibold text-neon-red">Danger Zone</h3>
+  </div>
+
+  @if (!showConfirm()) {
+    <p class="text-purple-300/60 text-sm mb-4">
+      Permanently delete your account and all associated data. This action cannot be undone.
+    </p>
+    <button
+      class="bg-neon-red text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-neon-red/80 transition-colors cursor-pointer"
+      (click)="confirmDelete()"
+    >
+      Delete Account
+    </button>
+  } @else {
+    <p class="text-purple-300/60 text-sm mb-4">
+      This will permanently delete your account, your permanent rooms, and all associated data. Enter your password to confirm.
+    </p>
+
+    @if (error()) {
+      <p class="text-neon-red text-sm mb-3">{{ error() }}</p>
+    }
+
+    <form (ngSubmit)="deleteAccount()" class="flex flex-col gap-3">
+      <input
+        type="password"
+        class="input-dark text-sm max-w-xs"
+        placeholder="Your password"
+        [ngModel]="password()"
+        (ngModelChange)="password.set($event)"
+        name="password"
+        required
+      />
+      <div class="flex items-center gap-2">
+        <button
+          type="submit"
+          class="bg-neon-red text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-neon-red/80 transition-colors cursor-pointer"
+          [disabled]="deleting()"
+        >
+          {{ deleting() ? 'Deleting…' : 'Confirm Delete' }}
+        </button>
+        <button
+          type="button"
+          class="btn-ghost text-sm"
+          (click)="cancel()"
+          [disabled]="deleting()"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  }
+</div>

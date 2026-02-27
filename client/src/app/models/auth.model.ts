@@ -22,3 +22,17 @@ export interface LoginRequest {
   email: string;
   password: string;
 }
+
+export interface UpdateProfileRequest {
+  displayName?: string;
+  email?: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface DeleteAccountRequest {
+  password: string;
+}

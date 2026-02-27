@@ -74,6 +74,11 @@ export class WebRtcService {
   async start(): Promise<void> {
     try {
       this.mediaError.set(null);
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error(
+          'Camera/microphone unavailable. Please use HTTPS or localhost.',
+        );
+      }
       const myId = this.ws.myConnectionId();
       if (myId) {
         this._myConnectionId = myId;
@@ -96,7 +101,9 @@ export class WebRtcService {
     } catch (err) {
       const message = err instanceof DOMException
         ? `Camera/microphone access denied: ${err.message}`
-        : 'Failed to access media devices';
+        : err instanceof Error
+          ? err.message
+          : 'Failed to access media devices';
       this.mediaError.set(message);
       throw err;
     }

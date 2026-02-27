@@ -1,6 +1,6 @@
-import { Component, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { LucideAngularModule, Film, LogOut, UserRound, LayoutDashboard } from 'lucide-angular';
+import { Component, inject, signal, HostListener, ElementRef } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { LucideAngularModule, Film, LogOut, Settings, ChevronDown } from 'lucide-angular';
 import { AuthService } from '../services/auth.service';
 import packageJson from '../../../package.json';
 
@@ -12,14 +12,31 @@ import packageJson from '../../../package.json';
 })
 export class UserMenuComponent {
   readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly elRef = inject(ElementRef);
   readonly version = packageJson.version;
 
   readonly FilmIcon = Film;
   readonly LogOutIcon = LogOut;
-  readonly UserIcon = UserRound;
-  readonly DashboardIcon = LayoutDashboard;
+  readonly SettingsIcon = Settings;
+  readonly ChevronDownIcon = ChevronDown;
+
+  readonly dropdownOpen = signal(false);
+
+  toggleDropdown(): void {
+    this.dropdownOpen.update(v => !v);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.elRef.nativeElement.contains(event.target)) {
+      this.dropdownOpen.set(false);
+    }
+  }
 
   logout(): void {
+    this.dropdownOpen.set(false);
     this.authService.logout();
+    this.router.navigate(['/']);
   }
 }

@@ -1,0 +1,41 @@
+:host {
+  display: block;
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-purple-300);
+  text-decoration: none;
+  transition: background-color 0.15s, color 0.15s;
+
+  &:hover {
+    background: var(--color-surface-3);
+    color: var(--color-purple-100);
+  }
+
+  &.active {
+    background: var(--color-neon-purple-alpha, rgba(168, 85, 247, 0.15));
+    color: var(--color-neon-purple);
+    font-weight: 600;
+  }
+
+  &.danger {
+    color: var(--color-neon-red);
+    opacity: 0.7;
+
+    &:hover {
+      opacity: 1;
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    &.active {
+      opacity: 1;
+      background: rgba(239, 68, 68, 0.15);
+    }
+  }
+}

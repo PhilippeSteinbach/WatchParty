@@ -36,6 +36,9 @@
     </form>
 
     <div class="toolbar-right">
+      @if (webRtc.mediaError(); as error) {
+        <span class="text-neon-red text-xs">{{ error }}</span>
+      }
       @if (!webRtc.isActive()) {
         <app-media-controls
           [isActive]="false"
