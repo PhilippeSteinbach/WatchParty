@@ -41,12 +41,39 @@ Watch YouTube videos together in real-time with synchronized playback, live chat
 - Docker & Docker Compose
 - PostgreSQL 16 _(included in Docker Compose)_
 
-### Quick Start (Docker)
+### Quick Start — Single Container (easiest)
+
+Everything in one container — no external database needed:
+
+```bash
+docker run -p 4200:8080 -v watchparty-data:/data \
+  -e JWT_SECRET=my-secret-key \
+  ghcr.io/philippesteinbach/watchparty:latest
+```
+
+| Service | URL |
+|---------|-----|
+| App | http://localhost:4200 |
+| Swagger | http://localhost:4200/swagger-ui.html |
+
+Or build from source:
 
 ```bash
 git clone <repo-url>
 cd WatchParty
-docker compose up
+docker compose -f docker-compose.standalone.yml up
+```
+
+Data is persisted in the `watchparty-data` volume (H2 file database).
+
+### Quick Start — Multi Container (production)
+
+Uses separate containers for frontend (Nginx), backend (Spring Boot), and database (PostgreSQL):
+
+```bash
+git clone <repo-url>
+cd WatchParty
+JWT_SECRET=my-secret-key docker compose up
 ```
 
 | Service | URL |
@@ -89,10 +116,13 @@ The project includes preconfigured VS Code tasks with a dependency chain (**DB �
 
 ```
 WatchParty/
-├── client/                # Angular frontend
-├── server/                # Spring Boot backend
-├── docker-compose.yml
-└── docker-compose.dev.yml
+├── client/                      # Angular frontend
+├── server/                      # Spring Boot backend
+├── docker-compose.yml           # Multi-container (Nginx + API + PostgreSQL)
+├── docker-compose.standalone.yml # Single container (all-in-one with H2)
+├── docker-compose.dev.yml       # Dev DB only
+├── Dockerfile.standalone        # All-in-one build
+└── README.md
 ```
 
 ## Contributing
