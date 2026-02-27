@@ -46,9 +46,9 @@ Watch YouTube videos together in real-time with synchronized playback, live chat
 Everything in one container — no external database needed:
 
 ```bash
-git clone <repo-url>
-cd WatchParty
-docker compose -f docker-compose.standalone.yml up
+docker run -p 4200:8080 -v watchparty-data:/data \
+  -e JWT_SECRET=my-secret-key \
+  ghcr.io/philippesteinbach/watchparty:latest
 ```
 
 | Service | URL |
@@ -56,13 +56,12 @@ docker compose -f docker-compose.standalone.yml up
 | App | http://localhost:4200 |
 | Swagger | http://localhost:4200/swagger-ui.html |
 
-Or run the image directly:
+Or build from source:
 
 ```bash
-docker build -f Dockerfile.standalone -t watchparty:standalone .
-docker run -p 4200:8080 -v watchparty-data:/data \
-  -e JWT_SECRET=my-secret-key \
-  watchparty:standalone
+git clone <repo-url>
+cd WatchParty
+docker compose -f docker-compose.standalone.yml up
 ```
 
 Data is persisted in the `watchparty-data` volume (H2 file database).

@@ -77,6 +77,16 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/watchparty-client:${{ github.event.inputs.version }}
             ghcr.io/${{ github.repository_owner }}/watchparty-client:latest
 
+      - name: Build & push Standalone image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.standalone
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/watchparty:${{ github.event.inputs.version }}
+            ghcr.io/${{ github.repository_owner }}/watchparty:latest
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
