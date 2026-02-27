@@ -1,6 +1,6 @@
 import { Component, inject, signal, HostListener, ElementRef } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { LucideAngularModule, Film, LogOut, Settings, ChevronDown } from 'lucide-angular';
+import { LucideAngularModule, Film, LogOut, Settings, ChevronDown, Sofa } from 'lucide-angular';
 import { AuthService } from '../services/auth.service';
 import packageJson from '../../../package.json';
 
@@ -20,6 +20,7 @@ export class UserMenuComponent {
   readonly LogOutIcon = LogOut;
   readonly SettingsIcon = Settings;
   readonly ChevronDownIcon = ChevronDown;
+  readonly SofaIcon = Sofa;
 
   readonly dropdownOpen = signal(false);
 

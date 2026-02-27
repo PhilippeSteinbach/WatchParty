@@ -31,6 +31,15 @@
             <p class="text-xs text-purple-400/50 m-0">{{ authService.currentUser()?.email }}</p>
           </div>
           <a
+            routerLink="/settings/rooms"
+            class="dropdown-item"
+            role="menuitem"
+            (click)="dropdownOpen.set(false)"
+          >
+            <lucide-icon [img]="SofaIcon" [size]="14"></lucide-icon>
+            My Rooms
+          </a>
+          <a
             routerLink="/settings"
             class="dropdown-item"
             role="menuitem"
