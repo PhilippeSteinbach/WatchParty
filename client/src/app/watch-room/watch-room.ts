@@ -15,6 +15,7 @@ import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap, map, distinctUntilChanged, pairwise } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { FormsModule } from '@angular/forms';
+import { LucideAngularModule, Copy, Check, Link, PanelLeftClose, PanelLeftOpen, Film } from 'lucide-angular';
 import { WebSocketService } from '../services/websocket.service';
 import { WebRtcService } from '../services/webrtc.service';
 import { VideoRecommendationService } from '../services/video-recommendation.service';
@@ -32,12 +33,19 @@ import { extractPlaylistId } from '../utils/youtube.utils';
 @Component({
   selector: 'app-watch-room',
   standalone: true,
-  imports: [FormsModule, YoutubePlayerComponent, VideoControlsComponent, ParticipantListComponent, ChatPanelComponent, PlaylistPanelComponent, VideoGridComponent, MediaControlsComponent, ConfirmDialogComponent],
+  imports: [FormsModule, LucideAngularModule, YoutubePlayerComponent, VideoControlsComponent, ParticipantListComponent, ChatPanelComponent, PlaylistPanelComponent, VideoGridComponent, MediaControlsComponent, ConfirmDialogComponent],
   templateUrl: './watch-room.html',
   styleUrl: './watch-room.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WatchRoomComponent implements OnDestroy {
+  readonly CopyIcon = Copy;
+  readonly CheckIcon = Check;
+  readonly LinkIcon = Link;
+  readonly PanelLeftCloseIcon = PanelLeftClose;
+  readonly PanelLeftOpenIcon = PanelLeftOpen;
+  readonly FilmIcon = Film;
+
   private readonly ws = inject(WebSocketService);
   readonly webRtc = inject(WebRtcService);
   private readonly recService = inject(VideoRecommendationService);

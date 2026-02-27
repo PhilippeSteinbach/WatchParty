@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { LucideAngularModule, Film, AlertCircle } from 'lucide-angular';
 import { WebSocketService } from '../services/websocket.service';
 import { RoomService } from '../services/room.service';
 import { WatchRoomComponent } from '../watch-room/watch-room';
@@ -16,7 +17,7 @@ import { AuthService } from '../services/auth.service';
 @Component({
   selector: 'app-join-room',
   standalone: true,
-  imports: [FormsModule, WatchRoomComponent],
+  imports: [FormsModule, WatchRoomComponent, LucideAngularModule],
   templateUrl: './join-room.html',
   styleUrl: './join-room.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,6 +27,9 @@ export class JoinRoomComponent implements OnInit, OnDestroy {
   private readonly ws = inject(WebSocketService);
   private readonly roomService = inject(RoomService);
   private readonly auth = inject(AuthService);
+
+  readonly FilmIcon = Film;
+  readonly AlertCircleIcon = AlertCircle;
 
   readonly nickname = signal('');
   readonly roomCode = signal('');

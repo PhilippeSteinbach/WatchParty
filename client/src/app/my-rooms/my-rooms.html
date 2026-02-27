@@ -1,29 +1,33 @@
-<div class="my-rooms-container">
-  <div class="header">
-    <h2>My Rooms</h2>
-    <a routerLink="/" [queryParams]="{view: 'create'}" class="create-btn">+ Create Room</a>
+<div class="max-w-2xl mx-auto py-8 px-4">
+  <div class="flex items-center justify-between mb-6">
+    <h2 class="text-2xl font-bold gradient-text">My Rooms</h2>
+    <a routerLink="/" [queryParams]="{view: 'create'}" class="btn-gradient inline-flex items-center gap-1.5 text-sm px-4 py-2">
+      <lucide-icon [img]="PlusIcon" [size]="16"></lucide-icon>
+      Create Room
+    </a>
   </div>
 
   @if (loading()) {
-    <p class="status">Loading…</p>
+    <p class="text-purple-300/60">Loading…</p>
   } @else if (error()) {
-    <p class="status error">{{ error() }}</p>
+    <p class="text-neon-red">{{ error() }}</p>
   } @else if (rooms().length === 0) {
-    <p class="status">You don't have any permanent rooms yet.</p>
+    <p class="text-purple-300/60">You don't have any permanent rooms yet.</p>
   } @else {
-    <ul class="room-list">
+    <ul class="flex flex-col gap-3">
       @for (room of rooms(); track room.id) {
-        <li class="room-card">
-          <div class="room-info">
-            <span class="room-name">{{ room.name }}</span>
-            <span class="room-code">#{{ room.code }}</span>
+        <li class="card-glow p-4 flex items-center justify-between">
+          <div class="flex flex-col gap-1">
+            <span class="text-purple-100 font-semibold">{{ room.name }}</span>
+            <span class="text-purple-400/50 font-mono text-xs">#{{ room.code }}</span>
           </div>
-          <div class="room-actions">
-            <a class="join-btn" [routerLink]="['/room', room.code]">Join</a>
-            <button class="delete-btn" (click)="confirmDelete(room.code)" aria-label="Delete room">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-              </svg>
+          <div class="flex items-center gap-2">
+            <a class="btn-gradient text-sm px-3 py-1.5" [routerLink]="['/room', room.code]">Join</a>
+            <button
+              class="p-1.5 rounded-md border border-border text-purple-400/50 hover:text-neon-red hover:border-neon-red hover:bg-neon-red/10 transition-colors cursor-pointer"
+              (click)="confirmDelete(room.code)"
+              aria-label="Delete room">
+              <lucide-icon [img]="Trash2Icon" [size]="16"></lucide-icon>
             </button>
           </div>
         </li>
@@ -33,13 +37,20 @@
 </div>
 
 @if (confirmDeleteCode()) {
-  <div class="modal-backdrop" (click)="cancelDelete()" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="modal" (click)="$event.stopPropagation()">
-      <h3 id="modal-title">Delete Room?</h3>
-      <p>Are you sure you want to delete room <strong>#{{ confirmDeleteCode() }}</strong>? This cannot be undone.</p>
-      <div class="modal-actions">
-        <button class="modal-cancel" (click)="cancelDelete()">Cancel</button>
-        <button class="modal-confirm" (click)="deleteRoom()">Delete</button>
+  <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center"
+       (click)="cancelDelete()" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="card-glow p-6 max-w-sm w-[90%] flex flex-col gap-3" (click)="$event.stopPropagation()">
+      <div class="flex items-center gap-2">
+        <lucide-icon [img]="AlertTriangleIcon" [size]="20" class="text-neon-red"></lucide-icon>
+        <h3 id="modal-title" class="text-purple-100 text-lg font-semibold">Delete Room?</h3>
+      </div>
+      <p class="text-purple-300/60 text-sm leading-relaxed">
+        Are you sure you want to delete room <strong class="text-purple-100 font-mono">#{{ confirmDeleteCode() }}</strong>? This cannot be undone.
+      </p>
+      <div class="flex justify-end gap-2 mt-1">
+        <button class="btn-ghost text-sm px-3 py-1.5" (click)="cancelDelete()">Cancel</button>
+        <button class="bg-neon-red text-white text-sm font-semibold px-3 py-1.5 rounded-lg hover:bg-neon-red/80 transition-colors cursor-pointer"
+                (click)="deleteRoom()">Delete</button>
       </div>
     </div>
   </div>

@@ -1,17 +1,20 @@
 import { Component, signal, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { LucideAngularModule, Film } from 'lucide-angular';
 import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-register',
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, LucideAngularModule],
   templateUrl: './register.html',
   styleUrl: './register.scss'
 })
 export class RegisterComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+
+  readonly FilmIcon = Film;
 
   readonly email = signal('');
   readonly displayName = signal('');

@@ -1,7 +1,7 @@
-<div class="emoji-picker">
+<div class="flex gap-1">
   @for (emoji of emojis; track emoji) {
     <button
-      class="emoji-btn"
+      class="bg-surface-4 hover:bg-neon-purple/20 border-none rounded px-1.5 py-0.5 text-sm cursor-pointer transition-colors"
       type="button"
       (click)="selectEmoji(emoji)"
       [attr.aria-label]="'React with ' + emoji"

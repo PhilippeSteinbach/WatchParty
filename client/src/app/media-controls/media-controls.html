@@ -1,39 +1,48 @@
-<div class="media-controls">
+<div class="flex items-center gap-2">
   @if (!isActive()) {
     <button
-      class="media-btn start-btn"
+      class="btn-ghost"
       (click)="startMedia.emit()"
       aria-label="Start camera and microphone"
       title="Start camera & mic"
     >
-      📹 Join Video
+      <lucide-icon [img]="VideoIcon" [size]="16"></lucide-icon>
+      Join Video
     </button>
   } @else {
     <button
-      class="media-btn"
-      [class.off]="!isCameraOn()"
+      class="w-9 h-9 rounded-full flex items-center justify-center transition"
+      [class]="isCameraOn() ? 'bg-neon-purple/20 text-neon-purple hover:bg-neon-purple/30' : 'bg-neon-red/20 text-neon-red hover:bg-neon-red/30'"
       (click)="toggleCamera.emit()"
       [attr.aria-label]="isCameraOn() ? 'Turn off camera' : 'Turn on camera'"
       [title]="isCameraOn() ? 'Turn off camera' : 'Turn on camera'"
     >
-      {{ isCameraOn() ? '📹' : '🚫' }}
+      @if (isCameraOn()) {
+        <lucide-icon [img]="VideoIcon" [size]="16"></lucide-icon>
+      } @else {
+        <lucide-icon [img]="VideoOffIcon" [size]="16"></lucide-icon>
+      }
     </button>
     <button
-      class="media-btn"
-      [class.off]="!isMicOn()"
+      class="w-9 h-9 rounded-full flex items-center justify-center transition"
+      [class]="isMicOn() ? 'bg-neon-purple/20 text-neon-purple hover:bg-neon-purple/30' : 'bg-neon-red/20 text-neon-red hover:bg-neon-red/30'"
       (click)="toggleMic.emit()"
       [attr.aria-label]="isMicOn() ? 'Mute microphone' : 'Unmute microphone'"
       [title]="isMicOn() ? 'Mute' : 'Unmute'"
     >
-      {{ isMicOn() ? '🎤' : '🔇' }}
+      @if (isMicOn()) {
+        <lucide-icon [img]="MicIcon" [size]="16"></lucide-icon>
+      } @else {
+        <lucide-icon [img]="MicOffIcon" [size]="16"></lucide-icon>
+      }
     </button>
     <button
-      class="media-btn stop-btn"
+      class="w-9 h-9 rounded-full flex items-center justify-center bg-neon-red text-white hover:bg-neon-red/80 transition"
       (click)="stopMedia.emit()"
       aria-label="Leave video call"
       title="Leave video"
     >
-      ✖
+      <lucide-icon [img]="XIcon" [size]="16"></lucide-icon>
     </button>
   }
 </div>

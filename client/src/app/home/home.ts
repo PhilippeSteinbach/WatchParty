@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { LucideAngularModule, Film, Plus, DoorOpen, ArrowLeft } from 'lucide-angular';
 import { RoomService } from '../services/room.service';
 import { AuthService } from '../services/auth.service';
 import { ControlMode } from '../models/room.model';
@@ -8,7 +9,7 @@ import { ControlMode } from '../models/room.model';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, LucideAngularModule],
   templateUrl: './home.html',
   styleUrl: './home.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,6 +27,11 @@ export class HomeComponent implements OnInit {
   readonly joinCode = signal('');
   readonly error = signal('');
   readonly creating = signal(false);
+
+  readonly FilmIcon = Film;
+  readonly PlusIcon = Plus;
+  readonly DoorOpenIcon = DoorOpen;
+  readonly ArrowLeftIcon = ArrowLeft;
 
   ngOnInit(): void {
     const v = this.route.snapshot.queryParamMap.get('view');

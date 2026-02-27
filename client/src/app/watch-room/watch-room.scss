@@ -24,12 +24,8 @@
   pointer-events: none;
 
   .toast {
-    background: #313244;
-    color: #cdd6f4;
     padding: 0.5rem 1rem;
-    border-radius: 6px;
     font-size: 0.85rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     animation: toast-in 0.3s ease, toast-out 0.3s ease 3.5s forwards;
   }
 }
@@ -49,8 +45,11 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  background: #1e1e2e;
-  border-bottom: 1px solid #313244;
+  border-bottom: 1px solid var(--color-border);
+  background-image: linear-gradient(to right, var(--color-border), transparent, var(--color-border));
+  background-size: 100% 1px;
+  background-position: bottom;
+  background-repeat: no-repeat;
   gap: 1rem;
   flex-wrap: wrap;
 }
@@ -65,30 +64,6 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-
-  .room-label {
-    color: #a6adc8;
-    font-size: 0.85rem;
-  }
-
-  .room-code {
-    font-weight: 600;
-    color: #89b4fa;
-  }
-}
-
-.copy-btn {
-  background: #313244;
-  color: #cdd6f4;
-  border: none;
-  border-radius: 4px;
-  padding: 0.35rem 0.65rem;
-  font-size: 0.8rem;
-  cursor: pointer;
-
-  &:hover {
-    background: #45475a;
-  }
 }
 
 .video-form {
@@ -96,35 +71,6 @@
   gap: 0.5rem;
   flex: 1;
   justify-content: center;
-
-  input {
-    background: #181825;
-    border: 1px solid #45475a;
-    border-radius: 6px;
-    padding: 0.5rem 0.75rem;
-    color: #cdd6f4;
-    font-size: 0.85rem;
-    width: 300px;
-    outline: none;
-
-    &:focus {
-      border-color: #89b4fa;
-    }
-  }
-
-  button {
-    background: #89b4fa;
-    color: #1e1e2e;
-    border: none;
-    border-radius: 6px;
-    padding: 0.5rem 1rem;
-    font-weight: 600;
-    cursor: pointer;
-
-    &:hover {
-      background: #74c7ec;
-    }
-  }
 }
 
 .main-content {
@@ -136,8 +82,6 @@
 .video-grid-area {
   flex-shrink: 0;
   height: 120px;
-  background: #181825;
-  border-bottom: 1px solid #313244;
   padding: 6px 1rem;
   overflow-x: auto;
   overflow-y: hidden;
@@ -145,7 +89,6 @@
 
 .player-area {
   flex: 7;
-  background: #11111b;
   display: flex;
   flex-direction: column;
 
@@ -171,19 +114,6 @@
     align-items: center;
     justify-content: center;
     gap: 1rem;
-    color: #6c7086;
-
-    .placeholder-icon {
-      font-size: 3rem;
-    }
-
-    .placeholder-text {
-      font-size: 0.95rem;
-      max-width: 360px;
-      text-align: center;
-      line-height: 1.5;
-      margin: 0;
-    }
   }
 }
 
@@ -191,8 +121,6 @@
   flex: 3;
   min-width: 280px;
   max-width: 360px;
-  background: #1e1e2e;
-  border-left: 1px solid #313244;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -207,7 +135,7 @@
 
   app-participant-list {
     flex-shrink: 0;
-    border-bottom: 1px solid #313244;
+    border-bottom: 1px solid var(--color-border);
   }
 
   app-chat-panel {
@@ -225,19 +153,20 @@
   flex-shrink: 0;
   width: 32px;
   background: none;
-  color: #a6adc8;
+  color: var(--color-neon-purple);
+  opacity: 0.6;
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
   padding: 0.5rem 0;
+  transition: opacity 0.2s ease, background 0.2s ease;
 
   &:hover {
-    color: #89b4fa;
-    background: #31324480;
+    opacity: 1;
+    background: rgba(139, 92, 246, 0.08);
   }
 
   .collapsed & {
@@ -247,7 +176,7 @@
 
 .tab-bar {
   display: flex;
-  border-bottom: 1px solid #313244;
+  border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 
   .tab-btn {
@@ -256,18 +185,19 @@
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
-    color: #a6adc8;
+    color: rgba(216, 180, 254, 0.6);
     font-size: 0.85rem;
     cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 
     &:hover {
-      color: #cdd6f4;
-      background: #31324480;
+      color: rgba(216, 180, 254, 0.9);
+      background: rgba(139, 92, 246, 0.08);
     }
 
     &.active {
-      color: #89b4fa;
-      border-bottom-color: #89b4fa;
+      color: var(--color-neon-purple);
+      border-bottom-color: var(--color-neon-purple);
     }
 
     .unread-badge {
@@ -278,9 +208,7 @@
       height: 18px;
       padding: 0 5px;
       margin-left: 6px;
-      border-radius: 50%;
-      background: #f38ba8;
-      color: #1e1e2e;
+      border-radius: 9999px;
       font-size: 0.7rem;
       font-weight: 700;
       line-height: 1;

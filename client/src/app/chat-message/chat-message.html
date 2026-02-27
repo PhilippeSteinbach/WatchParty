@@ -1,24 +1,24 @@
 <div
-  class="message"
+  class="relative bg-surface-1 rounded-lg px-3 py-2 group"
   (mouseenter)="hovered.set(true)"
   (mouseleave)="hovered.set(false)"
 >
-  <div class="message-header">
-    <span class="nickname">{{ message().nickname }}</span>
-    <span class="timestamp">{{ relativeTime(message().sentAt) }}</span>
+  <div class="flex justify-between items-baseline mb-0.5">
+    <span class="text-neon-purple text-sm font-semibold">{{ message().nickname }}</span>
+    <span class="text-xs text-purple-400/40">{{ relativeTime(message().sentAt) }}</span>
   </div>
-  <div class="message-content">{{ message().content }}</div>
+  <div class="text-sm text-purple-100">{{ message().content }}</div>
 
   @if (reactionEntries(message().reactions).length > 0) {
-    <div class="reactions">
+    <div class="flex flex-wrap gap-1.5 mt-1.5">
       @for (entry of reactionEntries(message().reactions); track entry[0]) {
-        <span class="reaction-badge">{{ entry[0] }} {{ entry[1] }}</span>
+        <span class="bg-surface-4 rounded-full px-2 py-0.5 text-xs text-purple-200">{{ entry[0] }} {{ entry[1] }}</span>
       }
     </div>
   }
 
   @if (hovered()) {
-    <div class="reaction-bar">
+    <div class="absolute -top-2 right-2 bg-surface-3 border border-border rounded-lg p-1 shadow-glow-sm">
       <app-emoji-picker
         [messageId]="message().id"
         (reactionSelected)="onReaction($event)"

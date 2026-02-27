@@ -6,15 +6,30 @@ import {
   output,
   signal,
 } from '@angular/core';
+import {
+  LucideAngularModule,
+  Play,
+  Pause,
+  Volume2,
+  Volume1,
+  VolumeX,
+} from 'lucide-angular';
 
 @Component({
   selector: 'app-video-controls',
   standalone: true,
+  imports: [LucideAngularModule],
   templateUrl: './video-controls.html',
   styleUrl: './video-controls.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VideoControlsComponent {
+  protected readonly PlayIcon = Play;
+  protected readonly PauseIcon = Pause;
+  protected readonly Volume2Icon = Volume2;
+  protected readonly Volume1Icon = Volume1;
+  protected readonly VolumeXIcon = VolumeX;
+
   readonly isPlaying = input(false);
   readonly currentTime = input(0);
   readonly duration = input(0);

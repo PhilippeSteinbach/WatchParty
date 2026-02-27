@@ -37,156 +37,22 @@
   padding: 1rem;
   overflow: hidden;
 
-  &.initial {
-    background: #11111b;
-  }
-
+  &.initial,
   &.has-content {
-    background: #11111b;
-  }
-}
-
-.play-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: rgba(17, 17, 27, 0.8);
-  color: #cdd6f4;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  padding-left: 4px;
-  flex-shrink: 0;
-  transition: transform 0.15s ease, background 0.15s ease;
-
-  &:hover {
-    transform: scale(1.1);
-    background: rgba(137, 180, 250, 0.85);
-    color: #1e1e2e;
+    @apply bg-surface-0;
   }
 }
 
 .recommendations {
   cursor: default;
   width: 100%;
-  max-width: 720px;
+  max-width: 48rem;
   overflow-y: auto;
   max-height: calc(100% - 100px);
-}
-
-.rec-heading {
-  color: #cdd6f4;
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin: 0 0 0.5rem 0;
-  text-align: center;
 }
 
 .rec-list {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-}
-
-.rec-card {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.4rem;
-  border-radius: 6px;
-  background: rgba(30, 30, 46, 0.9);
-  transition: background 0.15s ease;
-
-  &:hover {
-    background: rgba(49, 50, 68, 0.95);
-  }
-}
-
-.rec-thumb {
-  position: relative;
-  flex-shrink: 0;
-
-  img {
-    width: 100px;
-    height: 56px;
-    border-radius: 4px;
-    object-fit: cover;
-    display: block;
-  }
-}
-
-.rec-duration {
-  position: absolute;
-  bottom: 3px;
-  right: 3px;
-  background: rgba(0, 0, 0, 0.8);
-  color: #cdd6f4;
-  font-size: 0.65rem;
-  padding: 1px 4px;
-  border-radius: 3px;
-  pointer-events: none;
-}
-
-.rec-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.rec-title {
-  color: #cdd6f4;
-  font-size: 0.75rem;
-  font-weight: 500;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.rec-channel {
-  color: #a6adc8;
-  font-size: 0.65rem;
-}
-
-.rec-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex-shrink: 0;
-}
-
-.rec-play,
-.rec-queue {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  transition: background 0.15s ease;
-}
-
-.rec-play {
-  background: #89b4fa;
-  color: #1e1e2e;
-
-  &:hover {
-    background: #74c7ec;
-  }
-}
-
-.rec-queue {
-  background: #313244;
-  color: #cdd6f4;
-  font-weight: 700;
-
-  &:hover {
-    background: #45475a;
-  }
 }

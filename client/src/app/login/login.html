@@ -1,31 +1,34 @@
-<div class="auth-container">
-  <div class="card">
-    <h1>🎬 WatchParty</h1>
-    <h2>Sign In</h2>
+<div class="flex items-center justify-center min-h-full p-4">
+  <div class="card-glow p-10 w-full max-w-md text-center">
+    <div class="text-neon-purple mb-2">
+      <lucide-icon [img]="FilmIcon" [size]="32"></lucide-icon>
+    </div>
+    <h1 class="gradient-text text-3xl font-bold mb-1">WatchParty</h1>
+    <h2 class="text-purple-200/80 text-lg font-medium mb-8">Sign In</h2>
 
-    <form (ngSubmit)="login()" class="form">
-      <div class="field">
-        <label for="email">Email</label>
-        <input id="email" type="email" placeholder="you@example.com"
+    <form (ngSubmit)="login()" class="flex flex-col gap-4 text-left">
+      <div class="flex flex-col gap-1">
+        <label for="email" class="text-sm text-purple-300/70">Email</label>
+        <input id="email" type="email" placeholder="you@example.com" class="input-dark w-full"
           [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" required />
       </div>
 
-      <div class="field">
-        <label for="password">Password</label>
-        <input id="password" type="password" placeholder="••••••••"
+      <div class="flex flex-col gap-1">
+        <label for="password" class="text-sm text-purple-300/70">Password</label>
+        <input id="password" type="password" placeholder="••••••••" class="input-dark w-full"
           [ngModel]="password()" (ngModelChange)="password.set($event)" name="password" required />
       </div>
 
       @if (error()) {
-        <p class="error">{{ error() }}</p>
+        <p class="text-neon-red text-sm">{{ error() }}</p>
       }
 
-      <button type="submit" [disabled]="loading()">
+      <button type="submit" class="btn-gradient w-full py-3 text-base mt-2" [disabled]="loading()">
         {{ loading() ? 'Signing in…' : 'Sign In' }}
       </button>
     </form>
 
-    <p class="footer-link">Don't have an account? <a routerLink="/register">Register</a></p>
-    <p class="footer-link"><a routerLink="/">Continue without account</a></p>
+    <p class="mt-4 text-sm text-purple-300/60">Don't have an account? <a routerLink="/register" class="text-neon-purple hover:underline">Register</a></p>
+    <p class="mt-4 text-sm text-purple-300/60"><a routerLink="/" class="text-neon-purple hover:underline">Continue without account</a></p>
   </div>
 </div>

@@ -8,18 +8,20 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { LucideAngularModule, Send } from 'lucide-angular';
 import { WebSocketService } from '../services/websocket.service';
 import { ChatMessageComponent } from '../chat-message/chat-message';
 
 @Component({
   selector: 'app-chat-panel',
   standalone: true,
-  imports: [FormsModule, ChatMessageComponent],
+  imports: [FormsModule, LucideAngularModule, ChatMessageComponent],
   templateUrl: './chat-panel.html',
   styleUrl: './chat-panel.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChatPanelComponent implements AfterViewChecked {
+  protected readonly SendIcon = Send;
   private readonly ws = inject(WebSocketService);
 
   readonly messages = this.ws.chatMessages;

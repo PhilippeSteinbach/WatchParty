@@ -1,37 +1,40 @@
-<div class="auth-container">
-  <div class="card">
-    <h1>🎬 WatchParty</h1>
-    <h2>Create Account</h2>
+<div class="flex items-center justify-center min-h-full p-4">
+  <div class="card-glow p-10 w-full max-w-md text-center">
+    <div class="text-neon-purple mb-2">
+      <lucide-icon [img]="FilmIcon" [size]="32"></lucide-icon>
+    </div>
+    <h1 class="gradient-text text-3xl font-bold mb-1">WatchParty</h1>
+    <h2 class="text-purple-200/80 text-lg font-medium mb-8">Create Account</h2>
 
-    <form (ngSubmit)="register()" class="form">
-      <div class="field">
-        <label for="displayName">Display Name</label>
-        <input id="displayName" type="text" placeholder="Your name"
+    <form (ngSubmit)="register()" class="flex flex-col gap-4 text-left">
+      <div class="flex flex-col gap-1">
+        <label for="displayName" class="text-sm text-purple-300/70">Display Name</label>
+        <input id="displayName" type="text" placeholder="Your name" class="input-dark w-full"
           [ngModel]="displayName()" (ngModelChange)="displayName.set($event)" name="displayName" required />
       </div>
 
-      <div class="field">
-        <label for="email">Email</label>
-        <input id="email" type="email" placeholder="you@example.com"
+      <div class="flex flex-col gap-1">
+        <label for="email" class="text-sm text-purple-300/70">Email</label>
+        <input id="email" type="email" placeholder="you@example.com" class="input-dark w-full"
           [ngModel]="email()" (ngModelChange)="email.set($event)" name="email" required />
       </div>
 
-      <div class="field">
-        <label for="password">Password <span class="hint">(min. 8 characters)</span></label>
-        <input id="password" type="password" placeholder="••••••••"
+      <div class="flex flex-col gap-1">
+        <label for="password" class="text-sm text-purple-300/70">Password <span class="text-purple-400/40 font-normal">(min. 8 characters)</span></label>
+        <input id="password" type="password" placeholder="••••••••" class="input-dark w-full"
           [ngModel]="password()" (ngModelChange)="password.set($event)" name="password" required minlength="8" />
       </div>
 
       @if (error()) {
-        <p class="error">{{ error() }}</p>
+        <p class="text-neon-red text-sm">{{ error() }}</p>
       }
 
-      <button type="submit" [disabled]="loading()">
+      <button type="submit" class="btn-gradient w-full py-3 text-base mt-2" [disabled]="loading()">
         {{ loading() ? 'Creating account…' : 'Create Account' }}
       </button>
     </form>
 
-    <p class="footer-link">Already have an account? <a routerLink="/login">Sign In</a></p>
-    <p class="footer-link"><a routerLink="/">Continue without account</a></p>
+    <p class="mt-4 text-sm text-purple-300/60">Already have an account? <a routerLink="/login" class="text-neon-purple hover:underline">Sign In</a></p>
+    <p class="mt-4 text-sm text-purple-300/60"><a routerLink="/" class="text-neon-purple hover:underline">Continue without account</a></p>
   </div>
 </div>

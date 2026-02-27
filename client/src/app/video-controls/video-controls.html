@@ -1,26 +1,32 @@
-<div class="video-controls">
+<div class="flex items-center gap-2 bg-surface-1 border-t border-border px-4 py-2">
   @if (hasVideo()) {
     <button
-      class="ctrl-btn play-pause"
+      class="w-8 h-8 rounded-full flex items-center justify-center bg-neon-purple/20 text-neon-purple hover:bg-neon-purple/30 transition disabled:opacity-40 disabled:cursor-default"
       (click)="togglePlayPause()"
       [disabled]="!canControl()"
       [attr.aria-label]="isPlaying() ? 'Pause' : 'Play'"
     >
-      @if (isPlaying()) { ⏸ } @else { ▶ }
+      @if (isPlaying()) {
+        <lucide-icon [img]="PauseIcon" [size]="16"></lucide-icon>
+      } @else {
+        <lucide-icon [img]="PlayIcon" [size]="16"></lucide-icon>
+      }
     </button>
   } @else {
     <button
-      class="ctrl-btn play-pause"
+      class="w-8 h-8 rounded-full flex items-center justify-center bg-neon-purple/20 text-neon-purple opacity-40 cursor-default"
       disabled
       aria-label="Play"
-    >▶</button>
+    >
+      <lucide-icon [img]="PlayIcon" [size]="16"></lucide-icon>
+    </button>
   }
 
-  <span class="time">{{ formatTime(displayTime()) }}</span>
+  <span class="text-xs text-purple-300/60 font-mono tabular-nums min-w-[3.5em] text-center select-none">{{ formatTime(displayTime()) }}</span>
 
   <input
     type="range"
-    class="seek-bar"
+    class="seek-bar flex-1"
     min="0"
     [max]="duration()"
     step="0.1"
@@ -33,14 +39,20 @@
     aria-label="Seek"
   />
 
-  <span class="time">{{ formatTime(duration()) }}</span>
+  <span class="text-xs text-purple-300/60 font-mono tabular-nums min-w-[3.5em] text-center select-none">{{ formatTime(duration()) }}</span>
 
   <button
-    class="ctrl-btn volume-btn"
+    class="text-purple-300/60 hover:text-purple-300 transition p-1"
     (click)="toggleMute()"
     [attr.aria-label]="isMuted() ? 'Unmute' : 'Mute'"
   >
-    @if (isMuted()) { 🔇 } @else if (volume() < 50) { 🔉 } @else { 🔊 }
+    @if (isMuted()) {
+      <lucide-icon [img]="VolumeXIcon" [size]="16"></lucide-icon>
+    } @else if (volume() < 50) {
+      <lucide-icon [img]="Volume1Icon" [size]="16"></lucide-icon>
+    } @else {
+      <lucide-icon [img]="Volume2Icon" [size]="16"></lucide-icon>
+    }
   </button>
 
   <input

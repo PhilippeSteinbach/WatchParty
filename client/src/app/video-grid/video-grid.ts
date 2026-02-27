@@ -8,16 +8,26 @@ import {
   signal,
   viewChildren,
 } from '@angular/core';
+import { LucideAngularModule, Video, VideoOff, Mic, MicOff, Volume2, VolumeX, X } from 'lucide-angular';
 import { RemotePeer } from '../models/room.model';
 
 @Component({
   selector: 'app-video-grid',
   standalone: true,
+  imports: [LucideAngularModule],
   templateUrl: './video-grid.html',
   styleUrl: './video-grid.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VideoGridComponent {
+  readonly VideoIcon = Video;
+  readonly VideoOffIcon = VideoOff;
+  readonly MicIcon = Mic;
+  readonly MicOffIcon = MicOff;
+  readonly Volume2Icon = Volume2;
+  readonly VolumeXIcon = VolumeX;
+  readonly XIcon = X;
+
   readonly localStream = input<MediaStream | null>(null);
   readonly remoteStreams = input<RemotePeer[]>([]);
   readonly isCameraOn = input(false);

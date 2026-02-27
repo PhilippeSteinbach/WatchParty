@@ -1,74 +1,88 @@
-<div class="home">
+<div class="min-h-screen flex items-center justify-center p-4 bg-radial-gradient">
 
   @if (view() === 'landing') {
-    <div class="hero">
-      <div class="hero-icon">🎬</div>
-      <h1>WatchParty</h1>
-      <p class="tagline">Watch videos together — perfectly in sync.</p>
-      <div class="hero-actions">
-        <button class="btn-primary" (click)="showView('create')">Create Room</button>
-        <button class="btn-secondary" (click)="showView('join')">Join Room</button>
+    <div class="flex flex-col items-center text-center gap-5">
+      <div class="shadow-glow-lg rounded-full p-4 bg-surface-1/50">
+        <lucide-icon [img]="FilmIcon" [size]="56" class="text-neon-purple"></lucide-icon>
+      </div>
+      <h1 class="gradient-text text-5xl font-bold tracking-tight">WatchParty</h1>
+      <p class="text-purple-300/60 text-lg">Watch videos together — perfectly in sync.</p>
+      <div class="flex flex-wrap justify-center gap-3 mt-2">
+        <button class="btn-gradient flex items-center gap-2" (click)="showView('create')">
+          <lucide-icon [img]="PlusIcon" [size]="18"></lucide-icon>
+          Create Room
+        </button>
+        <button class="btn-ghost flex items-center gap-2" (click)="showView('join')">
+          <lucide-icon [img]="DoorOpenIcon" [size]="18"></lucide-icon>
+          Join Room
+        </button>
       </div>
       @if (auth.isLoggedIn()) {
-        <p class="logged-hint">Logged in as <strong>{{ auth.currentUser()?.displayName }}</strong></p>
+        <p class="text-purple-400/50 text-sm mt-2">Logged in as <strong class="text-purple-300/70">{{ auth.currentUser()?.displayName }}</strong></p>
       }
     </div>
 
   } @else if (view() === 'create') {
-    <div class="card">
-      <button class="back-btn" (click)="view.set('landing')" aria-label="Back">← Back</button>
-      <h2>Create a Room</h2>
+    <div class="card-glow p-10 w-full max-w-md flex flex-col gap-5">
+      <button class="flex items-center gap-1 text-sm text-purple-400/50 hover:text-purple-300 transition-colors w-fit" (click)="view.set('landing')" aria-label="Back">
+        <lucide-icon [img]="ArrowLeftIcon" [size]="16"></lucide-icon>
+        Back
+      </button>
+      <h2 class="text-purple-100 text-xl font-semibold">Create a Room</h2>
       @if (!auth.isLoggedIn()) {
-        <p class="hint">Room expires in 24 hours. <a routerLink="/register">Register</a> for permanent rooms.</p>
+        <p class="text-purple-300/50 text-sm">Room expires in 24 hours. <a routerLink="/register" class="text-neon-purple hover:underline">Register</a> for permanent rooms.</p>
       }
 
-      <form (ngSubmit)="createRoom()" class="form">
-        <div class="field">
-          <label for="roomName">Room Name</label>
-          <input id="roomName" type="text" placeholder="My Watch Party" [ngModel]="roomName()" (ngModelChange)="roomName.set($event)" name="roomName" />
+      <form (ngSubmit)="createRoom()" class="flex flex-col gap-4">
+        <div class="flex flex-col">
+          <label for="roomName" class="text-sm text-purple-200/70 mb-1.5">Room Name</label>
+          <input id="roomName" type="text" placeholder="My Watch Party" class="input-dark" [ngModel]="roomName()" (ngModelChange)="roomName.set($event)" name="roomName" />
         </div>
 
-        <div class="field">
-          <label for="controlMode">Control Mode</label>
-          <select id="controlMode" [ngModel]="controlMode()" (ngModelChange)="controlMode.set($event)" name="controlMode">
+        <div class="flex flex-col">
+          <label for="controlMode" class="text-sm text-purple-200/70 mb-1.5">Control Mode</label>
+          <select id="controlMode" class="input-dark" [ngModel]="controlMode()" (ngModelChange)="controlMode.set($event)" name="controlMode">
             <option value="COLLABORATIVE">Collaborative – everyone can control</option>
             <option value="HOST_ONLY">Host Only – only the host controls</option>
           </select>
         </div>
 
         @if (!auth.isLoggedIn()) {
-          <div class="field">
-            <label for="nickname">Your Nickname</label>
-            <input id="nickname" type="text" placeholder="Enter your nickname" [ngModel]="nickname()" (ngModelChange)="nickname.set($event)" name="nickname" />
+          <div class="flex flex-col">
+            <label for="nickname" class="text-sm text-purple-200/70 mb-1.5">Your Nickname</label>
+            <input id="nickname" type="text" placeholder="Enter your nickname" class="input-dark" [ngModel]="nickname()" (ngModelChange)="nickname.set($event)" name="nickname" />
           </div>
         }
 
         @if (error()) {
-          <p class="error">{{ error() }}</p>
+          <p class="text-neon-red text-sm">{{ error() }}</p>
         }
 
-        <button type="submit" [disabled]="creating()">
+        <button type="submit" class="btn-gradient" [disabled]="creating()">
           {{ creating() ? 'Creating…' : 'Create Room' }}
         </button>
       </form>
     </div>
 
   } @else {
-    <div class="card">
-      <button class="back-btn" (click)="view.set('landing')" aria-label="Back">← Back</button>
-      <h2>Join a Room</h2>
+    <div class="card-glow p-10 w-full max-w-md flex flex-col gap-5">
+      <button class="flex items-center gap-1 text-sm text-purple-400/50 hover:text-purple-300 transition-colors w-fit" (click)="view.set('landing')" aria-label="Back">
+        <lucide-icon [img]="ArrowLeftIcon" [size]="16"></lucide-icon>
+        Back
+      </button>
+      <h2 class="text-purple-100 text-xl font-semibold">Join a Room</h2>
 
-      <form (ngSubmit)="joinRoom()" class="form">
-        <div class="field">
-          <label for="joinCode">Room Code</label>
-          <input id="joinCode" type="text" placeholder="e.g. ABC12345" [ngModel]="joinCode()" (ngModelChange)="joinCode.set($event)" name="joinCode" autocomplete="off" />
+      <form (ngSubmit)="joinRoom()" class="flex flex-col gap-4">
+        <div class="flex flex-col">
+          <label for="joinCode" class="text-sm text-purple-200/70 mb-1.5">Room Code</label>
+          <input id="joinCode" type="text" placeholder="e.g. ABC12345" class="input-dark" [ngModel]="joinCode()" (ngModelChange)="joinCode.set($event)" name="joinCode" autocomplete="off" />
         </div>
 
         @if (error()) {
-          <p class="error">{{ error() }}</p>
+          <p class="text-neon-red text-sm">{{ error() }}</p>
         }
 
-        <button type="submit">Join Room</button>
+        <button type="submit" class="btn-gradient">Join Room</button>
       </form>
     </div>
   }

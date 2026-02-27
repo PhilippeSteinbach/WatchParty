@@ -1,45 +1,42 @@
-<div class="video-grid">
+<div class="flex gap-1.5 h-full bg-surface-1">
   @if (localStream()) {
-    <div class="video-tile local">
-      <video #localVideo autoplay muted playsinline aria-label="Your camera"></video>
-      <span class="video-label">You</span>
-      <div class="tile-controls">
+    <div class="group local relative bg-surface-0 rounded-lg overflow-hidden w-[140px] shrink-0 flex items-center justify-center">
+      <video #localVideo class="w-full h-full object-cover" autoplay muted playsinline aria-label="Your camera"></video>
+      <span class="absolute bottom-1.5 left-2 bg-black/60 text-purple-100 px-2 py-0.5 rounded text-xs pointer-events-none">You</span>
+      <div class="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
-          class="tile-btn"
-          [class.off]="!isCameraOn()"
+          [class]="'w-7 h-7 rounded-full flex items-center justify-center transition ' + (isCameraOn() ? 'bg-black/60 text-purple-100 hover:bg-surface-4/80' : 'bg-neon-red/80 text-white')"
           (click)="toggleCamera.emit()"
           [attr.aria-label]="isCameraOn() ? 'Turn off camera' : 'Turn on camera'"
-        >{{ isCameraOn() ? '📹' : '🚫' }}</button>
+        ><lucide-icon [img]="isCameraOn() ? VideoIcon : VideoOffIcon" [size]="12"></lucide-icon></button>
         <button
-          class="tile-btn"
-          [class.off]="!isMicOn()"
+          [class]="'w-7 h-7 rounded-full flex items-center justify-center transition ' + (isMicOn() ? 'bg-black/60 text-purple-100 hover:bg-surface-4/80' : 'bg-neon-red/80 text-white')"
           (click)="toggleMic.emit()"
           [attr.aria-label]="isMicOn() ? 'Mute microphone' : 'Unmute microphone'"
-        >{{ isMicOn() ? '🎤' : '🔇' }}</button>
+        ><lucide-icon [img]="isMicOn() ? MicIcon : MicOffIcon" [size]="12"></lucide-icon></button>
         <button
-          class="tile-btn stop"
+          class="w-7 h-7 rounded-full flex items-center justify-center bg-neon-red text-white transition"
           (click)="stopMedia.emit()"
           aria-label="Leave video call"
-        >✖</button>
+        ><lucide-icon [img]="XIcon" [size]="12"></lucide-icon></button>
       </div>
     </div>
   }
 
   @for (peer of remoteStreams(); track peer.connectionId) {
-    <div class="video-tile">
-      <video #remoteVideo autoplay playsinline [attr.aria-label]="peer.nickname + '\'s camera'"></video>
-      <span class="video-label">{{ peer.nickname }}</span>
-      <div class="tile-controls">
+    <div class="group relative bg-surface-0 rounded-lg overflow-hidden w-[140px] shrink-0 flex items-center justify-center">
+      <video #remoteVideo class="w-full h-full object-cover" autoplay playsinline [attr.aria-label]="peer.nickname + '\'s camera'"></video>
+      <span class="absolute bottom-1.5 left-2 bg-black/60 text-purple-100 px-2 py-0.5 rounded text-xs pointer-events-none">{{ peer.nickname }}</span>
+      <div class="absolute bottom-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
-          class="tile-btn"
-          [class.off]="isPeerMuted(peer.connectionId)"
+          [class]="'w-7 h-7 rounded-full flex items-center justify-center transition ' + (isPeerMuted(peer.connectionId) ? 'bg-neon-red/80 text-white' : 'bg-black/60 text-purple-100 hover:bg-surface-4/80')"
           (click)="toggleMutePeer(peer.connectionId)"
           [attr.aria-label]="isPeerMuted(peer.connectionId) ? 'Unmute ' + peer.nickname : 'Mute ' + peer.nickname"
-        >{{ isPeerMuted(peer.connectionId) ? '🔇' : '🔊' }}</button>
+        ><lucide-icon [img]="isPeerMuted(peer.connectionId) ? VolumeXIcon : Volume2Icon" [size]="12"></lucide-icon></button>
       </div>
       @if (!peer.stream) {
-        <div class="no-video">
-          <span class="avatar">{{ peer.nickname.charAt(0).toUpperCase() }}</span>
+        <div class="absolute inset-0 flex items-center justify-center bg-surface-2">
+          <span class="w-9 h-9 rounded-full bg-gradient-to-br from-neon-purple to-neon-blue text-white text-sm font-semibold flex items-center justify-center">{{ peer.nickname.charAt(0).toUpperCase() }}</span>
         </div>
       }
     </div>

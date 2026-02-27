@@ -9,28 +9,34 @@
       (click)="onOverlayClick()"
     >
       @if (!videoEverStarted() || showOverlayContent()) {
-        <div class="play-icon" aria-hidden="true">▶</div>
+        <div class="w-16 h-16 rounded-full bg-neon-purple/80 text-white flex items-center justify-center hover:bg-neon-purple hover:shadow-glow hover:scale-110 transition-all shrink-0" aria-hidden="true">
+          <lucide-icon [img]="PlayIcon" [size]="28"></lucide-icon>
+        </div>
       }
 
       @if (showOverlayContent() && recommendations().length > 0) {
         <div class="recommendations" (click)="$event.stopPropagation()">
-          <h3 class="rec-heading">Vorschläge</h3>
+          <h3 class="text-purple-200 text-sm font-semibold text-center mb-2">Vorschläge</h3>
           <div class="rec-list">
             @for (rec of recommendations(); track rec.videoId) {
-              <div class="rec-card">
-                <div class="rec-thumb">
-                  <img [src]="rec.thumbnailUrl" [alt]="rec.title" />
+              <div class="flex items-center gap-3 p-2 rounded-lg bg-surface-3/90 hover:bg-surface-4/95 transition-colors">
+                <div class="relative shrink-0">
+                  <img class="w-24 h-14 rounded object-cover" [src]="rec.thumbnailUrl" [alt]="rec.title" />
                   @if (rec.durationSeconds) {
-                    <span class="rec-duration">{{ formatDuration(rec.durationSeconds) }}</span>
+                    <span class="absolute bottom-0.5 right-0.5 bg-black/80 text-purple-100 text-[10px] px-1 rounded">{{ formatDuration(rec.durationSeconds) }}</span>
                   }
                 </div>
-                <div class="rec-info">
-                  <span class="rec-title">{{ rec.title }}</span>
-                  <span class="rec-channel">{{ rec.channelName }}</span>
+                <div class="flex-1 min-w-0 flex flex-col gap-0.5">
+                  <span class="text-purple-100 text-xs font-medium line-clamp-2">{{ rec.title }}</span>
+                  <span class="text-purple-400/50 text-[10px]">{{ rec.channelName }}</span>
                 </div>
-                <div class="rec-actions">
-                  <button class="rec-play" title="Abspielen" (click)="onPlayRec(rec)">▶</button>
-                  <button class="rec-queue" title="Zur Playlist hinzufügen" (click)="onQueueRec(rec)">+</button>
+                <div class="flex flex-col gap-1 shrink-0">
+                  <button class="w-7 h-7 rounded-full bg-neon-purple text-white flex items-center justify-center hover:bg-neon-blue transition" title="Abspielen" (click)="onPlayRec(rec)">
+                    <lucide-icon [img]="PlayIcon" [size]="12"></lucide-icon>
+                  </button>
+                  <button class="w-7 h-7 rounded-full bg-surface-4 text-purple-200 flex items-center justify-center hover:bg-surface-4 transition" title="Zur Playlist hinzufügen" (click)="onQueueRec(rec)">
+                    <lucide-icon [img]="ListPlusIcon" [size]="12"></lucide-icon>
+                  </button>
                 </div>
               </div>
             }
