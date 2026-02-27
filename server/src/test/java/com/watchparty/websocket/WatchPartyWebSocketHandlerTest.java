@@ -135,6 +135,20 @@ class WatchPartyWebSocketHandlerTest {
     }
 
     @Test
+    void whenRoomNotFoundExceptionThenReturnsErrorMessage() {
+        var ex = new RoomNotFoundException("ABC123");
+        ErrorMessage result = handler.handleRoomNotFound(ex);
+        assertEquals("Room not found: ABC123", result.message());
+    }
+
+    @Test
+    void whenUnhandledExceptionThenReturnsGenericErrorMessage() {
+        var ex = new RuntimeException("something broke");
+        ErrorMessage result = handler.handleException(ex);
+        assertEquals("An error occurred", result.message());
+    }
+
+    @Test
     void whenPlayerActionByHostThenUpdatesRoom() {
         sampleRoom.setControlMode(ControlMode.HOST_ONLY);
         var playerMessage = new PlayerStateMessage("PAUSE", null, 50.0, false);
