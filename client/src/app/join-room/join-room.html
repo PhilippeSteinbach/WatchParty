@@ -1,4 +1,6 @@
-@if (roomNotFound()) {
+@if (connected()) {
+  <app-watch-room [roomCode]="roomCode()" />
+} @else if (roomNotFound()) {
   <div class="flex items-center justify-center min-h-full p-4">
     <div class="card-glow p-10 w-full max-w-md text-center">
       <div class="text-neon-red mb-4">
@@ -12,7 +14,7 @@
   <div class="flex items-center justify-center min-h-full p-4">
     <div class="text-purple-300/60 text-sm">Joining room…</div>
   </div>
-} @else if (!connected()) {
+} @else {
   <div class="flex items-center justify-center min-h-full p-4">
     <div class="card-glow p-10 w-full max-w-md text-center">
       <div class="text-neon-purple mb-2">
@@ -43,6 +45,4 @@
       </form>
     </div>
   </div>
-} @else {
-  <app-watch-room [roomCode]="roomCode()" />
 }
