@@ -16,11 +16,15 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
+import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +39,8 @@ import java.util.UUID;
 
 @Controller
 public class WatchPartyWebSocketHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(WatchPartyWebSocketHandler.class);
 
     private final RoomRepository roomRepository;
     private final ParticipantRepository participantRepository;
@@ -537,6 +543,20 @@ public class WatchPartyWebSocketHandler {
                 participantMessages);
 
         messagingTemplate.convertAndSend("/topic/room." + room.getCode(), roomState);
+    }
+
+    @MessageExceptionHandler(RoomNotFoundException.class)
+    @SendToUser("/queue/errors")
+    public ErrorMessage handleRoomNotFound(RoomNotFoundException ex) {
+        log.debug("Room not found: {}", ex.getRoomCode());
+        return new ErrorMessage("Room not found: " + ex.getRoomCode());
+    }
+
+    @MessageExceptionHandler(Exception.class)
+    @SendToUser("/queue/errors")
+    public ErrorMessage handleException(Exception ex) {
+        log.warn("Unhandled WebSocket message error: {}", ex.getMessage());
+        return new ErrorMessage("An error occurred");
     }
 
     /**
