@@ -10,6 +10,14 @@ spring:
       hibernate:
         format_sql: true
 
+server:
+  error:
+    include-message: always
+    include-binding-errors: always
+
+jwt:
+  secret: ${JWT_SECRET:dev-only-secret-key-that-is-long-enough-for-hmac-sha-256-bits-minimum}
+
 logging:
   level:
     com.watchparty: DEBUG

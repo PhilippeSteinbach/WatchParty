@@ -5,6 +5,7 @@ import com.watchparty.dto.CreateRoomRequest;
 import com.watchparty.dto.RoomResponse;
 import com.watchparty.entity.ControlMode;
 import com.watchparty.exception.RoomNotFoundException;
+import com.watchparty.security.AuthenticatedUser;
 import com.watchparty.service.JwtService;
 import com.watchparty.service.RoomService;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,10 @@ import java.util.Objects;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -105,17 +109,28 @@ class RoomControllerTest {
 
     @Test
     void whenDeleteRoomThenReturns204() throws Exception {
-        doNothing().when(roomService).deleteByCode("ABCD1234");
+        UUID userId = UUID.randomUUID();
+        doNothing().when(roomService).deleteByCode(eq("ABCD1234"), eq(userId));
 
-        mockMvc.perform(delete("/api/rooms/ABCD1234"))
+        mockMvc.perform(delete("/api/rooms/ABCD1234")
+                        .with(authentication(authenticatedUser(userId))))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void whenDeleteNonExistentRoomThenReturns404() throws Exception {
-        doThrow(new RoomNotFoundException("NOTFOUND")).when(roomService).deleteByCode("NOTFOUND");
+        UUID userId = UUID.randomUUID();
+        doThrow(new RoomNotFoundException("NOTFOUND")).when(roomService).deleteByCode(eq("NOTFOUND"), eq(userId));
 
-        mockMvc.perform(delete("/api/rooms/NOTFOUND"))
+        mockMvc.perform(delete("/api/rooms/NOTFOUND")
+                        .with(authentication(authenticatedUser(userId))))
                 .andExpect(status().isNotFound());
+    }
+
+    private static org.springframework.security.authentication.AbstractAuthenticationToken authenticatedUser(UUID userId) {
+        var principal = new AuthenticatedUser(userId, "test@example.com");
+        var auth = new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                principal, null, java.util.Collections.emptyList());
+        return auth;
     }
 }

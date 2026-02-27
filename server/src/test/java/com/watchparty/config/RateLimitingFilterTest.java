@@ -87,13 +87,14 @@ class RateLimitingFilterTest {
     }
 
     @Test
-    void whenXForwardedForHeaderThenUsesFirstIp() throws ServletException, IOException {
+    void whenRemoteAddrUsedForRateLimiting() throws ServletException, IOException {
         var request = new MockHttpServletRequest("GET", "/api/rooms");
-        request.addHeader("X-Forwarded-For", "203.0.113.50, 70.41.3.18");
+        request.setRemoteAddr("203.0.113.50");
         var response = new MockHttpServletResponse();
 
         filter.doFilter(request, response, chain);
 
         verify(chain).doFilter(request, response);
+        assertEquals(200, response.getStatus());
     }
 }

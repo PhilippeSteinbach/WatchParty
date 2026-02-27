@@ -22,9 +22,10 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+  forward-headers-strategy: native
   error:
-    include-message: always
-    include-binding-errors: always
+    include-message: never
+    include-binding-errors: never
 
 springdoc:
   api-docs:
@@ -39,10 +40,10 @@ management:
         include: health,info
   endpoint:
     health:
-      show-details: always
+      show-details: when_authorized
 
 jwt:
-  secret: ${JWT_SECRET:change-me-in-production-this-is-a-placeholder-key-at-least-256-bits}
+  secret: ${JWT_SECRET}
   expiration-ms: ${JWT_EXPIRATION_MS:3600000}
   refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}
 

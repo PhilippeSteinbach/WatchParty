@@ -3,12 +3,12 @@ package com.watchparty.service;
 import com.watchparty.dto.ChangePasswordRequest;
 import com.watchparty.dto.UpdateProfileRequest;
 import com.watchparty.entity.User;
+import com.watchparty.repository.RefreshTokenRepository;
 import com.watchparty.repository.RoomRepository;
 import com.watchparty.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,7 +38,9 @@ class AuthServiceTest {
     @Mock
     private RoomRepository roomRepository;
 
-    @InjectMocks
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
+
     private AuthService authService;
 
     private User sampleUser;
@@ -46,6 +48,8 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
+        authService = new AuthService(userRepository, passwordEncoder, jwtService,
+                roomRepository, refreshTokenRepository, 604800000L);
         userId = UUID.randomUUID();
         sampleUser = new User();
         sampleUser.setId(userId);
@@ -124,6 +128,7 @@ class AuthServiceTest {
 
         authService.deleteAccount(userId, "mypassword");
 
+        verify(refreshTokenRepository).deleteByUserId(userId);
         verify(roomRepository).deleteByOwnerId(userId);
         verify(userRepository).delete(sampleUser);
     }

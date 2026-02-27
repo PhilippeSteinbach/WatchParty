@@ -8,8 +8,10 @@ import com.watchparty.exception.RoomNotFoundException;
 import com.watchparty.repository.ParticipantRepository;
 import com.watchparty.repository.PlaylistItemRepository;
 import com.watchparty.repository.RoomRepository;
+import com.watchparty.repository.UserRepository;
 import com.watchparty.service.ChatService;
 import com.watchparty.service.PlaylistService;
+import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,6 +50,9 @@ class WatchPartyWebSocketHandlerTest {
     private PlaylistItemRepository playlistItemRepository;
 
     @Mock
+    private UserRepository userRepository;
+
+    @Mock
     private SimpMessagingTemplate messagingTemplate;
 
     @Mock
@@ -55,6 +60,9 @@ class WatchPartyWebSocketHandlerTest {
 
     @Mock
     private PlaylistService playlistService;
+
+    @Mock
+    private Validator validator;
 
     @InjectMocks
     private WatchPartyWebSocketHandler handler;
@@ -68,6 +76,9 @@ class WatchPartyWebSocketHandlerTest {
 
     @BeforeEach
     void setUp() {
+        // Validator mock should return no violations by default
+        lenient().when(validator.validate(any())).thenReturn(Collections.emptySet());
+
         sampleRoom = new Room();
         sampleRoom.setId(UUID.randomUUID());
         sampleRoom.setCode("ABCD1234");

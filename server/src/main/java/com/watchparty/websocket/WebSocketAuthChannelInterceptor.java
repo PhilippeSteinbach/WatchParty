@@ -3,6 +3,8 @@ package com.watchparty.websocket;
 import com.watchparty.service.JwtService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -17,9 +19,12 @@ import java.util.UUID;
 /**
  * Extracts the JWT Bearer token from STOMP CONNECT headers and stores
  * the authenticated user's ID in the WebSocket session attributes.
+ * Unauthenticated connections are allowed as guests with limited permissions.
  */
 @Component
 public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(WebSocketAuthChannelInterceptor.class);
 
     static final String USER_ID_ATTR = "userId";
 
@@ -42,11 +47,16 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
                         if (sessionAttrs != null) {
                             sessionAttrs.put(USER_ID_ATTR, UUID.fromString(claims.getSubject()));
                         }
+                    } else {
+                        log.warn("WebSocket CONNECT with non-access token type from session {}",
+                                accessor.getSessionId());
                     }
-                } catch (JwtException ignored) {
-                    // Unauthenticated – proceed as anonymous
+                } catch (JwtException e) {
+                    log.warn("WebSocket CONNECT with invalid JWT from session {}: {}",
+                            accessor.getSessionId(), e.getMessage());
                 }
             }
+            // No token or invalid token: proceed as anonymous guest
         }
         return message;
     }

@@ -1,6 +1,7 @@
 package com.watchparty.config;
 
 import com.watchparty.websocket.WebSocketAuthChannelInterceptor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
 import org.springframework.messaging.simp.config.ChannelRegistration;
@@ -14,9 +15,12 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final WebSocketAuthChannelInterceptor webSocketAuthChannelInterceptor;
+    private final String[] allowedOrigins;
 
-    public WebSocketConfig(WebSocketAuthChannelInterceptor webSocketAuthChannelInterceptor) {
+    public WebSocketConfig(WebSocketAuthChannelInterceptor webSocketAuthChannelInterceptor,
+                           @Value("${cors.allowed-origins:http://localhost:*}") String allowedOrigins) {
         this.webSocketAuthChannelInterceptor = webSocketAuthChannelInterceptor;
+        this.allowedOrigins = allowedOrigins.split(",");
     }
 
     @Override
@@ -29,7 +33,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(@NonNull StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")
+                .setAllowedOriginPatterns(allowedOrigins)
                 .withSockJS();
     }
 

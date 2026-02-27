@@ -7,8 +7,10 @@ import com.watchparty.exception.RoomNotFoundException;
 import com.watchparty.repository.ParticipantRepository;
 import com.watchparty.repository.RoomRepository;
 import org.jspecify.annotations.Nullable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -53,20 +55,28 @@ public class RoomService {
     }
 
     @Transactional
-    public void deleteByCode(String code) {
-        roomRepository.findByCode(code)
+    public void deleteByCode(String code, UUID requestingUserId) {
+        Room room = roomRepository.findByCode(code)
                 .orElseThrow(() -> new RoomNotFoundException(code));
+        verifyOwnership(room, requestingUserId);
         roomRepository.deleteByCode(code);
     }
 
     @Transactional
-    public RoomResponse renameRoom(String code, String newName) {
+    public RoomResponse renameRoom(String code, String newName, UUID requestingUserId) {
         Room room = roomRepository.findByCode(code)
                 .orElseThrow(() -> new RoomNotFoundException(code));
+        verifyOwnership(room, requestingUserId);
         room.setName(newName);
         room = roomRepository.save(room);
         int participantCount = participantRepository.findByRoomId(room.getId()).size();
         return toResponse(room, participantCount);
+    }
+
+    private void verifyOwnership(Room room, UUID requestingUserId) {
+        if (room.getOwnerId() == null || !room.getOwnerId().equals(requestingUserId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the room owner can perform this action");
+        }
     }
 
     private RoomResponse toResponse(Room room, int participantCount) {
