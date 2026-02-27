@@ -8,6 +8,10 @@
       <p class="text-purple-300/60">{{ error() }}</p>
     </div>
   </div>
+} @else if (loading()) {
+  <div class="flex items-center justify-center min-h-full p-4">
+    <div class="text-purple-300/60 text-sm">Joining room…</div>
+  </div>
 } @else if (!connected()) {
   <div class="flex items-center justify-center min-h-full p-4">
     <div class="card-glow p-10 w-full max-w-md text-center">

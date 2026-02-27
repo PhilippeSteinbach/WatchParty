@@ -35,6 +35,7 @@ export class JoinRoomComponent implements OnInit, OnDestroy {
   readonly roomCode = signal('');
   readonly error = signal('');
   readonly roomNotFound = signal(false);
+  readonly loading = signal(true);
   readonly connected = this.ws.connected;
 
   ngOnInit(): void {
@@ -55,11 +56,14 @@ export class JoinRoomComponent implements OnInit, OnDestroy {
           this.join();
         } else if (queryNick) {
           this.join();
+        } else {
+          this.loading.set(false);
         }
       },
       error: () => {
         this.roomNotFound.set(true);
         this.error.set('Room not found.');
+        this.loading.set(false);
       },
     });
   }
