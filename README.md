@@ -32,12 +32,27 @@ docker run -d -p 8080:8080 -v watchparty-data:/data \
   ghcr.io/philippesteinbach/watchparty:latest
 ```
 
-Or clone the repository and start with Docker Compose:
+Or use Docker Compose:
 
-```bash
-git clone https://github.com/PhilippeSteinbach/WatchParty.git
-cd WatchParty
-docker compose -f docker-compose.standalone.yml up -d
+```yaml
+services:
+  app:
+    image: ghcr.io/philippesteinbach/watchparty:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - watchparty-data:/data
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  watchparty-data:
 ```
 
 Open **http://localhost:8080** and you're ready to go.
