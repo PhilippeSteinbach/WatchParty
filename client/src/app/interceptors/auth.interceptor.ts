@@ -1,6 +1,5 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { catchError, filter, switchMap, take } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
@@ -10,7 +9,6 @@ const refreshSubject = new BehaviorSubject<string | null>(null);
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
-  const router = inject(Router);
 
   if (req.url.includes('/api/auth/')) {
     return next(req);
@@ -23,8 +21,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      if ((error.status === 401 || error.status === 403) && authService.getRefreshToken()) {
-        return handleTokenRefresh(authService, router, req, next);
+      if (error.status === 401 && authService.getRefreshToken()) {
+        return handleTokenRefresh(authService, req, next);
       }
       return throwError(() => error);
     })
@@ -33,7 +31,6 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
 function handleTokenRefresh(
   authService: AuthService,
-  router: Router,
   req: import('@angular/common/http').HttpRequest<unknown>,
   next: import('@angular/common/http').HttpHandlerFn
 ): Observable<import('@angular/common/http').HttpEvent<unknown>> {
@@ -51,7 +48,6 @@ function handleTokenRefresh(
         isRefreshing = false;
         refreshSubject.next(null);
         authService.logout();
-        router.navigate(['/login']);
         return throwError(() => err);
       })
     );
