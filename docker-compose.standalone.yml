@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile.standalone
     image: watchparty:standalone
     ports:
-      - "4200:8080"
+      - "8080:8080"
     volumes:
       - watchparty-data:/data
     environment:
