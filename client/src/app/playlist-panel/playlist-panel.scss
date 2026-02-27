@@ -4,11 +4,19 @@
 }
 
 .playlist-item.now-playing {
-  @apply bg-neon-purple/10 border-l-2 border-neon-green;
+  background: rgba(139, 92, 246, 0.1);
+  border-left: 2px solid var(--color-neon-green);
 }
 
 .cdk-drag-preview {
-  @apply flex items-center gap-2 p-2 bg-surface-4 rounded-lg shadow-glow-sm text-purple-100;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: var(--color-surface-4);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-glow-sm);
+  color: #ede9fe;
 }
 
 .cdk-drag-placeholder {

@@ -39,7 +39,7 @@
 
   &.initial,
   &.has-content {
-    @apply bg-surface-0;
+    background: var(--color-surface-0);
   }
 }
 
