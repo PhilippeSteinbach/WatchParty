@@ -27,6 +27,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
+            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
@@ -37,10 +38,15 @@ public class SecurityConfig {
                     "/ws/**",
                     "/swagger-ui/**",
                     "/v3/api-docs/**",
-                    "/actuator/**"
+                    "/actuator/**",
+                    "/h2-console/**",
+                    "/", "/index.html", "/favicon.ico",
+                    "/*.js", "/*.css", "/*.woff2", "/*.woff", "/*.ttf",
+                    "/*.png", "/*.svg", "/*.jpg", "/*.ico", "/*.webp",
+                    "/assets/**", "/media/**"
                 ).permitAll()
                 .requestMatchers("/api/users/**").authenticated()
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(ex -> ex
