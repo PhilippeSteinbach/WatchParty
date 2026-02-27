@@ -1,12 +1,12 @@
-<div class="participant-list">
-  <h3>Participants</h3>
-  <ul>
+<div class="p-3">
+  <h3 class="text-xs uppercase tracking-wider text-purple-400/50 mb-3">Participants</h3>
+  <ul class="list-none m-0 p-0 flex flex-wrap gap-2">
     @for (p of participants(); track p.id) {
-      <li class="participant">
-        <span class="avatar">{{ p.nickname.charAt(0).toUpperCase() }}</span>
-        <span class="name">{{ p.nickname }}</span>
+      <li class="bg-surface-1 rounded-full px-3 py-1.5 flex items-center gap-2 text-sm">
+        <span class="w-6 h-6 rounded-full bg-gradient-to-br from-neon-purple to-neon-blue text-white text-xs flex items-center justify-center font-semibold">{{ p.nickname.charAt(0).toUpperCase() }}</span>
+        <span class="text-purple-100">{{ p.nickname }}</span>
         @if (p.isHost) {
-          <span class="host-badge" title="Host">👑</span>
+          <lucide-icon [img]="CrownIcon" [size]="12" class="text-yellow-400" title="Host"></lucide-icon>
         }
       </li>
     }

@@ -1,9 +1,9 @@
-<div class="dialog-overlay" (click)="cancelled.emit()">
-  <div class="dialog-box" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
-    <p class="dialog-message">{{ message() }}</p>
-    <div class="dialog-actions">
-      <button class="cancel-btn" (click)="cancelled.emit()">{{ cancelLabel() }}</button>
-      <button class="confirm-btn" (click)="confirmed.emit()">{{ confirmLabel() }}</button>
+<div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1000] flex items-center justify-center" (click)="cancelled.emit()">
+  <div class="card-glow p-6 max-w-md w-[90%]" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+    <p class="text-purple-100 text-sm leading-relaxed text-center mb-5">{{ message() }}</p>
+    <div class="flex gap-3 justify-end">
+      <button class="btn-ghost px-4 py-2 text-sm" (click)="cancelled.emit()">{{ cancelLabel() }}</button>
+      <button class="btn-gradient px-4 py-2 text-sm" (click)="confirmed.emit()">{{ confirmLabel() }}</button>
     </div>
   </div>
 </div>

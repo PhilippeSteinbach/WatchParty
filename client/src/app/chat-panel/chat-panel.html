@@ -1,22 +1,22 @@
-<div class="chat-panel">
-  <h3>Chat</h3>
+<div class="flex flex-col h-full bg-surface-2">
+  <h3 class="text-xs uppercase tracking-wider text-purple-400/50 px-4 py-3 border-b border-border m-0">Chat</h3>
 
-  <div class="messages" #scrollContainer>
+  <div class="messages flex-1 overflow-y-auto p-3 flex flex-col gap-2" #scrollContainer>
     @for (msg of messages(); track msg.id) {
       <app-chat-message
         [message]="msg"
         (reactionSelected)="onReaction($event)"
       />
     } @empty {
-      <div class="empty-chat">No messages yet. Say hi! 👋</div>
+      <div class="text-purple-400/30 text-sm text-center py-8">No messages yet. Say hi! 👋</div>
     }
   </div>
 
-  <div class="emoji-bar">
+  <div class="flex gap-1 px-3 py-2 border-t border-border">
     @for (emoji of emojis; track emoji) {
       <button
         type="button"
-        class="emoji-btn"
+        class="bg-surface-4 hover:bg-neon-purple/20 rounded px-1.5 py-0.5 text-sm transition-colors border-none cursor-pointer"
         (click)="insertEmoji(emoji)"
         [attr.aria-label]="'Insert ' + emoji"
       >
@@ -25,9 +25,10 @@
     }
   </div>
 
-  <form class="chat-input" (ngSubmit)="sendMessage()">
+  <form class="flex gap-2 p-3 border-t border-border" (ngSubmit)="sendMessage()">
     <input
       type="text"
+      class="input-dark flex-1 text-sm"
       placeholder="Type a message…"
       [ngModel]="messageInput()"
       (ngModelChange)="messageInput.set($event)"
@@ -37,10 +38,11 @@
     />
     <button
       type="submit"
+      class="btn-gradient px-4 py-2 text-sm"
       [disabled]="!messageInput().trim()"
       aria-label="Send message"
     >
-      Send
+      <lucide-icon [img]="SendIcon" [size]="14"></lucide-icon>
     </button>
   </form>
 </div>

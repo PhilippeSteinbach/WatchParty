@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { LucideAngularModule, Film, AlertCircle } from 'lucide-angular';
 import { WebSocketService } from '../services/websocket.service';
 import { RoomService } from '../services/room.service';
 import { WatchRoomComponent } from '../watch-room/watch-room';
@@ -16,7 +17,7 @@ import { AuthService } from '../services/auth.service';
 @Component({
   selector: 'app-join-room',
   standalone: true,
-  imports: [FormsModule, WatchRoomComponent],
+  imports: [FormsModule, WatchRoomComponent, LucideAngularModule],
   templateUrl: './join-room.html',
   styleUrl: './join-room.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,10 +28,14 @@ export class JoinRoomComponent implements OnInit, OnDestroy {
   private readonly roomService = inject(RoomService);
   private readonly auth = inject(AuthService);
 
+  readonly FilmIcon = Film;
+  readonly AlertCircleIcon = AlertCircle;
+
   readonly nickname = signal('');
   readonly roomCode = signal('');
   readonly error = signal('');
   readonly roomNotFound = signal(false);
+  readonly loading = signal(true);
   readonly connected = this.ws.connected;
 
   ngOnInit(): void {
@@ -42,20 +47,19 @@ export class JoinRoomComponent implements OnInit, OnDestroy {
       this.nickname.set(queryNick);
     }
 
-    // Verify room exists, then auto-join if logged in
+    // Verify room exists, then show join form
     this.roomService.getRoom(code).subscribe({
       next: () => {
         const user = this.auth.currentUser();
         if (user) {
           this.nickname.set(user.displayName);
-          this.join();
-        } else if (queryNick) {
-          this.join();
         }
+        this.loading.set(false);
       },
       error: () => {
         this.roomNotFound.set(true);
         this.error.set('Room not found.');
+        this.loading.set(false);
       },
     });
   }

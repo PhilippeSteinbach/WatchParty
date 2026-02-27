@@ -12,16 +12,21 @@ import {
   NgZone,
   inject,
 } from '@angular/core';
+import { LucideAngularModule, Play, ListPlus } from 'lucide-angular';
 import { PlayerState, VideoRecommendation } from '../models/room.model';
 
 @Component({
   selector: 'app-youtube-player',
   standalone: true,
+  imports: [LucideAngularModule],
   templateUrl: './youtube-player.html',
   styleUrl: './youtube-player.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
+  readonly PlayIcon = Play;
+  readonly ListPlusIcon = ListPlus;
+
   private readonly zone = inject(NgZone);
 
   readonly videoUrl = input('');

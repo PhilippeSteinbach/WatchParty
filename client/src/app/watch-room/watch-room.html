@@ -3,29 +3,36 @@
   @if (notifications().length > 0) {
     <div class="toast-container" aria-live="polite">
       @for (note of notifications(); track $index) {
-        <div class="toast">{{ note }}</div>
+        <div class="toast bg-surface-4 text-purple-100 shadow-glow-sm border border-border rounded-lg">{{ note }}</div>
       }
     </div>
   }
 
-  <header class="toolbar">
+  <header class="toolbar bg-surface-2">
     <div class="room-info">
-      <span class="room-label">Room:</span>
-      <span class="room-code">{{ roomCode() }}</span>
-      <button class="copy-btn" (click)="copyLink()">
-        {{ linkCopied() ? '✓ Copied' : '📋 Copy Link' }}
+      <span class="text-purple-300/60 text-sm">Room:</span>
+      <span class="text-neon-purple font-semibold">{{ roomCode() }}</span>
+      <button class="btn-ghost flex items-center gap-1.5 px-2.5 py-1 text-xs" (click)="copyLink()">
+        @if (linkCopied()) {
+          <lucide-icon [img]="CheckIcon" [size]="14"></lucide-icon>
+          <span>Copied</span>
+        } @else {
+          <lucide-icon [img]="CopyIcon" [size]="14"></lucide-icon>
+          <span>Copy Link</span>
+        }
       </button>
     </div>
 
     <form class="video-form" (ngSubmit)="addVideo()">
       <input
+        class="input-dark flex-1 max-w-sm text-sm"
         type="text"
         placeholder="Paste YouTube URL or playlist…"
         [ngModel]="videoUrlInput()"
         (ngModelChange)="videoUrlInput.set($event)"
         name="videoUrl"
       />
-      <button type="submit">Add</button>
+      <button class="btn-gradient px-4 py-2 text-sm" type="submit">Add</button>
     </form>
 
     <div class="toolbar-right">
@@ -41,7 +48,7 @@
   </header>
 
   @if (webRtc.isActive() || webRtc.remoteStreams().length > 0) {
-    <div class="video-grid-area">
+    <div class="video-grid-area bg-surface-1 border-b border-border">
       <app-video-grid
         [localStream]="webRtc.localStream()"
         [remoteStreams]="webRtc.remoteStreams()"
@@ -55,7 +62,7 @@
   }
 
   <div class="main-content">
-    <div class="player-area">
+    <div class="player-area bg-surface-0">
       @if (currentVideoUrl) {
         <div class="youtube-area">
           <app-youtube-player
@@ -82,13 +89,15 @@
         />
       } @else {
         <div class="empty-player-placeholder">
-          <span class="placeholder-icon" aria-hidden="true">🎬</span>
-          <p class="placeholder-text">Füge ein Video über die URL-Leiste oben oder die Playlist hinzu, um loszulegen.</p>
+          <lucide-icon class="text-purple-400/30" [img]="FilmIcon" [size]="48" aria-hidden="true"></lucide-icon>
+          <p class="text-purple-300/40 text-sm max-w-[360px] text-center leading-relaxed m-0">
+            Füge ein Video über die URL-Leiste oben oder die Playlist hinzu, um loszulegen.
+          </p>
         </div>
       }
     </div>
 
-    <aside class="sidebar" [class.collapsed]="sidebarCollapsed()">
+    <aside class="sidebar bg-surface-2 border-l border-border" [class.collapsed]="sidebarCollapsed()">
       @if (!sidebarCollapsed()) {
         <app-participant-list [participants]="participants()" />
       }
@@ -108,7 +117,7 @@
           >
             Chat
             @if (unreadChatCount() > 0) {
-              <span class="unread-badge" aria-label="unread messages">{{ unreadChatCount() }}</span>
+              <span class="unread-badge bg-neon-pink text-white" aria-label="unread messages">{{ unreadChatCount() }}</span>
             }
           </button>
         }
@@ -117,7 +126,11 @@
           (click)="sidebarCollapsed.set(!sidebarCollapsed())"
           [attr.aria-label]="sidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
         >
-          {{ sidebarCollapsed() ? '◀' : '▶' }}
+          @if (sidebarCollapsed()) {
+            <lucide-icon [img]="PanelLeftOpenIcon" [size]="16"></lucide-icon>
+          } @else {
+            <lucide-icon [img]="PanelLeftCloseIcon" [size]="16"></lucide-icon>
+          }
         </button>
       </div>
       @if (!sidebarCollapsed()) {

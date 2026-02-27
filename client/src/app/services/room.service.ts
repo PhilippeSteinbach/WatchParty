@@ -19,6 +19,10 @@ export class RoomService {
     return this.http.delete<void>(`/api/rooms/${code}`);
   }
 
+  renameRoom(code: string, name: string): Observable<Room> {
+    return this.http.patch<Room>(`/api/rooms/${code}`, { name });
+  }
+
   getMyRooms(): Observable<Room[]> {
     return this.http.get<Room[]>('/api/users/me/rooms');
   }

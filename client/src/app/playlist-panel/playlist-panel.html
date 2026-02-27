@@ -1,7 +1,8 @@
-<div class="playlist-panel">
-  <div class="add-form">
+<div class="flex flex-col h-full bg-surface-2 text-purple-100">
+  <div class="p-3 border-b border-border flex flex-col gap-2">
     <input
       type="text"
+      class="input-dark text-sm"
       placeholder="Paste video or playlist URL…"
       [ngModel]="urlInput()"
       (ngModelChange)="urlInput.set($event)"
@@ -9,60 +10,68 @@
       aria-label="Video URL"
       (keydown.enter)="addToQueue()"
     />
-    <div class="add-actions">
-      <button class="queue-btn" (click)="addToQueue()">+ Queue</button>
-      <button class="play-now-btn" (click)="playNow()">▶ Play Now</button>
+    <div class="flex gap-2">
+      <button class="btn-ghost flex-1 text-sm py-2 inline-flex items-center justify-center gap-1" (click)="addToQueue()">
+        <lucide-icon [img]="ListPlus" [size]="14"></lucide-icon> Queue
+      </button>
+      <button class="btn-gradient flex-1 text-sm py-2 inline-flex items-center justify-center gap-1" (click)="playNow()">
+        <lucide-icon [img]="Play" [size]="14"></lucide-icon> Play Now
+      </button>
     </div>
   </div>
 
   <div
-    class="playlist-list"
+    class="flex-1 overflow-y-auto p-2"
     role="list"
     cdkDropList
     (cdkDropListDropped)="onDrop($event)"
   >
     @for (item of items(); track item.id) {
       <div
-        class="playlist-item"
+        class="playlist-item flex items-center gap-2 p-2 rounded-lg hover:bg-surface-4 transition-colors"
         [class.now-playing]="isCurrentlyPlaying(item)"
         role="listitem"
         cdkDrag
       >
-        <span class="drag-handle" cdkDragHandle>⠿</span>
+        <span class="text-purple-400/40 cursor-grab shrink-0" cdkDragHandle>
+          <lucide-icon [img]="GripVertical" [size]="14"></lucide-icon>
+        </span>
         @if (thumbnailFor(item); as thumb) {
           <img
-            class="thumbnail"
+            class="w-12 h-9 rounded object-cover shrink-0"
             [src]="thumb"
             [alt]="displayTitle(item)"
           />
         }
-        <div class="item-info">
-          <span class="item-title">{{ displayTitle(item) }}</span>
-          <span class="item-meta">
+        <div class="flex-1 min-w-0 flex flex-col gap-0.5">
+          <span class="text-sm truncate">{{ displayTitle(item) }}</span>
+          <span class="text-xs text-purple-400/50">
             {{ item.addedBy }} · {{ formatDuration(item.durationSeconds) }}
           </span>
         </div>
         <button
-          class="item-play-btn"
+          class="shrink-0 p-1 rounded text-purple-300/60 hover:text-neon-green transition-colors"
           (click)="playItem(item)"
           aria-label="Play now"
         >
-          ▶
+          <lucide-icon [img]="Play" [size]="14"></lucide-icon>
         </button>
         <button
-          class="remove-btn"
+          class="shrink-0 p-1 rounded text-purple-300/60 hover:text-neon-red transition-colors"
           (click)="removeItem(item.id)"
           aria-label="Remove item"
         >
-          ×
+          <lucide-icon [img]="X" [size]="14"></lucide-icon>
         </button>
       </div>
     } @empty {
-      <p class="empty-message">No items in playlist</p>
+      <p class="text-center text-purple-400/30 py-8 text-sm">No items in playlist</p>
     }
   </div>
 
-  <button class="next-btn" (click)="skipToNext()">⏭ Skip to Next</button>
+  <button class="btn-ghost mx-3 my-3 text-sm py-2 inline-flex items-center justify-center gap-1" (click)="skipToNext()">
+    <lucide-icon [img]="SkipForward" [size]="14"></lucide-icon> Skip to Next
+  </button>
 
   @if (showConfirmDialog()) {
     <app-confirm-dialog

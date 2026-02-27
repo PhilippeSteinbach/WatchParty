@@ -1,23 +1,36 @@
-@if (roomNotFound()) {
-  <div class="center-container">
-    <div class="card">
-      <h2>Room Not Found</h2>
-      <p>{{ error() }}</p>
+@if (connected()) {
+  <app-watch-room [roomCode]="roomCode()" />
+} @else if (roomNotFound()) {
+  <div class="flex items-center justify-center min-h-full p-4">
+    <div class="card-glow p-10 w-full max-w-md text-center">
+      <div class="text-neon-red mb-4">
+        <lucide-icon [img]="AlertCircleIcon" [size]="40"></lucide-icon>
+      </div>
+      <h2 class="text-neon-red text-2xl font-bold mb-2">Room Not Found</h2>
+      <p class="text-purple-300/60">{{ error() }}</p>
     </div>
   </div>
-} @else if (!connected()) {
-  <div class="center-container">
-    <div class="card">
-      <h2>Join Room</h2>
-      <p class="room-code">Room: {{ roomCode() }}</p>
+} @else if (loading()) {
+  <div class="flex items-center justify-center min-h-full p-4">
+    <div class="text-purple-300/60 text-sm">Joining room…</div>
+  </div>
+} @else {
+  <div class="flex items-center justify-center min-h-full p-4">
+    <div class="card-glow p-10 w-full max-w-md text-center">
+      <div class="text-neon-purple mb-2">
+        <lucide-icon [img]="FilmIcon" [size]="32"></lucide-icon>
+      </div>
+      <h2 class="gradient-text text-2xl font-bold mb-2">Join Room</h2>
+      <p class="text-purple-300/60 mb-6">Room: {{ roomCode() }}</p>
 
-      <form (ngSubmit)="join()" class="form">
-        <div class="field">
-          <label for="nickname">Your Nickname</label>
+      <form (ngSubmit)="join()" class="flex flex-col gap-4 text-left">
+        <div class="flex flex-col gap-1">
+          <label for="nickname" class="text-sm text-purple-300/70">Your Nickname</label>
           <input
             id="nickname"
             type="text"
             placeholder="Enter your nickname"
+            class="input-dark w-full"
             [ngModel]="nickname()"
             (ngModelChange)="nickname.set($event)"
             name="nickname"
@@ -25,13 +38,11 @@
         </div>
 
         @if (error()) {
-          <p class="error">{{ error() }}</p>
+          <p class="text-neon-red text-sm">{{ error() }}</p>
         }
 
-        <button type="submit">Join</button>
+        <button type="submit" class="btn-gradient w-full py-3">Join</button>
       </form>
     </div>
   </div>
-} @else {
-  <app-watch-room [roomCode]="roomCode()" />
 }

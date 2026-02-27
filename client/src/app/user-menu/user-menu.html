@@ -1,12 +1,25 @@
-<nav class="user-menu">
-  <a routerLink="/" class="home-link">🎬 WatchParty</a>
-  <span class="version-badge">v{{ version }}</span>
+<nav class="navbar flex items-center gap-3 px-4 py-2 bg-surface-2">
+  <a routerLink="/" class="flex items-center gap-2 no-underline group">
+    <lucide-icon [img]="FilmIcon" [size]="20" class="text-neon-purple group-hover:text-neon-blue transition-colors"></lucide-icon>
+    <span class="gradient-text font-semibold text-sm tracking-tight">WatchParty</span>
+  </a>
+  <span class="text-xs text-purple-400/40 select-none">v{{ version }}</span>
+
   @if (authService.isLoggedIn()) {
-    <span class="display-name">{{ authService.currentUser()?.displayName }}</span>
-    <a routerLink="/my-rooms" class="link">My Rooms</a>
-    <button class="logout-btn" (click)="logout()">Sign Out</button>
+    <span class="ml-auto flex items-center gap-1.5 text-purple-300/70 text-sm">
+      <lucide-icon [img]="UserIcon" [size]="14" class="text-purple-400/50"></lucide-icon>
+      {{ authService.currentUser()?.displayName }}
+    </span>
+    <a routerLink="/my-rooms" class="nav-link flex items-center gap-1.5 text-purple-300 text-sm no-underline hover:text-neon-blue transition-colors">
+      <lucide-icon [img]="DashboardIcon" [size]="14"></lucide-icon>
+      My Rooms
+    </a>
+    <button class="btn-ghost flex items-center gap-1.5 text-sm hover:text-neon-red hover:border-neon-red/50 hover:shadow-glow-pink transition-all" (click)="logout()">
+      <lucide-icon [img]="LogOutIcon" [size]="14"></lucide-icon>
+      Sign Out
+    </button>
   } @else {
-    <a routerLink="/login" class="link">Sign In</a>
-    <a routerLink="/register" class="btn-primary">Register</a>
+    <a routerLink="/login" class="ml-auto nav-link text-purple-300 text-sm no-underline hover:text-neon-blue transition-colors px-3 py-1.5">Sign In</a>
+    <a routerLink="/register" class="btn-gradient text-sm no-underline">Register</a>
   }
 </nav>

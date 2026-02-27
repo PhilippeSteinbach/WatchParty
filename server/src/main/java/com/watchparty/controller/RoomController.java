@@ -2,6 +2,7 @@ package com.watchparty.controller;
 
 import com.watchparty.dto.CreateRoomRequest;
 import com.watchparty.dto.RoomResponse;
+import com.watchparty.dto.UpdateRoomRequest;
 import com.watchparty.security.AuthenticatedUser;
 import com.watchparty.service.RoomService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -49,5 +50,13 @@ public class RoomController {
     @ApiResponse(responseCode = "404", description = "Room not found")
     public void deleteRoom(@PathVariable String code) {
         roomService.deleteByCode(code);
+    }
+
+    @PatchMapping("/{code}")
+    @Operation(summary = "Update a room")
+    @ApiResponse(responseCode = "200", description = "Room updated")
+    @ApiResponse(responseCode = "404", description = "Room not found")
+    public RoomResponse updateRoom(@PathVariable String code, @Valid @RequestBody UpdateRoomRequest request) {
+        return roomService.renameRoom(code, request.name());
     }
 }

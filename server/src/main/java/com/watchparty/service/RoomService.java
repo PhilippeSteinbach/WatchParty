@@ -59,6 +59,16 @@ public class RoomService {
         roomRepository.deleteByCode(code);
     }
 
+    @Transactional
+    public RoomResponse renameRoom(String code, String newName) {
+        Room room = roomRepository.findByCode(code)
+                .orElseThrow(() -> new RoomNotFoundException(code));
+        room.setName(newName);
+        room = roomRepository.save(room);
+        int participantCount = participantRepository.findByRoomId(room.getId()).size();
+        return toResponse(room, participantCount);
+    }
+
     private RoomResponse toResponse(Room room, int participantCount) {
         return new RoomResponse(
                 room.getId(),

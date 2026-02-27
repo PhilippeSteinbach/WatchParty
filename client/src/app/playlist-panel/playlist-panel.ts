@@ -7,6 +7,7 @@ import {
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { CdkDropList, CdkDrag, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { LucideAngularModule, ListPlus, Play, GripVertical, X, SkipForward } from 'lucide-angular';
 import { PlaylistService } from '../services/playlist.service';
 import { WebSocketService } from '../services/websocket.service';
 import { PlaylistItem } from '../models/room.model';
@@ -16,12 +17,18 @@ import { extractPlaylistId } from '../utils/youtube.utils';
 @Component({
   selector: 'app-playlist-panel',
   standalone: true,
-  imports: [FormsModule, CdkDropList, CdkDrag, ConfirmDialogComponent],
+  imports: [FormsModule, CdkDropList, CdkDrag, LucideAngularModule, ConfirmDialogComponent],
   templateUrl: './playlist-panel.html',
   styleUrl: './playlist-panel.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlaylistPanelComponent {
+  readonly ListPlus = ListPlus;
+  readonly Play = Play;
+  readonly GripVertical = GripVertical;
+  readonly X = X;
+  readonly SkipForward = SkipForward;
+
   private readonly playlist = inject(PlaylistService);
   private readonly ws = inject(WebSocketService);
   private readonly http = inject(HttpClient);

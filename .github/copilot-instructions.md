@@ -32,6 +32,7 @@ For language-specific details see:
 7. **Accessibility (a11y).** Use semantic HTML and ARIA attributes in Angular templates (WCAG 2.1).
 8. **Localisation.** Move user-visible strings to resource / i18n files; keep error text localizable.
 9. **Do not edit auto-generated files** (Angular generated scaffolding, generated sources).
+10. **Never commit directly to `main`.** The `main` branch is protected. Always create a feature branch (e.g. `feature/my-feature`) and open a pull request for review.
 
 ---
 
