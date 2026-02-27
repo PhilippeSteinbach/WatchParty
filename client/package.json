@@ -1,6 +1,6 @@
 {
   "name": "watch-party",
-  "version": "0.10.15",
+  "version": "0.10.16",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
