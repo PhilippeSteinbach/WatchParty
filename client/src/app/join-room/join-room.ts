@@ -47,18 +47,14 @@ export class JoinRoomComponent implements OnInit, OnDestroy {
       this.nickname.set(queryNick);
     }
 
-    // Verify room exists, then auto-join if logged in
+    // Verify room exists, then show join form
     this.roomService.getRoom(code).subscribe({
       next: () => {
         const user = this.auth.currentUser();
         if (user) {
           this.nickname.set(user.displayName);
-          this.join();
-        } else if (queryNick) {
-          this.join();
-        } else {
-          this.loading.set(false);
         }
+        this.loading.set(false);
       },
       error: () => {
         this.roomNotFound.set(true);
