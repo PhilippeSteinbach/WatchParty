@@ -1,7 +1,7 @@
 -- Refresh token rotation: stores hashed refresh tokens for revocation and replay detection
 
 CREATE TABLE refresh_tokens (
-    id          UUID            PRIMARY KEY DEFAULT random_uuid(),
+    id          UUID            DEFAULT random_uuid() PRIMARY KEY,
     token_hash  VARCHAR(64)     NOT NULL UNIQUE,
     user_id     UUID            NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     family_id   UUID            NOT NULL,
