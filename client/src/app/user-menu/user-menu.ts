@@ -1,6 +1,6 @@
 import { Component, inject, signal, HostListener, ElementRef } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { LucideAngularModule, Film, LogOut, Settings, ChevronDown, Sofa } from 'lucide-angular';
+import { LucideAngularModule, LogOut, Settings, ChevronDown, Sofa } from 'lucide-angular';
 import { AuthService } from '../services/auth.service';
 import packageJson from '../../../package.json';
 
@@ -16,7 +16,6 @@ export class UserMenuComponent {
   private readonly elRef = inject(ElementRef);
   readonly version = packageJson.version;
 
-  readonly FilmIcon = Film;
   readonly LogOutIcon = LogOut;
   readonly SettingsIcon = Settings;
   readonly ChevronDownIcon = ChevronDown;
