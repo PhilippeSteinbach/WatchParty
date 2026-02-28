@@ -16,7 +16,7 @@ import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap, map, distinctUntilChanged, pairwise, debounceTime, filter } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Copy, Check, Link, PanelLeftClose, PanelLeftOpen, Film, Search } from 'lucide-angular';
+import { LucideAngularModule, Copy, Check, Link, PanelLeftClose, PanelLeftOpen, Film, Search, X } from 'lucide-angular';
 import { WebSocketService } from '../services/websocket.service';
 import { WebRtcService } from '../services/webrtc.service';
 import { VideoRecommendationService } from '../services/video-recommendation.service';
@@ -49,6 +49,7 @@ export class WatchRoomComponent implements OnDestroy {
   readonly PanelLeftOpenIcon = PanelLeftOpen;
   readonly FilmIcon = Film;
   readonly SearchIcon = Search;
+  readonly XIcon = X;
 
   private readonly ws = inject(WebSocketService);
   readonly webRtc = inject(WebRtcService);

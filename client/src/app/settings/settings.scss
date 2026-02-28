@@ -39,3 +39,34 @@
     }
   }
 }
+
+@media (max-width: 768px) {
+  .settings-layout {
+    padding: 1rem 0.75rem;
+  }
+
+  .settings-content {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .settings-nav {
+    flex-direction: row;
+    min-width: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 0.25rem;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .settings-nav-item {
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+}

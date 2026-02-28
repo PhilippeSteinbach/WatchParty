@@ -141,3 +141,9 @@
     cursor: pointer;
   }
 }
+
+@media (max-width: 768px) {
+  .volume-controls {
+    display: none;
+  }
+}

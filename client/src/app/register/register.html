@@ -20,9 +20,19 @@
       </div>
 
       <div class="flex flex-col gap-1">
-        <label for="password" class="text-sm text-purple-300/70">Password <span class="text-purple-400/40 font-normal">(min. 8 characters)</span></label>
+        <label for="password" class="text-sm text-purple-300/70">Password</label>
         <input id="password" type="password" placeholder="••••••••" class="input-dark w-full"
           [ngModel]="password()" (ngModelChange)="password.set($event)" name="password" required minlength="8" />
+        @if (password()) {
+          <ul class="password-rules">
+            @for (rule of passwordRules(); track rule.label) {
+              <li [class.met]="rule.met">
+                <lucide-icon [img]="rule.met ? CheckIcon : CircleIcon" [size]="12"></lucide-icon>
+                {{ rule.label }}
+              </li>
+            }
+          </ul>
+        }
       </div>
 
       @if (error()) {

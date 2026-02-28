@@ -77,6 +77,18 @@
     overflow: hidden;
   }
 
+  /* Mobile: allow vertical scrolling for stacked layouts */
+  @media (max-width: 768px) {
+    app-root > router-outlet + * {
+      overflow: auto;
+    }
+
+    .input-dark {
+      padding: 0.5rem 0.625rem;
+      font-size: 0.875rem;
+    }
+  }
+
   /* Scrollbar styling */
   ::-webkit-scrollbar {
     width: 6px;
