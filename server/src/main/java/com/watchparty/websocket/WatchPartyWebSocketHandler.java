@@ -272,6 +272,13 @@ public class WatchPartyWebSocketHandler {
             roomRepository.save(room);
         }
 
+        // Notify all clients that the leaving participant's camera is off.
+        // Without this, other clients keep a stale camera-state entry and
+        // may display a frozen video frame (especially on Safari).
+        messagingTemplate.convertAndSend(
+                "/topic/room." + room.getCode() + ".camera-state",
+                new CameraStateMessage(sessionId, false));
+
         broadcastRoomState(room);
     }
 

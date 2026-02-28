@@ -81,6 +81,7 @@ export class WatchRoomComponent implements OnDestroy {
   readonly suggestions = signal<string[]>([]);
   readonly showSuggestions = signal(false);
   readonly activeSuggestionIndex = signal(-1);
+  readonly isFullscreen = signal(false);
   private suppressSuggestions = false;
   private pendingPlaylistUrls: string[] = [];
 
@@ -91,6 +92,7 @@ export class WatchRoomComponent implements OnDestroy {
   private readonly searchResultsArea = viewChild<ElementRef>('searchResultsArea');
   private readonly playerArea = viewChild<ElementRef>('playerArea');
   private readonly playerTop = viewChild<ElementRef>('playerTop');
+  private readonly videoSection = viewChild<ElementRef>('videoSection');
 
   private positionReportInterval: ReturnType<typeof setInterval> | null = null;
   private timePollingInterval: ReturnType<typeof setInterval> | null = null;
@@ -203,17 +205,28 @@ export class WatchRoomComponent implements OnDestroy {
         }
         break;
       case 'KeyF':
-        this.toggleFullscreen();
+        this.onToggleFullscreen();
         break;
     }
   }
 
-  private toggleFullscreen(): void {
+  @HostListener('document:fullscreenchange')
+  onFullscreenChange(): void {
+    this.isFullscreen.set(!!document.fullscreenElement);
+  }
+
+  onToggleFullscreen(): void {
     if (document.fullscreenElement) {
       document.exitFullscreen();
     } else {
-      document.documentElement.requestFullscreen();
+      this.videoSection()?.nativeElement?.requestFullscreen();
     }
+  }
+
+  onPlayerDoubleClick(): void {
+    // Double-click fullscreen only on desktop (no double-click on mobile per design)
+    if (window.matchMedia('(max-width: 768px)').matches) return;
+    this.onToggleFullscreen();
   }
 
   ngOnDestroy(): void {

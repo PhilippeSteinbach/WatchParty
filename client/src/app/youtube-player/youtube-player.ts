@@ -37,6 +37,7 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
 
   readonly playerEvent = output<PlayerState>();
   readonly overlayClick = output<void>();
+  readonly doubleClick = output<void>();
   readonly playRecommendation = output<VideoRecommendation>();
   readonly queueRecommendation = output<VideoRecommendation>();
 
@@ -45,20 +46,26 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
   private player: YT.Player | null = null;
   private apiLoaded = false;
   private lastVideoId = '';
+  private autoplayCheckTimer: ReturnType<typeof setTimeout> | null = null;
 
   ngAfterViewInit(): void {
     this.loadYouTubeApi();
   }
 
   ngOnDestroy(): void {
+    if (this.autoplayCheckTimer) {
+      clearTimeout(this.autoplayCheckTimer);
+    }
     this.player?.destroy();
   }
 
   private wasPlaying = false;
   private readonly _showOverlayContent = signal(false);
   private readonly _videoEverStarted = signal(false);
+  private readonly _autoplayBlocked = signal(false);
   readonly showOverlayContent = this._showOverlayContent.asReadonly();
   readonly videoEverStarted = this._videoEverStarted.asReadonly();
+  readonly autoplayBlocked = this._autoplayBlocked.asReadonly();
 
   constructor() {
     effect(() => {
@@ -67,11 +74,14 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
       if (videoId && videoId !== this.lastVideoId && this.player) {
         this.lastVideoId = videoId;
         this._showOverlayContent.set(false);
-        this._videoEverStarted.set(this.isPlaying());
+        this._autoplayBlocked.set(false);
         this.wasPlaying = this.isPlaying();
         if (this.isPlaying()) {
+          this._videoEverStarted.set(true);
           this.player.loadVideoById({ videoId, startSeconds: this.currentTime() });
+          this.scheduleAutoplayCheck();
         } else {
+          this._videoEverStarted.set(false);
           this.player.cueVideoById({ videoId, startSeconds: this.currentTime() });
         }
       }
@@ -89,7 +99,9 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
       if (!this.player) return;
       if (playing) {
         this.player.playVideo();
+        this.scheduleAutoplayCheck();
       } else {
+        this._autoplayBlocked.set(false);
         this.player.pauseVideo();
       }
     });
@@ -127,6 +139,14 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   onOverlayClick(): void {
+    // iOS Safari blocks autoplay without user gesture. When blocked,
+    // call playVideo() directly (this tap IS the user gesture) without
+    // emitting overlayClick (which would toggle to PAUSE since room
+    // state already says isPlaying=true).
+    if (this._autoplayBlocked()) {
+      this.player?.playVideo();
+      return;
+    }
     this.overlayClick.emit();
   }
 
@@ -177,7 +197,7 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
       width: '100%',
       height: '100%',
       videoId,
-      playerVars: { autoplay: 0, controls: 0, disablekb: 1, modestbranding: 1, rel: 0, iv_load_policy: 3 },
+      playerVars: { autoplay: 0, controls: 0, disablekb: 1, modestbranding: 1, rel: 0, iv_load_policy: 3, playsinline: 1 },
       events: {
         onReady: () => {
           this.zone.run(() => {
@@ -189,6 +209,7 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
               this._videoEverStarted.set(true);
               this._showOverlayContent.set(false);
               this.player!.playVideo();
+              this.scheduleAutoplayCheck();
             }
           });
         },
@@ -200,17 +221,34 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   private onPlayerStateChange(event: YT.OnStateChangeEvent): void {
-    if (event.data === YT.PlayerState.ENDED) {
+    if (event.data === YT.PlayerState.PLAYING) {
+      this._autoplayBlocked.set(false);
+      if (!this.isPlaying()) {
+        // YouTube auto-played but our state says paused — force pause
+        this.player?.pauseVideo();
+      }
+    } else if (event.data === YT.PlayerState.ENDED) {
       this._showOverlayContent.set(true);
       this.playerEvent.emit({
         action: 'ENDED',
         currentTimeSeconds: this.player?.getCurrentTime?.() ?? 0,
         isPlaying: false,
       });
-    } else if (event.data === YT.PlayerState.PLAYING && !this.isPlaying()) {
-      // YouTube auto-played but our state says paused — force pause
-      this.player?.pauseVideo();
     }
+  }
+
+  /** Detect when playVideo()/loadVideoById() was silently blocked (iOS Safari) */
+  private scheduleAutoplayCheck(): void {
+    if (this.autoplayCheckTimer) {
+      clearTimeout(this.autoplayCheckTimer);
+    }
+    this.autoplayCheckTimer = setTimeout(() => {
+      if (!this.player || !this.isPlaying()) return;
+      const state = this.player.getPlayerState?.();
+      if (state !== YT.PlayerState.PLAYING && state !== YT.PlayerState.BUFFERING) {
+        this._autoplayBlocked.set(true);
+      }
+    }, 800);
   }
 
   extractVideoId(url: string): string {

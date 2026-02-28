@@ -137,11 +137,45 @@ export class WebRtcService {
 
   toggleCamera(): void {
     if (!this.localStreamInternal) return;
-    const videoTrack = this.localStreamInternal.getVideoTracks()[0];
-    if (videoTrack) {
-      videoTrack.enabled = !videoTrack.enabled;
-      this.isCameraOn.set(videoTrack.enabled);
-      this.ws.sendCameraState(videoTrack.enabled);
+
+    if (this.isCameraOn()) {
+      // Turn OFF: replace sender tracks with null and stop the video track.
+      // Safari doesn't reliably send black frames for disabled tracks,
+      // so we must fully remove the track from the RTP stream.
+      const videoTrack = this.localStreamInternal.getVideoTracks()[0];
+      if (videoTrack) {
+        for (const pc of this.peerConnections.values()) {
+          const sender = pc.getSenders().find(s => s.track === videoTrack);
+          sender?.replaceTrack(null);
+        }
+        videoTrack.stop();
+        this.localStreamInternal.removeTrack(videoTrack);
+      }
+      this.isCameraOn.set(false);
+      this.ws.sendCameraState(false);
+    } else {
+      // Turn ON: acquire a new video track, add to stream, replace on senders
+      navigator.mediaDevices.getUserMedia({ video: true }).then(newStream => {
+        const newVideoTrack = newStream.getVideoTracks()[0];
+        if (!newVideoTrack || !this.localStreamInternal) return;
+
+        this.localStreamInternal.addTrack(newVideoTrack);
+
+        for (const pc of this.peerConnections.values()) {
+          const videoTransceiver = pc.getTransceivers().find(t =>
+            t.receiver.track?.kind === 'video'
+          );
+          if (videoTransceiver) {
+            videoTransceiver.sender.replaceTrack(newVideoTrack);
+          }
+        }
+
+        this.isCameraOn.set(true);
+        this.ws.sendCameraState(true);
+      }).catch(err => {
+        console.error('Failed to re-enable camera:', err);
+        this.mediaError.set('Failed to re-enable camera');
+      });
     }
   }
 
