@@ -9,21 +9,41 @@
   }
 
   <header class="toolbar bg-surface-2">
-    <div class="room-info">
-      <span class="text-purple-300/60 text-sm">Room:</span>
-      <span class="text-neon-purple font-semibold">{{ roomCode() }}</span>
-      <button
-        class="btn-icon"
-        (click)="copyLink()"
-        [title]="linkCopied() ? 'Copied!' : 'Copy invite link'"
-        [attr.aria-label]="linkCopied() ? 'Link copied' : 'Copy invite link'"
-      >
-        @if (linkCopied()) {
-          <lucide-icon [img]="CheckIcon" [size]="14"></lucide-icon>
-        } @else {
-          <lucide-icon [img]="CopyIcon" [size]="14"></lucide-icon>
+    <div class="toolbar-top">
+      <div class="room-info">
+        <span class="text-purple-300/60 text-sm">Room</span>
+        <div class="flex items-center gap-1.5">
+          <span class="room-code text-neon-purple font-semibold">{{ roomCode() }}</span>
+          <button
+            class="btn-icon"
+            (click)="copyLink()"
+            [title]="linkCopied() ? 'Copied!' : 'Copy invite link'"
+            [attr.aria-label]="linkCopied() ? 'Link copied' : 'Copy invite link'"
+          >
+            @if (linkCopied()) {
+              <lucide-icon [img]="CheckIcon" [size]="14"></lucide-icon>
+            } @else {
+              <lucide-icon [img]="CopyIcon" [size]="14"></lucide-icon>
+            }
+          </button>
+        </div>
+      </div>
+
+      <div class="toolbar-right">
+        @if (webRtc.mediaError(); as error) {
+          <span class="text-neon-red text-xs">{{ error }}</span>
         }
-      </button>
+        @if (!webRtc.isActive()) {
+          <app-media-controls
+            [isActive]="false"
+            [isCameraOn]="false"
+            [isMicOn]="false"
+            [disabled]="webRtc.isVideoFull()"
+            [disabledReason]="'Video limit reached (max 6)'"
+            (startMedia)="onStartMedia()"
+          />
+        }
+      </div>
     </div>
 
     <form class="video-form" (ngSubmit)="searchVideos()">
@@ -76,22 +96,6 @@
         }
       </div>
     </form>
-
-    <div class="toolbar-right">
-      @if (webRtc.mediaError(); as error) {
-        <span class="text-neon-red text-xs">{{ error }}</span>
-      }
-      @if (!webRtc.isActive()) {
-        <app-media-controls
-          [isActive]="false"
-          [isCameraOn]="false"
-          [isMicOn]="false"
-          [disabled]="webRtc.isVideoFull()"
-          [disabledReason]="'Video limit reached (max 6)'"
-          (startMedia)="onStartMedia()"
-        />
-      }
-    </div>
   </header>
 
   @if (webRtc.isActive() || webRtc.remoteStreams().length > 0) {
