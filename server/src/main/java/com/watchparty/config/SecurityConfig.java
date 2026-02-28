@@ -50,6 +50,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/videos/**").permitAll()
                 // Health check
                 .requestMatchers("/api/health").permitAll()
+                // Actuator (used by Docker/Portainer health checks)
+                .requestMatchers("/actuator/**").permitAll()
                 // WebSocket endpoint (auth handled by STOMP interceptor)
                 .requestMatchers("/ws/**").permitAll()
                 // API docs (dev only in practice, but accessible)
