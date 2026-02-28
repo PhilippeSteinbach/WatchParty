@@ -33,6 +33,19 @@ export class WebSocketService {
             const body = JSON.parse(message.body);
             if (body.participants) {
               this.roomState.set(body as RoomState);
+              // Clean up stale camera states for participants who left
+              const activeIds = new Set((body as RoomState).participants.map((p: Participant) => p.connectionId));
+              this.peerCameraStates.update(map => {
+                let changed = false;
+                const next = new Map(map);
+                for (const id of next.keys()) {
+                  if (!activeIds.has(id)) {
+                    next.delete(id);
+                    changed = true;
+                  }
+                }
+                return changed ? next : map;
+              });
             } else {
               const current = this.roomState();
               if (current) {
