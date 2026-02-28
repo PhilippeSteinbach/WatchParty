@@ -26,3 +26,8 @@
 .cdk-drag-animating {
   transition: transform 200ms ease;
 }
+
+/* Allow native touch scrolling; CDK drag activates only after long-press delay */
+.playlist-item {
+  touch-action: pan-y;
+}

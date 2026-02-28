@@ -68,6 +68,7 @@
         [class.now-playing]="isCurrentlyPlaying(item)"
         role="listitem"
         cdkDrag
+        [cdkDragStartDelay]="{touch: 500, mouse: 0}"
       >
         <span class="text-purple-400/40 cursor-grab shrink-0" cdkDragHandle>
           <lucide-icon [img]="GripVertical" [size]="14"></lucide-icon>
