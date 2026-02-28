@@ -69,6 +69,16 @@
             aria-controls="search-suggestions"
             [attr.aria-activedescendant]="activeSuggestionIndex() >= 0 ? 'suggestion-' + activeSuggestionIndex() : null"
           />
+          @if (videoUrlInput()) {
+            <button
+              class="search-inline-btn"
+              type="button"
+              aria-label="Clear search"
+              (click)="videoUrlInput.set(''); clearSearch()"
+            >
+              <lucide-icon [img]="XIcon" [size]="16"></lucide-icon>
+            </button>
+          }
           <button
             class="search-inline-btn"
             type="submit"
