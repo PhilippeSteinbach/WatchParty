@@ -80,6 +80,7 @@ export class WatchRoomComponent implements OnDestroy {
   readonly suggestions = signal<string[]>([]);
   readonly showSuggestions = signal(false);
   readonly activeSuggestionIndex = signal(-1);
+  private suppressSuggestions = false;
   private pendingPlaylistUrls: string[] = [];
 
   /** YouTube API recommendations for the currently playing video */
@@ -169,7 +170,13 @@ export class WatchRoomComponent implements OnDestroy {
     toObservable(this.videoUrlInput).pipe(
       debounceTime(250),
       distinctUntilChanged(),
-      switchMap(q => q.trim().length >= 2 ? this.searchService.suggest(q.trim()) : of([])),
+      switchMap(q => {
+        if (this.suppressSuggestions) {
+          this.suppressSuggestions = false;
+          return of([]);
+        }
+        return q.trim().length >= 2 ? this.searchService.suggest(q.trim()) : of([]);
+      }),
       takeUntilDestroyed()
     ).subscribe(s => {
       this.suggestions.set(s);
@@ -264,7 +271,9 @@ export class WatchRoomComponent implements OnDestroy {
   }
 
   searchVideos(): void {
+    this.suppressSuggestions = true;
     this.showSuggestions.set(false);
+    this.suggestions.set([]);
     const query = this.videoUrlInput().trim();
     if (!query) return;
 
@@ -292,9 +301,10 @@ export class WatchRoomComponent implements OnDestroy {
   }
 
   selectSuggestion(suggestion: string): void {
-    this.videoUrlInput.set(suggestion);
     this.showSuggestions.set(false);
+    this.suggestions.set([]);
     this.activeSuggestionIndex.set(-1);
+    this.videoUrlInput.set(suggestion);
     this.searchVideos();
   }
 

@@ -59,6 +59,8 @@ public class SecurityConfig {
                 .requestMatchers("/*.js", "/*.css", "/*.woff2", "/*.woff", "/*.ttf").permitAll()
                 .requestMatchers("/*.png", "/*.svg", "/*.jpg", "/*.ico", "/*.webp").permitAll()
                 .requestMatchers("/assets/**", "/media/**").permitAll()
+                // SPA routes (Angular client-side routing, forwarded to index.html by SpaForwardingController)
+                .requestMatchers("/room/**", "/login", "/register", "/settings/**").permitAll()
                 // Everything else requires authentication
                 .anyRequest().authenticated()
             )
