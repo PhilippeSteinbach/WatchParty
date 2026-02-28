@@ -89,10 +89,7 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
 
     effect(() => {
       const playing = this.isPlaying();
-      if (playing) {
-        this._videoEverStarted.set(true);
-        this._showOverlayContent.set(false);
-      } else if (this.wasPlaying) {
+      if (!playing && this.wasPlaying) {
         this._showOverlayContent.set(true);
       }
       this.wasPlaying = playing;
@@ -222,7 +219,10 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
 
   private onPlayerStateChange(event: YT.OnStateChangeEvent): void {
     if (event.data === YT.PlayerState.PLAYING) {
+      // Playback actually started — clear blocked state and hide overlay
       this._autoplayBlocked.set(false);
+      this._videoEverStarted.set(true);
+      this._showOverlayContent.set(false);
       if (!this.isPlaying()) {
         // YouTube auto-played but our state says paused — force pause
         this.player?.pauseVideo();
