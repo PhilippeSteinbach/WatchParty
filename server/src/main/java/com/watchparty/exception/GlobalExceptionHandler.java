@@ -5,6 +5,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 import java.util.Map;
@@ -51,6 +52,16 @@ public class GlobalExceptionHandler {
                 ex.getMessage()
         );
         problemDetail.setTitle("Bad Request");
+        return problemDetail;
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ProblemDetail handleResponseStatusException(ResponseStatusException ex) {
+        var problemDetail = ProblemDetail.forStatusAndDetail(
+                ex.getStatusCode(),
+                ex.getReason()
+        );
+        problemDetail.setTitle(HttpStatus.valueOf(ex.getStatusCode().value()).getReasonPhrase());
         return problemDetail;
     }
 
