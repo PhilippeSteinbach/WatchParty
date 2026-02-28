@@ -37,6 +37,7 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
 
   readonly playerEvent = output<PlayerState>();
   readonly overlayClick = output<void>();
+  readonly doubleClick = output<void>();
   readonly playRecommendation = output<VideoRecommendation>();
   readonly queueRecommendation = output<VideoRecommendation>();
 

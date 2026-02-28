@@ -75,4 +75,16 @@
       aria-label="Volume"
     />
   </div>
+
+  <button
+    class="fullscreen-btn text-purple-300/60 hover:text-purple-300 transition p-1"
+    (click)="toggleFullscreen.emit()"
+    [attr.aria-label]="isFullscreen() ? 'Exit fullscreen' : 'Fullscreen'"
+  >
+    @if (isFullscreen()) {
+      <lucide-icon [img]="MinimizeIcon" [size]="16"></lucide-icon>
+    } @else {
+      <lucide-icon [img]="MaximizeIcon" [size]="16"></lucide-icon>
+    }
+  </button>
 </div>

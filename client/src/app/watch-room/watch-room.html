@@ -126,29 +126,34 @@
     <div class="player-area bg-surface-0" #playerArea>
       <div #playerTop></div>
       @if (currentVideoUrl) {
-        <div class="youtube-area">
-          <app-youtube-player
-            [videoUrl]="currentVideoUrl"
+        <div class="video-section" #videoSection>
+          <div class="youtube-area">
+            <app-youtube-player
+              [videoUrl]="currentVideoUrl"
+              [isPlaying]="isPlaying"
+              [currentTime]="currentTime"
+              [playbackRate]="playbackRate()"
+              [recommendations]="displayRecommendations()"
+              (playerEvent)="onPlayerEvent($event)"
+              (overlayClick)="onPlayPause()"
+              (doubleClick)="onPlayerDoubleClick()"
+              (playRecommendation)="onPlayRecommendation($event)"
+              (queueRecommendation)="onQueueRecommendation($event)"
+            />
+          </div>
+          <app-video-controls
             [isPlaying]="isPlaying"
-            [currentTime]="currentTime"
-            [playbackRate]="playbackRate()"
-            [recommendations]="displayRecommendations()"
-            (playerEvent)="onPlayerEvent($event)"
-            (overlayClick)="onPlayPause()"
-            (playRecommendation)="onPlayRecommendation($event)"
-            (queueRecommendation)="onQueueRecommendation($event)"
+            [currentTime]="polledTime()"
+            [duration]="polledDuration()"
+            [canControl]="true"
+            [hasVideo]="!!currentVideoUrl"
+            [isFullscreen]="isFullscreen()"
+            (playPause)="onPlayPause()"
+            (seek)="onSeek($event)"
+            (volumeChange)="onVolumeChange($event)"
+            (toggleFullscreen)="onToggleFullscreen()"
           />
         </div>
-        <app-video-controls
-          [isPlaying]="isPlaying"
-          [currentTime]="polledTime()"
-          [duration]="polledDuration()"
-          [canControl]="true"
-          [hasVideo]="!!currentVideoUrl"
-          (playPause)="onPlayPause()"
-          (seek)="onSeek($event)"
-          (volumeChange)="onVolumeChange($event)"
-        />
       } @else {
         <div class="empty-player-placeholder">
           <lucide-icon class="text-purple-400/30" [img]="FilmIcon" [size]="48" aria-hidden="true"></lucide-icon>

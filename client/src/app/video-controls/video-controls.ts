@@ -13,6 +13,8 @@ import {
   Volume2,
   Volume1,
   VolumeX,
+  Maximize,
+  Minimize,
 } from 'lucide-angular';
 
 @Component({
@@ -29,16 +31,20 @@ export class VideoControlsComponent {
   protected readonly Volume2Icon = Volume2;
   protected readonly Volume1Icon = Volume1;
   protected readonly VolumeXIcon = VolumeX;
+  protected readonly MaximizeIcon = Maximize;
+  protected readonly MinimizeIcon = Minimize;
 
   readonly isPlaying = input(false);
   readonly currentTime = input(0);
   readonly duration = input(0);
   readonly canControl = input(false);
   readonly hasVideo = input(false);
+  readonly isFullscreen = input(false);
 
   readonly playPause = output<void>();
   readonly seek = output<number>();
   readonly volumeChange = output<number>();
+  readonly toggleFullscreen = output<void>();
 
   protected readonly isSeeking = signal(false);
   protected readonly seekTime = signal(0);

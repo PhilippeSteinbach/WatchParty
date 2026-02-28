@@ -170,6 +170,16 @@
     display: none;
   }
 
+  .video-section {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    width: 100%;
+
+    // In container-query context, youtube-area height references cqh
+    // so video-section itself should not constrain height in normal mode.
+  }
+
   .youtube-area {
     flex-shrink: 0;
     width: 100%;
@@ -198,6 +208,30 @@
     align-items: center;
     justify-content: center;
     gap: 1rem;
+  }
+}
+
+/* ── Fullscreen mode ──────────────────────────────────── */
+.video-section:fullscreen {
+  background: black;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+
+  .youtube-area {
+    flex: 1;
+    height: auto;
+
+    app-youtube-player {
+      position: absolute;
+      inset: 0;
+    }
+  }
+
+  app-video-controls {
+    flex-shrink: 0;
+    width: 100%;
   }
 }
 
