@@ -4,12 +4,12 @@
   @if (videoUrl()) {
     <div
       class="click-overlay"
-      [class.initial]="!videoEverStarted()"
+      [class.initial]="!videoEverStarted() || autoplayBlocked()"
       [class.has-content]="showOverlayContent()"
       (click)="onOverlayClick()"
       (dblclick)="doubleClick.emit(); $event.stopPropagation()"
     >
-      @if (!videoEverStarted() || showOverlayContent()) {
+      @if (!videoEverStarted() || showOverlayContent() || autoplayBlocked()) {
         <div class="w-16 h-16 rounded-full bg-neon-purple/80 text-white flex items-center justify-center hover:bg-neon-purple hover:shadow-glow hover:scale-110 transition-all shrink-0" aria-hidden="true">
           <lucide-icon [img]="PlayIcon" [size]="28"></lucide-icon>
         </div>
