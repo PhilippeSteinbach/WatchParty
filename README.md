@@ -8,6 +8,10 @@ Watch YouTube videos together in real-time — self-hostable with a single Docke
 
 ---
 
+<p align="center">
+  <img src="docs/screenshot.png" alt="WatchParty – Home Screen" width="800" />
+</p>
+
 ## About
 
 WatchParty was built as an exercise in **agentic development** (mostly called *vibe coding*) — writing software with AI assistance to explore how far that workflow can go.
