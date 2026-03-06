@@ -82,6 +82,8 @@ export class WatchRoomComponent implements OnDestroy {
   readonly showSuggestions = signal(false);
   readonly activeSuggestionIndex = signal(-1);
   readonly isFullscreen = signal(false);
+  readonly controlsVisible = signal(true);
+  private fullscreenIdleTimer: ReturnType<typeof setTimeout> | null = null;
   private suppressSuggestions = false;
   private pendingPlaylistUrls: string[] = [];
 
@@ -212,7 +214,34 @@ export class WatchRoomComponent implements OnDestroy {
 
   @HostListener('document:fullscreenchange')
   onFullscreenChange(): void {
-    this.isFullscreen.set(!!document.fullscreenElement);
+    const fs = !!document.fullscreenElement;
+    this.isFullscreen.set(fs);
+    if (fs) {
+      this.resetFullscreenIdleTimer();
+    } else {
+      this.clearFullscreenIdleTimer();
+      this.controlsVisible.set(true);
+    }
+  }
+
+  onFullscreenMouseMove(): void {
+    if (!this.isFullscreen()) return;
+    this.controlsVisible.set(true);
+    this.resetFullscreenIdleTimer();
+  }
+
+  private resetFullscreenIdleTimer(): void {
+    this.clearFullscreenIdleTimer();
+    this.fullscreenIdleTimer = setTimeout(() => {
+      this.controlsVisible.set(false);
+    }, 2000);
+  }
+
+  private clearFullscreenIdleTimer(): void {
+    if (this.fullscreenIdleTimer) {
+      clearTimeout(this.fullscreenIdleTimer);
+      this.fullscreenIdleTimer = null;
+    }
   }
 
   onToggleFullscreen(): void {
@@ -231,6 +260,7 @@ export class WatchRoomComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.stopPositionReporting();
+    this.clearFullscreenIdleTimer();
     if (this.timePollingInterval) {
       clearInterval(this.timePollingInterval);
     }
