@@ -70,7 +70,7 @@ export class HomeComponent implements OnInit {
   }
 
   joinRoom(): void {
-    const code = this.joinCode().trim().toUpperCase();
+    const code = this.joinCode().trim();
     if (!code) {
       this.error.set('Please enter a room code.');
       return;
