@@ -126,7 +126,12 @@
     <div class="player-area bg-surface-0" #playerArea>
       <div #playerTop></div>
       @if (currentVideoUrl) {
-        <div class="video-section" #videoSection>
+        <div
+          class="video-section"
+          #videoSection
+          [class.controls-hidden]="isFullscreen() && !controlsVisible()"
+          (mousemove)="onFullscreenMouseMove()"
+        >
           <div class="youtube-area">
             <app-youtube-player
               [videoUrl]="currentVideoUrl"

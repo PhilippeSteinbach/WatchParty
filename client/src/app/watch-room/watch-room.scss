@@ -232,6 +232,17 @@
   app-video-controls {
     flex-shrink: 0;
     width: 100%;
+    transition: transform 0.35s ease, opacity 0.35s ease;
+  }
+
+  &.controls-hidden {
+    cursor: none;
+
+    app-video-controls {
+      transform: translateY(100%);
+      opacity: 0;
+      pointer-events: none;
+    }
   }
 }
 
