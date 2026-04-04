@@ -9,8 +9,9 @@ import {
   signal,
   viewChildren,
 } from '@angular/core';
-import { LucideAngularModule, Video, VideoOff, Mic, MicOff, Volume2, VolumeX, X, Maximize2, MonitorPlay, SwitchCamera } from 'lucide-angular';
+import { LucideAngularModule, Video, VideoOff, Mic, MicOff, Volume2, VolumeX, X, Maximize2, MonitorPlay, SwitchCamera, Settings2 } from 'lucide-angular';
 import { RemotePeer } from '../models/room.model';
+import { VideoQuality, QUALITY_PRESETS } from '../services/webrtc.service';
 
 export interface TileEntry {
   id: string;
@@ -37,11 +38,18 @@ export class VideoGridComponent {
   readonly Maximize2Icon = Maximize2;
   readonly MonitorPlayIcon = MonitorPlay;
   readonly SwitchCameraIcon = SwitchCamera;
+  readonly Settings2Icon = Settings2;
+
+  readonly qualityPresets = QUALITY_PRESETS;
+  readonly qualityKeys: VideoQuality[] = ['high', 'ultra', 'max'];
+  readonly showQualityMenu = signal(false);
+  readonly qualityMenuPos = signal<{ x: number; y: number }>({ x: 0, y: 0 });
 
   readonly localStream = input<MediaStream | null>(null);
   readonly remoteStreams = input<RemotePeer[]>([]);
   readonly isCameraOn = input(false);
   readonly isMicOn = input(false);
+  readonly videoQuality = input<VideoQuality>('high');
 
   /** ID of the webcam currently focused in the main player area (null = none) */
   readonly focusedWebcamId = input<string | null>(null);
@@ -54,6 +62,7 @@ export class VideoGridComponent {
   readonly toggleMic = output<void>();
   readonly stopMedia = output<void>();
   readonly flipCamera = output<void>();
+  readonly qualityChange = output<VideoQuality>();
   /** Emits a connectionId when user wants to focus a remote webcam */
   readonly focusWebcam = output<string>();
   /** Emits when user wants to return the YouTube player to the main area */

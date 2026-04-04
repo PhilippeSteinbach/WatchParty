@@ -18,7 +18,7 @@ import { of } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Copy, Check, Link, PanelLeftClose, PanelLeftOpen, Film, Search, X, MonitorPlay } from 'lucide-angular';
 import { WebSocketService } from '../services/websocket.service';
-import { WebRtcService } from '../services/webrtc.service';
+import { WebRtcService, VideoQuality } from '../services/webrtc.service';
 import { VideoRecommendationService } from '../services/video-recommendation.service';
 import { YoutubeSearchService } from '../services/youtube-search.service';
 import { YoutubePlayerComponent } from '../youtube-player/youtube-player';
@@ -637,6 +637,10 @@ export class WatchRoomComponent implements OnDestroy {
 
   onFlipCamera(): void {
     this.webRtc.flipCamera();
+  }
+
+  onQualityChange(quality: VideoQuality): void {
+    this.webRtc.setQuality(quality);
   }
 
   addNotification(message: string): void {

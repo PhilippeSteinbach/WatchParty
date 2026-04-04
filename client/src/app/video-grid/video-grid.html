@@ -27,6 +27,7 @@
         draggable="true"
         [class.dragging]="dragIndex() === i"
         [class.drop-target]="dropTargetIndex() === i && dragIndex() !== i"
+        [class.quality-open]="showQualityMenu()"
         (dragstart)="onDragStart(i, $event)"
         (dragover)="onDragOver(i, $event)"
         (dragleave)="onDragLeave()"
@@ -47,6 +48,11 @@
               (click)="flipCamera.emit()"
               aria-label="Switch camera"
             ><lucide-icon [img]="SwitchCameraIcon" [size]="12"></lucide-icon></button>
+            <button
+              class="w-7 h-7 rounded-full flex items-center justify-center bg-black/60 text-purple-100 hover:bg-surface-4/80 transition"
+              (click)="$event.stopPropagation(); qualityMenuPos.set({ x: $event.clientX, y: $event.clientY }); showQualityMenu.set(!showQualityMenu())"
+              aria-label="Video quality"
+            ><lucide-icon [img]="Settings2Icon" [size]="12"></lucide-icon></button>
           }
           <button
             [class]="'w-7 h-7 rounded-full flex items-center justify-center transition ' + (isMicOn() ? 'bg-black/60 text-purple-100 hover:bg-surface-4/80' : 'bg-neon-red/80 text-white')"
@@ -59,6 +65,19 @@
             aria-label="Leave video call"
           ><lucide-icon [img]="XIcon" [size]="12"></lucide-icon></button>
         </div>
+        @if (showQualityMenu()) {
+          <div class="quality-backdrop" (click)="showQualityMenu.set(false)"></div>
+          <div class="quality-menu" [style.left.px]="qualityMenuPos().x" [style.bottom.px]="'unset'" [style.top.px]="qualityMenuPos().y - 8"
+               style="transform: translate(-50%, -100%)">
+            @for (key of qualityKeys; track key) {
+              <button
+                class="quality-option"
+                [class.active]="videoQuality() === key"
+                (click)="qualityChange.emit(key); showQualityMenu.set(false)"
+              >{{ qualityPresets[key].label }}</button>
+            }
+          </div>
+        }
       </div>
     } @else {
       <div
