@@ -16,7 +16,7 @@ import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap, map, distinctUntilChanged, pairwise, debounceTime, filter } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, Copy, Check, Link, PanelLeftClose, PanelLeftOpen, Film, Search, X } from 'lucide-angular';
+import { LucideAngularModule, Copy, Check, Link, PanelLeftClose, PanelLeftOpen, Film, Search, X, MonitorPlay } from 'lucide-angular';
 import { WebSocketService } from '../services/websocket.service';
 import { WebRtcService } from '../services/webrtc.service';
 import { VideoRecommendationService } from '../services/video-recommendation.service';
@@ -50,6 +50,7 @@ export class WatchRoomComponent implements OnDestroy {
   readonly FilmIcon = Film;
   readonly SearchIcon = Search;
   readonly XIcon = X;
+  readonly MonitorPlayIcon = MonitorPlay;
 
   private readonly ws = inject(WebSocketService);
   readonly webRtc = inject(WebRtcService);
@@ -87,6 +88,40 @@ export class WatchRoomComponent implements OnDestroy {
   private suppressSuggestions = false;
   private pendingPlaylistUrls: string[] = [];
 
+  /** Which webcam connectionId is currently focused in the main player area (null = YouTube player) */
+  readonly focusedWebcamId = signal<string | null>(null);
+
+  /** The focused remote peer's stream */
+  readonly focusedStream = computed<MediaStream | null>(() => {
+    const id = this.focusedWebcamId();
+    if (!id) return null;
+    return this.webRtc.remoteStreams().find(p => p.connectionId === id)?.stream ?? null;
+  });
+
+  /** The focused remote peer's nickname */
+  readonly focusedNickname = computed<string>(() => {
+    const id = this.focusedWebcamId();
+    if (!id) return '';
+    return this.webRtc.remoteStreams().find(p => p.connectionId === id)?.nickname ?? '';
+  });
+
+  /** Set of connectionIds that have active webcam streams */
+  readonly activeWebcamIds = computed<Set<string>>(() => {
+    const ids = new Set<string>();
+    for (const peer of this.webRtc.remoteStreams()) {
+      if (peer.stream) {
+        ids.add(peer.connectionId);
+      }
+    }
+    return ids;
+  });
+
+  /** YouTube thumbnail URL for the video tile in the grid */
+  readonly currentVideoThumbnail = computed<string>(() => {
+    const videoId = this.extractYouTubeId(this.currentVideoUrl);
+    return videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : '';
+  });
+
   /** YouTube API recommendations for the currently playing video */
   readonly displayRecommendations = computed<VideoRecommendation[]>(() => this.recommendations());
 
@@ -95,6 +130,7 @@ export class WatchRoomComponent implements OnDestroy {
   private readonly playerArea = viewChild<ElementRef>('playerArea');
   private readonly playerTop = viewChild<ElementRef>('playerTop');
   private readonly videoSection = viewChild<ElementRef>('videoSection');
+  private readonly focusedVideoEl = viewChild<ElementRef<HTMLVideoElement>>('focusedVideo');
 
   private positionReportInterval: ReturnType<typeof setInterval> | null = null;
   private timePollingInterval: ReturnType<typeof setInterval> | null = null;
@@ -188,6 +224,46 @@ export class WatchRoomComponent implements OnDestroy {
       this.showSuggestions.set(s.length > 0);
       this.activeSuggestionIndex.set(-1);
     });
+
+    // Auto-clear webcam focus when the focused peer disconnects
+    effect(() => {
+      const focusedId = this.focusedWebcamId();
+      if (!focusedId) return;
+      const peers = this.webRtc.remoteStreams();
+      const stillPresent = peers.some(p => p.connectionId === focusedId);
+      if (!stillPresent) {
+        this.unfocusWebcam();
+      }
+    });
+
+    // Bind focused webcam stream to the focused video element
+    effect(() => {
+      const stream = this.focusedStream();
+      const ref = this.focusedVideoEl();
+      if (ref && stream) {
+        const el = ref.nativeElement;
+        if (el.srcObject !== stream) {
+          el.srcObject = stream;
+        }
+      }
+    });
+
+    // Re-bind stream after the @if block renders the <video> element
+    effect(() => {
+      const id = this.focusedWebcamId();
+      if (!id) return;
+      // Schedule after Angular has rendered the conditional block
+      setTimeout(() => {
+        const stream = this.focusedStream();
+        const ref = this.focusedVideoEl();
+        if (ref && stream) {
+          const el = ref.nativeElement;
+          if (el.srcObject !== stream) {
+            el.srcObject = stream;
+          }
+        }
+      }, 0);
+    });
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -263,6 +339,10 @@ export class WatchRoomComponent implements OnDestroy {
     this.clearFullscreenIdleTimer();
     if (this.timePollingInterval) {
       clearInterval(this.timePollingInterval);
+    }
+    // Ensure YouTube player state is preserved on teardown
+    if (this.focusedWebcamId()) {
+      this.focusedWebcamId.set(null);
     }
     this.webRtc.stop();
   }
@@ -537,12 +617,26 @@ export class WatchRoomComponent implements OnDestroy {
     this.webRtc.stop();
   }
 
+  /** Focus a remote webcam in the main player area */
+  onFocusWebcam(connectionId: string): void {
+    this.focusedWebcamId.set(connectionId);
+  }
+
+  /** Return YouTube player to the main area */
+  unfocusWebcam(): void {
+    this.focusedWebcamId.set(null);
+  }
+
   onToggleCamera(): void {
     this.webRtc.toggleCamera();
   }
 
   onToggleMic(): void {
     this.webRtc.toggleMic();
+  }
+
+  onFlipCamera(): void {
+    this.webRtc.flipCamera();
   }
 
   addNotification(message: string): void {

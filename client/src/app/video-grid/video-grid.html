@@ -1,6 +1,27 @@
 <div class="tile-container">
   @for (tile of orderedTiles(); track tile.id; let i = $index) {
-    @if (tile.type === 'local') {
+    @if (tile.type === 'video') {
+      <div
+        class="group tile video-tile"
+        (click)="focusVideo.emit()"
+        role="button"
+        tabindex="0"
+        (keydown.enter)="focusVideo.emit()"
+        aria-label="Return to video"
+      >
+        @if (videoThumbnailUrl()) {
+          <img [src]="videoThumbnailUrl()" alt="Now playing" class="w-full h-full object-cover" />
+        }
+        <span class="label">Video</span>
+        <div class="controls always-visible">
+          <button
+            class="w-7 h-7 rounded-full flex items-center justify-center bg-neon-purple/80 text-white transition hover:bg-neon-purple"
+            (click)="$event.stopPropagation(); focusVideo.emit()"
+            aria-label="Return to video"
+          ><lucide-icon [img]="MonitorPlayIcon" [size]="12"></lucide-icon></button>
+        </div>
+      </div>
+    } @else if (tile.type === 'local') {
       <div
         class="group tile local"
         draggable="true"
@@ -20,6 +41,13 @@
             (click)="toggleCamera.emit()"
             [attr.aria-label]="isCameraOn() ? 'Turn off camera' : 'Turn on camera'"
           ><lucide-icon [img]="isCameraOn() ? VideoIcon : VideoOffIcon" [size]="12"></lucide-icon></button>
+          @if (isCameraOn()) {
+            <button
+              class="w-7 h-7 rounded-full flex items-center justify-center bg-black/60 text-purple-100 hover:bg-surface-4/80 transition flip-camera-btn"
+              (click)="flipCamera.emit()"
+              aria-label="Switch camera"
+            ><lucide-icon [img]="SwitchCameraIcon" [size]="12"></lucide-icon></button>
+          }
           <button
             [class]="'w-7 h-7 rounded-full flex items-center justify-center transition ' + (isMicOn() ? 'bg-black/60 text-purple-100 hover:bg-surface-4/80' : 'bg-neon-red/80 text-white')"
             (click)="toggleMic.emit()"
@@ -47,6 +75,11 @@
         <video #remoteVideo class="w-full h-full object-cover" autoplay playsinline [attr.aria-label]="tile.peer!.nickname + '\'s camera'"></video>
         <span class="label">{{ tile.peer!.nickname }}</span>
         <div class="controls">
+          <button
+            class="w-7 h-7 rounded-full flex items-center justify-center bg-black/60 text-purple-100 hover:bg-surface-4/80 transition"
+            (click)="focusWebcam.emit(tile.peer!.connectionId)"
+            [attr.aria-label]="'Focus ' + tile.peer!.nickname + '\'s camera'"
+          ><lucide-icon [img]="Maximize2Icon" [size]="12"></lucide-icon></button>
           <button
             [class]="'w-7 h-7 rounded-full flex items-center justify-center transition ' + (isPeerMuted(tile.peer!.connectionId) ? 'bg-neon-red/80 text-white' : 'bg-black/60 text-purple-100 hover:bg-surface-4/80')"
             (click)="toggleMutePeer(tile.peer!.connectionId)"

@@ -9,6 +9,15 @@ const ICE_SERVERS: RTCIceServer[] = [
 
 const MAX_WEBRTC_PARTICIPANTS = 6;
 
+const VIDEO_CONSTRAINTS: MediaTrackConstraints = {
+  width: { ideal: 1280, min: 640 },
+  height: { ideal: 720, min: 480 },
+  frameRate: { ideal: 30, max: 30 },
+};
+
+/** Target video bitrate for WebRTC senders (2.5 Mbps for crisp 720p) */
+const VIDEO_MAX_BITRATE = 2_500_000;
+
 @Injectable({ providedIn: 'root' })
 export class WebRtcService {
   private readonly ws = inject(WebSocketService);
@@ -25,6 +34,9 @@ export class WebRtcService {
   readonly isCameraOn = signal(false);
   readonly isMicOn = signal(false);
   readonly mediaError = signal<string | null>(null);
+
+  /** Current camera facing mode — only relevant on mobile devices */
+  private currentFacingMode: 'user' | 'environment' = 'user';
 
   readonly isActive = computed(() => this.localStream() !== null);
   readonly isVideoFull = computed(() => {
@@ -89,9 +101,20 @@ export class WebRtcService {
         this._myConnectionId = myId;
       }
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: VIDEO_CONSTRAINTS,
         audio: true,
       });
+
+      // Hint the encoder to preserve detail/sharpness
+      for (const track of stream.getVideoTracks()) {
+        if ('contentHint' in track) {
+          track.contentHint = 'detail';
+        }
+        const settings = track.getSettings();
+        console.log('[WebRTC] Local camera resolution:',
+          settings.width, '×', settings.height, '@', settings.frameRate, 'fps');
+      }
+
       this.localStreamInternal = stream;
       this.localStream.set(stream);
       this.isCameraOn.set(true);
@@ -155,9 +178,13 @@ export class WebRtcService {
       this.ws.sendCameraState(false);
     } else {
       // Turn ON: acquire a new video track, add to stream, replace on senders
-      navigator.mediaDevices.getUserMedia({ video: true }).then(newStream => {
+      navigator.mediaDevices.getUserMedia({ video: VIDEO_CONSTRAINTS }).then(newStream => {
         const newVideoTrack = newStream.getVideoTracks()[0];
         if (!newVideoTrack || !this.localStreamInternal) return;
+
+        if ('contentHint' in newVideoTrack) {
+          newVideoTrack.contentHint = 'detail';
+        }
 
         this.localStreamInternal.addTrack(newVideoTrack);
 
@@ -176,6 +203,89 @@ export class WebRtcService {
         console.error('Failed to re-enable camera:', err);
         this.mediaError.set('Failed to re-enable camera');
       });
+    }
+  }
+
+  /** Switch between front and back camera (mobile only) */
+  async flipCamera(): Promise<void> {
+    if (!this.localStreamInternal || !this.isCameraOn()) return;
+
+    const newFacingMode = this.currentFacingMode === 'user' ? 'environment' : 'user';
+    try {
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        video: { ...VIDEO_CONSTRAINTS, facingMode: { exact: newFacingMode } },
+      });
+      const newVideoTrack = newStream.getVideoTracks()[0];
+      if (!newVideoTrack || !this.localStreamInternal) return;
+
+      if ('contentHint' in newVideoTrack) {
+        newVideoTrack.contentHint = 'detail';
+      }
+
+      // Stop and remove old video track
+      const oldVideoTrack = this.localStreamInternal.getVideoTracks()[0];
+      if (oldVideoTrack) {
+        oldVideoTrack.stop();
+        this.localStreamInternal.removeTrack(oldVideoTrack);
+      }
+
+      // Add new track to the local stream
+      this.localStreamInternal.addTrack(newVideoTrack);
+
+      // Replace on all peer connections
+      for (const pc of this.peerConnections.values()) {
+        const videoTransceiver = pc.getTransceivers().find(t =>
+          t.receiver.track?.kind === 'video'
+        );
+        if (videoTransceiver) {
+          await videoTransceiver.sender.replaceTrack(newVideoTrack);
+        }
+      }
+
+      this.currentFacingMode = newFacingMode;
+      // Re-emit so the local video element picks up the new track
+      this.localStream.set(this.localStreamInternal);
+
+      const settings = newVideoTrack.getSettings();
+      console.log('[WebRTC] Flipped camera to', newFacingMode,
+        '— resolution:', settings.width, '×', settings.height);
+    } catch (err) {
+      console.warn('[WebRTC] Could not flip camera:', err);
+      // Fallback: try without 'exact' constraint (some devices don't support it)
+      try {
+        const fallbackStream = await navigator.mediaDevices.getUserMedia({
+          video: { ...VIDEO_CONSTRAINTS, facingMode: newFacingMode },
+        });
+        const newVideoTrack = fallbackStream.getVideoTracks()[0];
+        if (!newVideoTrack || !this.localStreamInternal) return;
+
+        if ('contentHint' in newVideoTrack) {
+          newVideoTrack.contentHint = 'detail';
+        }
+
+        const oldVideoTrack = this.localStreamInternal.getVideoTracks()[0];
+        if (oldVideoTrack) {
+          oldVideoTrack.stop();
+          this.localStreamInternal.removeTrack(oldVideoTrack);
+        }
+
+        this.localStreamInternal.addTrack(newVideoTrack);
+
+        for (const pc of this.peerConnections.values()) {
+          const videoTransceiver = pc.getTransceivers().find(t =>
+            t.receiver.track?.kind === 'video'
+          );
+          if (videoTransceiver) {
+            await videoTransceiver.sender.replaceTrack(newVideoTrack);
+          }
+        }
+
+        this.currentFacingMode = newFacingMode;
+        this.localStream.set(this.localStreamInternal);
+      } catch (fallbackErr) {
+        console.error('[WebRTC] Camera flip failed entirely:', fallbackErr);
+        this.mediaError.set('Could not switch camera');
+      }
     }
   }
 
@@ -254,11 +364,22 @@ export class WebRtcService {
       }
     };
 
-    pc.ontrack = () => {
+    pc.ontrack = (event) => {
+      // Log received track info for quality debugging
+      const track = event.track;
+      if (track.kind === 'video') {
+        const settings = track.getSettings();
+        console.log('[WebRTC] Received video track from', remoteConnectionId,
+          '— resolution:', settings.width, '×', settings.height);
+      }
       this.zone.run(() => this.updateRemoteStreams());
     };
 
     pc.onconnectionstatechange = () => {
+      if (pc.connectionState === 'connected') {
+        // Apply bitrate/quality settings once the connection is fully established
+        this.applyVideoBitrateLimit(pc);
+      }
       if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
         this.peerConnections.delete(remoteConnectionId);
         this.peerNicknames.delete(remoteConnectionId);
@@ -365,6 +486,32 @@ export class WebRtcService {
       } catch (err) {
         console.error('Failed to add buffered ICE candidate:', err);
       }
+    }
+  }
+
+  /** Raise the video sender bitrate and prevent resolution downscaling */
+  private applyVideoBitrateLimit(pc: RTCPeerConnection): void {
+    const videoSender = pc.getSenders().find(s => s.track?.kind === 'video');
+    if (!videoSender) return;
+    try {
+      const params = videoSender.getParameters();
+      if (!params.encodings || params.encodings.length === 0) {
+        params.encodings = [{}];
+      }
+      // Set degradationPreference at the top-level params (per spec)
+      (params as any).degradationPreference = 'maintain-resolution';
+      for (const encoding of params.encodings) {
+        encoding.maxBitrate = VIDEO_MAX_BITRATE;
+        (encoding as any).scaleResolutionDownBy = 1.0;
+      }
+      videoSender.setParameters(params).then(() => {
+        console.log('[WebRTC] Video sender configured — maxBitrate:', VIDEO_MAX_BITRATE,
+          'scaleDown: 1.0, degradation: maintain-resolution');
+      }).catch(err => {
+        console.warn('[WebRTC] Could not set video bitrate:', err);
+      });
+    } catch (err) {
+      console.warn('[WebRTC] Could not configure video sender:', err);
     }
   }
 

@@ -8,6 +8,17 @@
         @if (p.isHost) {
           <lucide-icon [img]="CrownIcon" [size]="12" class="text-yellow-400" title="Host"></lucide-icon>
         }
+        @if (hasActiveWebcam(p.connectionId)) {
+          <button
+            class="focus-webcam-btn"
+            [class.focused]="isFocused(p.connectionId)"
+            (click)="focusWebcam.emit(p.connectionId)"
+            [attr.aria-label]="'Focus ' + p.nickname + '\'s camera'"
+            [title]="isFocused(p.connectionId) ? 'Currently focused' : 'Focus camera'"
+          >
+            <lucide-icon [img]="Maximize2Icon" [size]="12"></lucide-icon>
+          </button>
+        }
       </li>
     }
   </ul>

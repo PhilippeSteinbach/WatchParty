@@ -195,6 +195,97 @@
     }
   }
 
+  /* ── YouTube PiP wrapper ────────────────────────────── */
+  .youtube-pip-wrapper {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    transition: all 0.3s ease;
+
+    app-youtube-player {
+      position: absolute;
+      inset: 0;
+    }
+
+    &.pip-active {
+      position: absolute;
+      inset: auto 12px 12px auto;
+      width: 240px;
+      height: 135px;
+      z-index: 10;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 92, 246, 0.4);
+      cursor: pointer;
+      transition: all 0.3s ease, transform 0.15s ease;
+
+      &:hover {
+        transform: scale(1.04);
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6), 0 0 0 2px rgba(139, 92, 246, 0.7);
+      }
+    }
+  }
+
+  /* ── Focused webcam overlay ─────────────────────────── */
+  .focused-webcam-container {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-surface-0);
+  }
+
+  .focused-webcam-video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    /* Ensure browser doesn't apply smoothing that degrades clarity */
+    image-rendering: auto;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    will-change: contents;
+  }
+
+  .focused-webcam-label {
+    position: absolute;
+    bottom: 12px;
+    left: 16px;
+    background: rgba(0, 0, 0, 0.65);
+    color: rgba(237, 233, 254, 1);
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    pointer-events: none;
+    backdrop-filter: blur(4px);
+  }
+
+  .focused-webcam-back {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(139, 92, 246, 0.85);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: background 0.15s ease, transform 0.1s ease;
+    z-index: 3;
+
+    &:hover {
+      background: rgba(139, 92, 246, 1);
+      transform: scale(1.03);
+    }
+  }
+
   app-video-controls {
     flex-shrink: 0;
     width: 100%;
@@ -224,6 +315,11 @@
     height: auto;
 
     app-youtube-player {
+      position: absolute;
+      inset: 0;
+    }
+
+    .focused-webcam-container {
       position: absolute;
       inset: 0;
     }
