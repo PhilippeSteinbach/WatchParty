@@ -1,3 +1,29 @@
 :host {
   display: block;
 }
+
+.focus-webcam-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(139, 92, 246, 0.15);
+  color: rgba(196, 181, 253, 0.7);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  padding: 0;
+
+  &:hover {
+    background: rgba(139, 92, 246, 0.35);
+    color: rgba(237, 233, 254, 1);
+    transform: scale(1.1);
+  }
+
+  &.focused {
+    background: var(--color-neon-purple);
+    color: white;
+  }
+}

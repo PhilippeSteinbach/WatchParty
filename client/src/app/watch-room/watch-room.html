@@ -108,16 +108,22 @@
     </form>
   </header>
 
-  @if (webRtc.isActive() || webRtc.remoteStreams().length > 0) {
+  @if (webRtc.isActive() || webRtc.remoteStreams().length > 0 || focusedWebcamId()) {
     <div class="video-grid-area bg-surface-1 border-b border-border">
       <app-video-grid
         [localStream]="webRtc.localStream()"
         [remoteStreams]="webRtc.remoteStreams()"
         [isCameraOn]="webRtc.isCameraOn()"
         [isMicOn]="webRtc.isMicOn()"
+        [focusedWebcamId]="focusedWebcamId()"
+        [showVideoTile]="false"
+        [videoThumbnailUrl]="currentVideoThumbnail()"
         (toggleCamera)="onToggleCamera()"
         (toggleMic)="onToggleMic()"
         (stopMedia)="onStopMedia()"
+        (flipCamera)="onFlipCamera()"
+        (focusWebcam)="onFocusWebcam($event)"
+        (focusVideo)="unfocusWebcam()"
       />
     </div>
   }
@@ -125,39 +131,68 @@
   <div class="main-content">
     <div class="player-area bg-surface-0" #playerArea>
       <div #playerTop></div>
-      @if (currentVideoUrl) {
+      @if (currentVideoUrl || focusedWebcamId()) {
         <div
           class="video-section"
           #videoSection
           [class.controls-hidden]="isFullscreen() && !controlsVisible()"
           (mousemove)="onFullscreenMouseMove()"
         >
-          <div class="youtube-area">
-            <app-youtube-player
-              [videoUrl]="currentVideoUrl"
-              [isPlaying]="isPlaying"
-              [currentTime]="currentTime"
-              [playbackRate]="playbackRate()"
-              [recommendations]="displayRecommendations()"
-              (playerEvent)="onPlayerEvent($event)"
-              (overlayClick)="onPlayPause()"
-              (doubleClick)="onPlayerDoubleClick()"
-              (playRecommendation)="onPlayRecommendation($event)"
-              (queueRecommendation)="onQueueRecommendation($event)"
-            />
+          <div class="youtube-area" [class.webcam-focused]="!!focusedWebcamId()">
+            <!-- Focused webcam fills the main area when active -->
+            @if (focusedWebcamId()) {
+              <div class="focused-webcam-container">
+                <video #focusedVideo class="focused-webcam-video" autoplay playsinline></video>
+                <span class="focused-webcam-label">{{ focusedNickname() }}</span>
+                <button
+                  class="focused-webcam-back"
+                  (click)="unfocusWebcam()"
+                  aria-label="Return to video"
+                >
+                  <lucide-icon [img]="MonitorPlayIcon" [size]="16"></lucide-icon>
+                  <span>Back to Video</span>
+                </button>
+              </div>
+            }
+            <!-- YouTube player stays in DOM; CSS shrinks it to PiP when webcam focused -->
+            @if (currentVideoUrl) {
+              <div
+                class="youtube-pip-wrapper"
+                [class.pip-active]="!!focusedWebcamId()"
+                (click)="focusedWebcamId() ? unfocusWebcam() : null"
+                [attr.role]="focusedWebcamId() ? 'button' : null"
+                [attr.tabindex]="focusedWebcamId() ? 0 : null"
+                [attr.aria-label]="focusedWebcamId() ? 'Return to video' : null"
+              >
+                <app-youtube-player
+                  [videoUrl]="currentVideoUrl"
+                  [isPlaying]="isPlaying"
+                  [currentTime]="currentTime"
+                  [playbackRate]="playbackRate()"
+                  [recommendations]="displayRecommendations()"
+                  (playerEvent)="onPlayerEvent($event)"
+                  (overlayClick)="onPlayPause()"
+                  (doubleClick)="onPlayerDoubleClick()"
+                  (playRecommendation)="onPlayRecommendation($event)"
+                  (queueRecommendation)="onQueueRecommendation($event)"
+                />
+              </div>
+            }
           </div>
-          <app-video-controls
-            [isPlaying]="isPlaying"
-            [currentTime]="polledTime()"
-            [duration]="polledDuration()"
-            [canControl]="true"
-            [hasVideo]="!!currentVideoUrl"
-            [isFullscreen]="isFullscreen()"
-            (playPause)="onPlayPause()"
-            (seek)="onSeek($event)"
-            (volumeChange)="onVolumeChange($event)"
-            (toggleFullscreen)="onToggleFullscreen()"
-          />
+          @if (currentVideoUrl) {
+            <app-video-controls
+              [isPlaying]="isPlaying"
+              [currentTime]="polledTime()"
+              [duration]="polledDuration()"
+              [canControl]="true"
+              [hasVideo]="!!currentVideoUrl"
+              [isFullscreen]="isFullscreen()"
+              (playPause)="onPlayPause()"
+              (seek)="onSeek($event)"
+              (volumeChange)="onVolumeChange($event)"
+              (toggleFullscreen)="onToggleFullscreen()"
+            />
+          }
         </div>
       } @else {
         <div class="empty-player-placeholder">
@@ -191,7 +226,12 @@
 
     <aside class="sidebar bg-surface-2 border-l border-border" [class.collapsed]="sidebarCollapsed()">
       @if (!sidebarCollapsed()) {
-        <app-participant-list [participants]="participants()" />
+        <app-participant-list
+          [participants]="participants()"
+          [activeWebcamIds]="activeWebcamIds()"
+          [focusedWebcamId]="focusedWebcamId()"
+          (focusWebcam)="onFocusWebcam($event)"
+        />
       }
       <div class="tab-bar">
         @if (!sidebarCollapsed()) {

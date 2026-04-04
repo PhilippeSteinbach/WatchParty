@@ -9,12 +9,12 @@ import {
   signal,
   viewChildren,
 } from '@angular/core';
-import { LucideAngularModule, Video, VideoOff, Mic, MicOff, Volume2, VolumeX, X } from 'lucide-angular';
+import { LucideAngularModule, Video, VideoOff, Mic, MicOff, Volume2, VolumeX, X, Maximize2, MonitorPlay, SwitchCamera } from 'lucide-angular';
 import { RemotePeer } from '../models/room.model';
 
 export interface TileEntry {
   id: string;
-  type: 'local' | 'remote';
+  type: 'local' | 'remote' | 'video';
   peer?: RemotePeer;
 }
 
@@ -34,15 +34,30 @@ export class VideoGridComponent {
   readonly Volume2Icon = Volume2;
   readonly VolumeXIcon = VolumeX;
   readonly XIcon = X;
+  readonly Maximize2Icon = Maximize2;
+  readonly MonitorPlayIcon = MonitorPlay;
+  readonly SwitchCameraIcon = SwitchCamera;
 
   readonly localStream = input<MediaStream | null>(null);
   readonly remoteStreams = input<RemotePeer[]>([]);
   readonly isCameraOn = input(false);
   readonly isMicOn = input(false);
 
+  /** ID of the webcam currently focused in the main player area (null = none) */
+  readonly focusedWebcamId = input<string | null>(null);
+  /** Whether to show a video tile (YouTube player thumbnail) in the grid */
+  readonly showVideoTile = input(false);
+  /** Thumbnail URL for the video tile */
+  readonly videoThumbnailUrl = input('');
+
   readonly toggleCamera = output<void>();
   readonly toggleMic = output<void>();
   readonly stopMedia = output<void>();
+  readonly flipCamera = output<void>();
+  /** Emits a connectionId when user wants to focus a remote webcam */
+  readonly focusWebcam = output<string>();
+  /** Emits when user wants to return the YouTube player to the main area */
+  readonly focusVideo = output<void>();
 
   /** Locally muted remote peers (by connectionId) */
   readonly mutedPeers = signal<Set<string>>(new Set());
@@ -54,13 +69,22 @@ export class VideoGridComponent {
   readonly dragIndex = signal<number | null>(null);
   readonly dropTargetIndex = signal<number | null>(null);
 
-  /** Ordered tiles combining local + remote, respecting user reorder */
+  /** Ordered tiles combining local + remote + video, respecting user reorder */
   readonly orderedTiles = computed<TileEntry[]>(() => {
+    const focusedId = this.focusedWebcamId();
     const tiles: TileEntry[] = [];
+
+    // Video tile (YouTube player thumbnail) comes first when a webcam is focused
+    if (this.showVideoTile()) {
+      tiles.push({ id: '__video__', type: 'video' });
+    }
+
     if (this.localStream()) {
       tiles.push({ id: '__local__', type: 'local' });
     }
     for (const peer of this.remoteStreams()) {
+      // Exclude the peer that is currently focused in the main area
+      if (focusedId && peer.connectionId === focusedId) continue;
       tiles.push({ id: peer.connectionId, type: 'remote', peer });
     }
     const order = this.tileOrder();
