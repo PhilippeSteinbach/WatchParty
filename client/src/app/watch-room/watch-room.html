@@ -121,7 +121,9 @@
         (toggleCamera)="onToggleCamera()"
         (toggleMic)="onToggleMic()"
         (stopMedia)="onStopMedia()"
+        [videoQuality]="webRtc.videoQuality()"
         (flipCamera)="onFlipCamera()"
+        (qualityChange)="onQualityChange($event)"
         (focusWebcam)="onFocusWebcam($event)"
         (focusVideo)="unfocusWebcam()"
       />

@@ -245,7 +245,7 @@
     image-rendering: auto;
     -webkit-transform: translateZ(0);
     transform: translateZ(0);
-    will-change: contents;
+    will-change: transform;
   }
 
   .focused-webcam-label {
