@@ -12,7 +12,7 @@ permissions:
 jobs:
   bump-version:
     runs-on: ubuntu-latest
-    if: "!startsWith(github.event.head_commit.message, 'chore(version):')"
+    if: "!contains(github.event.head_commit.message, 'chore(version):')"
 
     steps:
       - name: Checkout
@@ -119,6 +119,7 @@ jobs:
           git push --force-with-lease origin "$BRANCH"
           echo "changed=true" >> "$GITHUB_OUTPUT"
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Open or update bump PR
         if: steps.bump_commit.outputs.changed == 'true'
@@ -142,13 +143,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
+          if [ "${{ steps.bump_commit.outputs.changed }}" != "true" ]; then
+            echo "No version bump commit was created, skipping tag."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           if git ls-remote --tags origin "refs/tags/v${{ steps.new.outputs.version }}" | grep -q .; then
             echo "Tag v${{ steps.new.outputs.version }} already exists, skipping tag push."
             echo "created=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          git tag "v${{ steps.new.outputs.version }}" "${{ github.sha }}"
+          # Tag the bump commit itself (on the chore/version-bump branch), not github.sha
+          # (the pre-bump commit) — otherwise the tag/image would ship the OLD version files.
+          git tag "v${{ steps.new.outputs.version }}" "${{ steps.bump_commit.outputs.sha }}"
           git push origin "v${{ steps.new.outputs.version }}"
           echo "created=true" >> "$GITHUB_OUTPUT"
 
