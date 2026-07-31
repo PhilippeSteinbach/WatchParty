@@ -7,6 +7,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 
 jobs:
   bump-version:
@@ -137,13 +138,24 @@ jobs:
           fi
 
       - name: Create version tag
+        id: tag
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           if git ls-remote --tags origin "refs/tags/v${{ steps.new.outputs.version }}" | grep -q .; then
             echo "Tag v${{ steps.new.outputs.version }} already exists, skipping tag push."
+            echo "created=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           git tag "v${{ steps.new.outputs.version }}" "${{ github.sha }}"
           git push origin "v${{ steps.new.outputs.version }}"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger Docker Publish workflow
+        # Tags pushed with the default GITHUB_TOKEN don't fire other workflows' `push: tags` triggers,
+        # so docker-publish.yml must be dispatched explicitly here.
+        if: steps.tag.outputs.created == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: gh workflow run docker-publish.yml --ref "v${{ steps.new.outputs.version }}"
