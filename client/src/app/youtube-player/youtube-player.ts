@@ -84,6 +84,7 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
           this._videoEverStarted.set(false);
           this.player.cueVideoById({ videoId, startSeconds: this.currentTime() });
         }
+        this.disableCaptions();
       }
     });
 
@@ -109,6 +110,7 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
       const diff = Math.abs((this.player.getCurrentTime?.() ?? 0) - time);
       if (diff > 2) {
         this.player.seekTo(time, true);
+        this.disableCaptions();
       }
     });
 
@@ -129,6 +131,7 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
 
   seekTo(time: number): void {
     this.player?.seekTo(time, true);
+    this.disableCaptions();
   }
 
   setVolume(volume: number): void {
@@ -208,13 +211,35 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
               this.player!.playVideo();
               this.scheduleAutoplayCheck();
             }
+            this.disableCaptions();
           });
         },
         onStateChange: (event: YT.OnStateChangeEvent) => {
           this.zone.run(() => this.onPlayerStateChange(event));
         },
+        // cc_load_policy alone doesn't stop YouTube re-enabling captions based on the
+        // viewer's account/browser preference — actively unload the module once it loads.
+        onApiChange: () => {
+          this.disableCaptions();
+        },
       },
     });
+  }
+
+  /**
+   * cc_load_policy=0 is not always honored by YouTube (viewer account/browser caption
+   * preference can override it), and the captions module reloads on every video change.
+   * Actively unload it right away and again after a short delay once the module has loaded.
+   */
+  private disableCaptions(): void {
+    const unload = () => {
+      const player = this.player as unknown as { unloadModule?: (module: string) => void };
+      player.unloadModule?.('captions');
+      player.unloadModule?.('cc');
+    };
+    unload();
+    setTimeout(unload, 300);
+    setTimeout(unload, 1500);
   }
 
   private getDefaultPlayerVars(): YT.PlayerVars {
@@ -236,6 +261,8 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
       this._autoplayBlocked.set(false);
       this._videoEverStarted.set(true);
       this._showOverlayContent.set(false);
+      // Seeking (or any buffering) can re-trigger YouTube's captions overlay
+      this.disableCaptions();
       if (!this.isPlaying()) {
         // YouTube auto-played but our state says paused — force pause
         this.player?.pauseVideo();
