@@ -60,6 +60,7 @@ class ChatServiceTest {
         savedMessage.setNickname("Alice");
         savedMessage.setContent("Hello everyone!");
         savedMessage.setReactions(new HashMap<>());
+        savedMessage.setUserReactions(new HashMap<>());
         savedMessage.setSentAt(Instant.now());
 
         when(chatMessageRepository.save(any(ChatMessage.class))).thenReturn(savedMessage);
@@ -100,15 +101,60 @@ class ChatServiceTest {
         message.setNickname("Alice");
         message.setContent("Great movie!");
         message.setReactions(new HashMap<>(Map.of("👍", 2)));
+        message.setUserReactions(new HashMap<>(Map.of("Bob", "👍")));
         message.setSentAt(Instant.now());
 
         when(chatMessageRepository.findById(Objects.requireNonNull(messageId))).thenReturn(Optional.of(message));
         when(chatMessageRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        ChatMessageResponse response = chatService.addReaction(messageId, "👍");
+        ChatMessageResponse response = chatService.addReaction(messageId, "👍", "Charlie");
 
         assertEquals(3, response.reactions().get("👍"));
+        assertEquals("👍", response.userReactions().get("Charlie"));
         verify(chatMessageRepository).save(message);
+    }
+
+    @Test
+    void whenAddReactionSameEmojiTwiceThenTogglesOff() {
+        UUID messageId = UUID.randomUUID();
+        ChatMessage message = new ChatMessage();
+        message.setId(messageId);
+        message.setRoom(sampleRoom);
+        message.setNickname("Alice");
+        message.setContent("Great movie!");
+        message.setReactions(new HashMap<>(Map.of("👍", 1)));
+        message.setUserReactions(new HashMap<>(Map.of("Bob", "👍")));
+        message.setSentAt(Instant.now());
+
+        when(chatMessageRepository.findById(Objects.requireNonNull(messageId))).thenReturn(Optional.of(message));
+        when(chatMessageRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ChatMessageResponse response = chatService.addReaction(messageId, "👍", "Bob");
+
+        assertFalse(response.reactions().containsKey("👍"), "Reaction count should be removed when toggled off");
+        assertFalse(response.userReactions().containsKey("Bob"), "User reaction should be removed when toggled off");
+    }
+
+    @Test
+    void whenUserReplacesReactionThenCountsUpdated() {
+        UUID messageId = UUID.randomUUID();
+        ChatMessage message = new ChatMessage();
+        message.setId(messageId);
+        message.setRoom(sampleRoom);
+        message.setNickname("Alice");
+        message.setContent("Great movie!");
+        message.setReactions(new HashMap<>(Map.of("👍", 1, "❤️", 1)));
+        message.setUserReactions(new HashMap<>(Map.of("Bob", "👍")));
+        message.setSentAt(Instant.now());
+
+        when(chatMessageRepository.findById(Objects.requireNonNull(messageId))).thenReturn(Optional.of(message));
+        when(chatMessageRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ChatMessageResponse response = chatService.addReaction(messageId, "❤️", "Bob");
+
+        assertFalse(response.reactions().containsKey("👍"), "Old reaction count should be removed");
+        assertEquals(2, response.reactions().get("❤️"), "New reaction count should be incremented");
+        assertEquals("❤️", response.userReactions().get("Bob"), "User's reaction should be updated");
     }
 
     @Test
@@ -117,7 +163,7 @@ class ChatServiceTest {
         when(chatMessageRepository.findById(Objects.requireNonNull(messageId))).thenReturn(Optional.empty());
 
         assertThrows(EntityNotFoundException.class,
-                () -> chatService.addReaction(messageId, "👍"));
+                () -> chatService.addReaction(messageId, "👍", "Alice"));
     }
 
     @Test
@@ -130,6 +176,7 @@ class ChatServiceTest {
         msg1.setNickname("Alice");
         msg1.setContent("First message");
         msg1.setReactions(new HashMap<>());
+        msg1.setUserReactions(new HashMap<>());
         msg1.setSentAt(now.minusSeconds(60));
 
         ChatMessage msg2 = new ChatMessage();
@@ -138,6 +185,7 @@ class ChatServiceTest {
         msg2.setNickname("Bob");
         msg2.setContent("Second message");
         msg2.setReactions(new HashMap<>());
+        msg2.setUserReactions(new HashMap<>());
         msg2.setSentAt(now.minusSeconds(30));
 
         ChatMessage msg3 = new ChatMessage();
@@ -146,6 +194,7 @@ class ChatServiceTest {
         msg3.setNickname("Alice");
         msg3.setContent("Third message");
         msg3.setReactions(new HashMap<>());
+        msg3.setUserReactions(new HashMap<>());
         msg3.setSentAt(now);
 
         // Repository returns desc order (newest first)

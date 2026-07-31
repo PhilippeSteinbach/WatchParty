@@ -17,10 +17,12 @@ export class WebSocketService {
   readonly syncCorrection = signal<SyncCorrection | null>(null);
   readonly webRtcSignal = signal<WebRtcSignalEnvelope[]>([]);
   readonly myConnectionId = signal<string | null>(null);
+  readonly myNickname = signal<string | null>(null);
   readonly peerCameraStates = signal<Map<string, boolean>>(new Map());
 
   connect(roomCode: string, nickname: string): void {
     this.roomCode = roomCode;
+    this.myNickname.set(nickname);
 
     this.client = new Client({
       webSocketFactory: () => new SockJS('/ws'),
@@ -156,6 +158,7 @@ export class WebSocketService {
     this.syncCorrection.set(null);
     this.webRtcSignal.set([]);
     this.myConnectionId.set(null);
+    this.myNickname.set(null);
     this.peerCameraStates.set(new Map());
   }
 

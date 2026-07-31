@@ -56,15 +56,32 @@ public class ChatService {
 
     @Transactional
     @NonNull
-    public ChatMessageResponse addReaction(UUID messageId, String emoji) {
+    public ChatMessageResponse addReaction(UUID messageId, String emoji, String nickname) {
         if (emoji == null || emoji.isBlank() || emoji.length() > 20) {
             throw new IllegalArgumentException("Invalid emoji");
         }
         String sanitizedEmoji = sanitizeText(emoji);
+        String sanitizedNickname = sanitizeText(nickname);
         ChatMessage message = chatMessageRepository.findById(Objects.requireNonNull(messageId))
                 .orElseThrow(() -> new EntityNotFoundException("Message not found: " + messageId));
 
-        message.getReactions().merge(sanitizedEmoji, 1, (a, b) -> a + b);
+        String previousEmoji = message.getUserReactions().get(sanitizedNickname);
+
+        if (previousEmoji != null) {
+            // Remove the old emoji count (decrement or remove entry)
+            message.getReactions().compute(previousEmoji, (k, count) ->
+                    (count == null || count <= 1) ? null : count - 1);
+        }
+
+        if (sanitizedEmoji.equals(previousEmoji)) {
+            // Same emoji toggled off: just remove from user reactions
+            message.getUserReactions().remove(sanitizedNickname);
+        } else {
+            // New or different emoji: add/replace
+            message.getReactions().merge(sanitizedEmoji, 1, Integer::sum);
+            message.getUserReactions().put(sanitizedNickname, sanitizedEmoji);
+        }
+
         message = chatMessageRepository.save(message);
         return toResponse(message);
     }
@@ -85,6 +102,7 @@ public class ChatService {
                 message.getNickname(),
                 message.getContent(),
                 message.getReactions(),
+                message.getUserReactions(),
                 message.getSentAt()
         );
     }
