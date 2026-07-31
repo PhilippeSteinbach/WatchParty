@@ -61,6 +61,7 @@ class ChatServiceSecurityTest {
         savedMsg.setNickname("Alice");
         savedMsg.setContent("Hello");
         savedMsg.setReactions(new HashMap<>());
+        savedMsg.setUserReactions(new HashMap<>());
         savedMsg.setSentAt(Instant.now());
         when(chatMessageRepository.save(any(ChatMessage.class))).thenReturn(savedMsg);
 
@@ -85,6 +86,7 @@ class ChatServiceSecurityTest {
         savedMsg.setNickname("Alice");
         savedMsg.setContent("Hello");
         savedMsg.setReactions(new HashMap<>());
+        savedMsg.setUserReactions(new HashMap<>());
         savedMsg.setSentAt(Instant.now());
         when(chatMessageRepository.save(any(ChatMessage.class))).thenReturn(savedMsg);
 
@@ -109,6 +111,7 @@ class ChatServiceSecurityTest {
         savedMsg.setNickname("Alice");
         savedMsg.setContent("Hello");
         savedMsg.setReactions(new HashMap<>());
+        savedMsg.setUserReactions(new HashMap<>());
         savedMsg.setSentAt(Instant.now());
         when(chatMessageRepository.save(any(ChatMessage.class))).thenReturn(savedMsg);
 
@@ -122,16 +125,16 @@ class ChatServiceSecurityTest {
     @Test
     void whenAddReactionWithTooLongEmojiThenRejects() {
         String longEmoji = "x".repeat(21);
-        assertThrows(IllegalArgumentException.class, () -> chatService.addReaction(UUID.randomUUID(), longEmoji));
+        assertThrows(IllegalArgumentException.class, () -> chatService.addReaction(UUID.randomUUID(), longEmoji, "Alice"));
     }
 
     @Test
     void whenAddReactionWithNullEmojiThenRejects() {
-        assertThrows(IllegalArgumentException.class, () -> chatService.addReaction(UUID.randomUUID(), null));
+        assertThrows(IllegalArgumentException.class, () -> chatService.addReaction(UUID.randomUUID(), null, "Alice"));
     }
 
     @Test
     void whenAddReactionWithBlankEmojiThenRejects() {
-        assertThrows(IllegalArgumentException.class, () -> chatService.addReaction(UUID.randomUUID(), "   "));
+        assertThrows(IllegalArgumentException.class, () -> chatService.addReaction(UUID.randomUUID(), "   ", "Alice"));
     }
 }

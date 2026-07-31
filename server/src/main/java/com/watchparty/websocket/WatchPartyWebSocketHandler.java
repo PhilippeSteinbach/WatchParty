@@ -305,7 +305,7 @@ public class WatchPartyWebSocketHandler {
                 .orElseThrow(() -> new IllegalStateException("Participant not found for session: " + sessionId));
 
         Room room = participant.getRoom();
-        ChatMessageResponse response = chatService.addReaction(request.messageId(), request.emoji());
+        ChatMessageResponse response = chatService.addReaction(request.messageId(), request.emoji(), participant.getNickname());
         messagingTemplate.convertAndSend("/topic/room." + room.getCode() + ".chat", response);
     }
 

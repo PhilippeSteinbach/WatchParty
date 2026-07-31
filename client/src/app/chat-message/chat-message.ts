@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   input,
   output,
   signal,
@@ -18,9 +19,16 @@ import { EmojiPickerComponent } from '../emoji-picker/emoji-picker';
 })
 export class ChatMessageComponent {
   readonly message = input.required<ChatMessage>();
+  readonly myNickname = input<string | null>(null);
   readonly reactionSelected = output<{ messageId: string; emoji: string }>();
 
   readonly hovered = signal(false);
+
+  readonly myReaction = computed(() => {
+    const nick = this.myNickname();
+    if (!nick) return null;
+    return this.message().userReactions?.[nick] ?? null;
+  });
 
   relativeTime(isoDate: string): string {
     const diff = Date.now() - new Date(isoDate).getTime();

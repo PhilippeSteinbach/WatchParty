@@ -5,6 +5,7 @@
     @for (msg of messages(); track msg.id) {
       <app-chat-message
         [message]="msg"
+        [myNickname]="myNickname()"
         (reactionSelected)="onReaction($event)"
       />
     } @empty {

@@ -32,6 +32,10 @@ public class ChatMessage {
     @Column(name = "reactions")
     private Map<String, Integer> reactions = new HashMap<>();
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "user_reactions", nullable = false)
+    private Map<String, String> userReactions = new HashMap<>();
+
     @Column(name = "sent_at", nullable = false, updatable = false)
     private Instant sentAt;
 
@@ -89,6 +93,14 @@ public class ChatMessage {
 
     public void setReactions(Map<String, Integer> reactions) {
         this.reactions = reactions;
+    }
+
+    public Map<String, String> getUserReactions() {
+        return userReactions;
+    }
+
+    public void setUserReactions(Map<String, String> userReactions) {
+        this.userReactions = userReactions;
     }
 
     public Instant getSentAt() {

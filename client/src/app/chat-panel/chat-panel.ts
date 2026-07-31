@@ -25,6 +25,7 @@ export class ChatPanelComponent implements AfterViewChecked {
   private readonly ws = inject(WebSocketService);
 
   readonly messages = this.ws.chatMessages;
+  readonly myNickname = this.ws.myNickname;
   readonly messageInput = signal('');
 
   private readonly scrollContainer = viewChild<ElementRef<HTMLElement>>('scrollContainer');
