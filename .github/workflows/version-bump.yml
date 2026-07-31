@@ -15,11 +15,9 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          # Prefer PAT when configured, otherwise fall back to the workflow token.
-          token: ${{ secrets.PAT_TOKEN != '' && secrets.PAT_TOKEN || github.token }}
 
       - name: Configure git user
         run: |
@@ -109,11 +107,3 @@ jobs:
         run: |
           git tag "v${{ steps.new.outputs.version }}"
           git push origin "v${{ steps.new.outputs.version }}"
-
-  publish-docker:
-    name: Publish Docker Image
-    needs: bump-version
-    uses: ./.github/workflows/docker-publish.yml
-    permissions:
-      contents: read
-      packages: write
