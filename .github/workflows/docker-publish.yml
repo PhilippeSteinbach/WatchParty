@@ -23,7 +23,13 @@ jobs:
 
       - name: Read version
         id: version
-        run: echo "version=$(cat VERSION | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION=$(cat VERSION | tr -d '[:space:]')
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Compute image name
         id: image

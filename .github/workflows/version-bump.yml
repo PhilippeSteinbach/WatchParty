@@ -6,7 +6,7 @@ on:
 
 permissions:
   contents: write
-  pull-requests: read
+  pull-requests: write
 
 jobs:
   bump-version:
@@ -27,7 +27,12 @@ jobs:
       - name: Read current version
         id: current
         run: |
-          CURRENT_VERSION=$(cat VERSION | tr -d '[:space:]')
+          LAST_TAG=$(git tag --list 'v*' --sort=-v:refname | head -n 1)
+          if [ -n "$LAST_TAG" ]; then
+            CURRENT_VERSION="${LAST_TAG#v}"
+          else
+            CURRENT_VERSION=$(cat VERSION | tr -d '[:space:]')
+          fi
           echo "version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Find merged PR number
@@ -97,13 +102,48 @@ jobs:
       - name: Update server version
         run: cd server && ./mvnw versions:set -DnewVersion=${{ steps.new.outputs.version }} -DgenerateBackupPoms=false -B
 
-      - name: Commit and push
+      - name: Commit bump on dedicated branch
+        id: bump_commit
         run: |
+          BRANCH="chore/version-bump-v${{ steps.new.outputs.version }}"
           git add -A
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git checkout -B "$BRANCH"
           git commit -m "chore(version): bump to ${{ steps.new.outputs.version }} [skip ci]"
-          git push origin main
+          git push --force-with-lease origin "$BRANCH"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update bump PR
+        if: steps.bump_commit.outputs.changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          BRANCH="${{ steps.bump_commit.outputs.branch }}"
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number')
+          if [ -n "$EXISTING_PR" ] && [ "$EXISTING_PR" != "null" ]; then
+            echo "Version bump PR #$EXISTING_PR already exists."
+          else
+            gh pr create \
+              --base main \
+              --head "$BRANCH" \
+              --title "chore(version): bump to ${{ steps.new.outputs.version }}" \
+              --body "Automated version bump after merge to main.\n\n- Updates VERSION\n- Updates client/package.json version\n- Updates server/pom.xml version"
+          fi
 
       - name: Create version tag
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          git tag "v${{ steps.new.outputs.version }}"
+          if git ls-remote --tags origin "refs/tags/v${{ steps.new.outputs.version }}" | grep -q .; then
+            echo "Tag v${{ steps.new.outputs.version }} already exists, skipping tag push."
+            exit 0
+          fi
+
+          git tag "v${{ steps.new.outputs.version }}" "${{ github.sha }}"
           git push origin "v${{ steps.new.outputs.version }}"
