@@ -8,6 +8,9 @@ import com.watchparty.repository.RoomRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
+import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +25,7 @@ public class ChatService {
 
     private static final int RATE_LIMIT_MAX_MESSAGES = 5;
     private static final int RATE_LIMIT_WINDOW_SECONDS = 10;
+    private static final Logger log = LoggerFactory.getLogger(ChatService.class);
 
     private final ChatMessageRepository chatMessageRepository;
     private final RoomRepository roomRepository;
@@ -90,9 +94,21 @@ public class ChatService {
     @NonNull
     public List<ChatMessageResponse> getChatHistory(UUID roomId) {
         List<ChatMessage> messages = chatMessageRepository.findTop200ByRoomIdOrderBySentAtDesc(roomId);
+        // Skip individual messages that fail to convert (e.g. legacy/malformed data) rather
+        // than letting one bad row take down the whole history and the join it's sent from.
         return Objects.requireNonNull(messages.reversed().stream()
-                .map(this::toResponse)
+                .map(this::tryToResponse)
+                .filter(Objects::nonNull)
                 .toList());
+    }
+
+    private @Nullable ChatMessageResponse tryToResponse(ChatMessage message) {
+        try {
+            return toResponse(message);
+        } catch (Exception ex) {
+            log.warn("Skipping malformed chat message {}: {}", message.getId(), ex.getMessage());
+            return null;
+        }
     }
 
     @NonNull
