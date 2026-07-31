@@ -18,7 +18,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.PAT_TOKEN }}
+          # Prefer PAT when configured, otherwise fall back to the workflow token.
+          token: ${{ secrets.PAT_TOKEN != '' && secrets.PAT_TOKEN || github.token }}
 
       - name: Configure git user
         run: |
@@ -114,4 +115,5 @@ jobs:
     needs: bump-version
     uses: ./.github/workflows/docker-publish.yml
     permissions:
+      contents: read
       packages: write
