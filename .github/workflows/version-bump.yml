@@ -110,12 +110,17 @@ jobs:
 
       - name: Commit and push to PR branch
         if: steps.skip.outputs.needed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           git add -A
           # No [skip ci] here: the required status checks must report on this,
           # the PR's new HEAD commit, or branch protection waits on it forever.
           git commit -m "chore(version): bump to ${{ steps.new.outputs.version }}"
           git push origin HEAD:"${{ github.head_ref }}"
+          # Pushes made with GITHUB_TOKEN do not start new workflow runs on their own,
+          # so explicitly dispatch CI for the updated PR branch HEAD.
+          gh workflow run ci.yml --ref "${{ github.head_ref }}"
 
   # After merge to main, the VERSION file already reflects the bump (it was part of the PR),
   # so we only need to tag the merge commit itself and kick off the Docker publish.
