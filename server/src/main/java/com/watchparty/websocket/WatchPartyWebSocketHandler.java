@@ -116,13 +116,23 @@ public class WatchPartyWebSocketHandler {
                 Objects.requireNonNull(Map.of("connectionId", sessionId)),
                 createHeaders(sessionId));
 
-        PlaylistResponse playlist = playlistService.getPlaylist(room.getId());
-        messagingTemplate.convertAndSendToUser(sessionId, "/queue/playlist.history", playlist,
-                createHeaders(sessionId));
+        // Playlist/chat history are supplementary: a failure loading them (e.g. legacy data)
+        // must not roll back the participant join we already broadcast to the room above.
+        try {
+            PlaylistResponse playlist = playlistService.getPlaylist(room.getId());
+            messagingTemplate.convertAndSendToUser(sessionId, "/queue/playlist.history", playlist,
+                    createHeaders(sessionId));
+        } catch (Exception ex) {
+            log.warn("Failed to load playlist history for room {}: {}", room.getCode(), ex.getMessage());
+        }
 
-        List<ChatMessageResponse> chatHistory = chatService.getChatHistory(room.getId());
-        messagingTemplate.convertAndSendToUser(sessionId, "/queue/chat.history", chatHistory,
-                createHeaders(sessionId));
+        try {
+            List<ChatMessageResponse> chatHistory = chatService.getChatHistory(room.getId());
+            messagingTemplate.convertAndSendToUser(sessionId, "/queue/chat.history", chatHistory,
+                    createHeaders(sessionId));
+        } catch (Exception ex) {
+            log.warn("Failed to load chat history for room {}: {}", room.getCode(), ex.getMessage());
+        }
     }
 
     @MessageMapping("/room.leave")
