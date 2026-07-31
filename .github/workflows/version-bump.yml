@@ -112,7 +112,9 @@ jobs:
         if: steps.skip.outputs.needed == 'true'
         run: |
           git add -A
-          git commit -m "chore(version): bump to ${{ steps.new.outputs.version }} [skip ci]"
+          # No [skip ci] here: the required status checks must report on this,
+          # the PR's new HEAD commit, or branch protection waits on it forever.
+          git commit -m "chore(version): bump to ${{ steps.new.outputs.version }}"
           git push origin HEAD:"${{ github.head_ref }}"
 
   # After merge to main, the VERSION file already reflects the bump (it was part of the PR),
