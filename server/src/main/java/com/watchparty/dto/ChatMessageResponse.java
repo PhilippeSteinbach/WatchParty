@@ -9,6 +9,7 @@ public record ChatMessageResponse(
         String nickname,
         String content,
         Map<String, Integer> reactions,
+        Map<String, String> userReactions,
         Instant sentAt
 ) {
 }

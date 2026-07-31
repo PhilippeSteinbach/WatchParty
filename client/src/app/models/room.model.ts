@@ -42,6 +42,7 @@ export interface ChatMessage {
   nickname: string;
   content: string;
   reactions: Record<string, number>;
+  userReactions: Record<string, string>;
   sentAt: string;
 }
 

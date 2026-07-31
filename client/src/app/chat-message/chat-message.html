@@ -12,7 +12,15 @@
   @if (reactionEntries(message().reactions).length > 0) {
     <div class="flex flex-wrap gap-1.5 mt-1.5">
       @for (entry of reactionEntries(message().reactions); track entry[0]) {
-        <span class="bg-surface-4 rounded-full px-2 py-0.5 text-xs text-purple-200">{{ entry[0] }} {{ entry[1] }}</span>
+        <span
+          class="bg-surface-4 rounded-full px-2 py-0.5 text-xs text-purple-200 cursor-pointer transition-colors"
+          [class.ring-1]="myReaction() === entry[0]"
+          [class.ring-neon-purple]="myReaction() === entry[0]"
+          [class.bg-neon-purple]="myReaction() === entry[0]"
+          [class.bg-opacity-20]="myReaction() === entry[0]"
+          [attr.aria-label]="entry[0] + ' ' + entry[1] + (myReaction() === entry[0] ? ' (your reaction, click to remove)' : '')"
+          (click)="onReaction({ messageId: message().id, emoji: entry[0] })"
+        >{{ entry[0] }} {{ entry[1] }}</span>
       }
     </div>
   }
