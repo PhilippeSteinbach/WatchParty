@@ -19,6 +19,8 @@ export class WebSocketService {
   readonly myConnectionId = signal<string | null>(null);
   readonly myNickname = signal<string | null>(null);
   readonly peerCameraStates = signal<Map<string, boolean>>(new Map());
+  readonly lastError = signal<string | null>(null);
+  private lastRejoinAt = 0;
 
   connect(roomCode: string, nickname: string): void {
     this.roomCode = roomCode;
@@ -134,10 +136,20 @@ export class WebSocketService {
           });
         });
 
-        this.client!.publish({
-          destination: '/app/room.join',
-          body: JSON.stringify({ roomCode, nickname }),
+        this.client!.subscribe('/user/queue/errors', (message: IMessage) => {
+          this.zone.run(() => {
+            const body = JSON.parse(message.body) as { message: string };
+            this.lastError.set(body.message);
+            // The server can lose our participant record (e.g. a backend restart clears
+            // stale participants) while this connection stays open — rejoin to self-heal.
+            if (body.message.includes('Participant not found') && Date.now() - this.lastRejoinAt > 3000) {
+              this.lastRejoinAt = Date.now();
+              this.rejoin();
+            }
+          });
         });
+
+        this.rejoin();
       },
       onDisconnect: () => this.connected.set(false),
       onStompError: () => this.connected.set(false),
@@ -160,6 +172,15 @@ export class WebSocketService {
     this.myConnectionId.set(null);
     this.myNickname.set(null);
     this.peerCameraStates.set(new Map());
+    this.lastError.set(null);
+  }
+
+  private rejoin(): void {
+    if (!this.client?.active) return;
+    this.client.publish({
+      destination: '/app/room.join',
+      body: JSON.stringify({ roomCode: this.roomCode, nickname: this.myNickname() }),
+    });
   }
 
   sendPlayerAction(action: PlayerState): void {
