@@ -164,6 +164,13 @@ export class WatchRoomComponent implements OnDestroy {
       }
     });
 
+    // Surface connection/action errors that were previously failing silently
+    effect(() => {
+      const message = this.ws.lastError();
+      if (!message) return;
+      this.addNotification(message);
+    });
+
     // Reset unread count when chat tab is active
     effect(() => {
       if (this.activeTab() === 'chat') {
