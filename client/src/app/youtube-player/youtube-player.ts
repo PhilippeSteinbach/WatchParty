@@ -194,7 +194,7 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
       width: '100%',
       height: '100%',
       videoId,
-      playerVars: { autoplay: 0, controls: 0, disablekb: 1, modestbranding: 1, rel: 0, iv_load_policy: 3, playsinline: 1 },
+      playerVars: this.getDefaultPlayerVars(),
       events: {
         onReady: () => {
           this.zone.run(() => {
@@ -215,6 +215,19 @@ export class YoutubePlayerComponent implements AfterViewInit, OnDestroy {
         },
       },
     });
+  }
+
+  private getDefaultPlayerVars(): YT.PlayerVars {
+    return {
+      autoplay: 0,
+      controls: 0,
+      disablekb: 1,
+      modestbranding: 1,
+      rel: 0,
+      iv_load_policy: 3,
+      playsinline: 1,
+      cc_load_policy: 0,
+    } as YT.PlayerVars;
   }
 
   private onPlayerStateChange(event: YT.OnStateChangeEvent): void {
