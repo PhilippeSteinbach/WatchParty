@@ -1,23 +1,28 @@
 name: Version Bump
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+    branches: [main]
   push:
     branches: [main]
 
 permissions:
   contents: write
-  pull-requests: write
+  pull-requests: read
   actions: write
 
 jobs:
-  bump-version:
+  # Bumps VERSION/package.json/pom.xml directly on the PR branch, before merge,
+  # so the version bump ships as part of the same PR instead of a follow-up one.
+  bump-pr-version:
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, 'chore(version):')"
-
     steps:
-      - name: Checkout
+      - name: Checkout PR branch
         uses: actions/checkout@v5
         with:
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - name: Configure git user
@@ -36,31 +41,16 @@ jobs:
           fi
           echo "version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Find merged PR number
-        id: pr
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          PR_NUMBER=$(gh pr list --state merged --search "${{ github.sha }}" --json number --jq '.[0].number')
-          echo "number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
-
-      - name: Get PR labels and determine bump type
+      - name: Determine bump type from PR labels
         id: bump
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PR_NUMBER="${{ steps.pr.outputs.number }}"
           BUMP_TYPE="patch"
-
-          if [ -n "$PR_NUMBER" ]; then
-            LABELS=$(gh pr view "$PR_NUMBER" --json labels --jq '.labels[].name')
-            if echo "$LABELS" | grep -q "^major$"; then
-              BUMP_TYPE="major"
-            elif echo "$LABELS" | grep -q "^minor$"; then
-              BUMP_TYPE="minor"
-            fi
+          LABELS='${{ join(github.event.pull_request.labels.*.name, ',') }}'
+          if echo ",$LABELS," | grep -q ",major,"; then
+            BUMP_TYPE="major"
+          elif echo ",$LABELS," | grep -q ",minor,"; then
+            BUMP_TYPE="minor"
           fi
-
           echo "type=$BUMP_TYPE" >> "$GITHUB_OUTPUT"
 
       - name: Calculate new version
@@ -82,18 +72,28 @@ jobs:
 
           echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Update VERSION file
-        run: echo "${{ steps.new.outputs.version }}" > VERSION
+      - name: Skip if branch is already bumped
+        id: skip
+        run: |
+          EXISTING=$(cat VERSION | tr -d '[:space:]')
+          if [ "$EXISTING" = "${{ steps.new.outputs.version }}" ]; then
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Set up Node.js
+        if: steps.skip.outputs.needed == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 24
 
       - name: Update client version
+        if: steps.skip.outputs.needed == 'true'
         run: cd client && npm version ${{ steps.new.outputs.version }} --no-git-tag-version
 
       - name: Set up JDK 21
+        if: steps.skip.outputs.needed == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: microsoft
@@ -101,64 +101,44 @@ jobs:
           cache: maven
 
       - name: Update server version
+        if: steps.skip.outputs.needed == 'true'
         run: cd server && ./mvnw versions:set -DnewVersion=${{ steps.new.outputs.version }} -DgenerateBackupPoms=false -B
 
-      - name: Commit bump on dedicated branch
-        id: bump_commit
+      - name: Update VERSION file
+        if: steps.skip.outputs.needed == 'true'
+        run: echo "${{ steps.new.outputs.version }}" > VERSION
+
+      - name: Commit and push to PR branch
+        if: steps.skip.outputs.needed == 'true'
         run: |
-          BRANCH="chore/version-bump-v${{ steps.new.outputs.version }}"
           git add -A
-          if git diff --cached --quiet; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          git checkout -B "$BRANCH"
           git commit -m "chore(version): bump to ${{ steps.new.outputs.version }} [skip ci]"
-          git push --force-with-lease origin "$BRANCH"
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          git push origin HEAD:"${{ github.head_ref }}"
 
-      - name: Open or update bump PR
-        if: steps.bump_commit.outputs.changed == 'true'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          BRANCH="${{ steps.bump_commit.outputs.branch }}"
-          EXISTING_PR=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number')
-          if [ -n "$EXISTING_PR" ] && [ "$EXISTING_PR" != "null" ]; then
-            echo "Version bump PR #$EXISTING_PR already exists."
-          else
-            gh pr create \
-              --base main \
-              --head "$BRANCH" \
-              --title "chore(version): bump to ${{ steps.new.outputs.version }}" \
-              --body "Automated version bump after merge to main.\n\n- Updates VERSION\n- Updates client/package.json version\n- Updates server/pom.xml version"
-          fi
+  # After merge to main, the VERSION file already reflects the bump (it was part of the PR),
+  # so we only need to tag the merge commit itself and kick off the Docker publish.
+  tag-and-publish:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Read version
+        id: version
+        run: echo "version=$(cat VERSION | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
 
       - name: Create version tag
         id: tag
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          if [ "${{ steps.bump_commit.outputs.changed }}" != "true" ]; then
-            echo "No version bump commit was created, skipping tag."
+          if git ls-remote --tags origin "refs/tags/v${{ steps.version.outputs.version }}" | grep -q .; then
+            echo "Tag v${{ steps.version.outputs.version }} already exists, skipping."
             echo "created=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          if git ls-remote --tags origin "refs/tags/v${{ steps.new.outputs.version }}" | grep -q .; then
-            echo "Tag v${{ steps.new.outputs.version }} already exists, skipping tag push."
-            echo "created=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          # Tag the bump commit itself (on the chore/version-bump branch), not github.sha
-          # (the pre-bump commit) — otherwise the tag/image would ship the OLD version files.
-          git tag "v${{ steps.new.outputs.version }}" "${{ steps.bump_commit.outputs.sha }}"
-          git push origin "v${{ steps.new.outputs.version }}"
+          git tag "v${{ steps.version.outputs.version }}" "${{ github.sha }}"
+          git push origin "v${{ steps.version.outputs.version }}"
           echo "created=true" >> "$GITHUB_OUTPUT"
 
       - name: Trigger Docker Publish workflow
@@ -167,4 +147,4 @@ jobs:
         if: steps.tag.outputs.created == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: gh workflow run docker-publish.yml --ref "v${{ steps.new.outputs.version }}"
+        run: gh workflow run docker-publish.yml --ref "v${{ steps.version.outputs.version }}"
